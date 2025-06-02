@@ -11,16 +11,19 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.navigation.compose.rememberNavController
+import com.example.pizza_app.ui.MainScreen
 import com.example.pizza_app.ui.auth.LoginScreen
 import com.example.pizza_app.ui.theme.Pizza_appTheme
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
+        //enableEdgeToEdge()
         setContent {
             Pizza_appTheme {
-                LoginScreen()
+                val navController = rememberNavController()
+                MainScreen(navController)
             }
         }
     }

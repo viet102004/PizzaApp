@@ -40,10 +40,11 @@ android {
 }
 
 dependencies {
-
-    implementation("androidx.compose.material:material:1.6.0") // hoặc mới hơn
-    implementation("androidx.navigation:navigation-compose:2.7.0") // hoặc mới hơn
-
+    implementation ("androidx.compose.material:material-icons-extended")
+    implementation ("androidx.compose.ui:ui:1.6.7") // Hoặc phiên bản mới nhất
+    implementation ("androidx.compose.material:material:1.6.7")
+    implementation ("androidx.compose.ui:ui-graphics:1.6.7")
+    implementation ("androidx.navigation:navigation-compose:2.7.7")
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)

@@ -1,4 +1,4 @@
-package com.example.pizza_app.ui.profile
+package com.example.pizza_app.ui.wallet
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.material.Text

@@ -9,10 +9,11 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.navigation.NavController
 import com.example.pizza_app.data.model.Product
 
 @Composable
-fun RecommendedSection(products: List<Product>) {
+fun ProductSection(products: List<Product>, navController: NavController) {
     Column(modifier = Modifier.padding(vertical = 8.dp)) {
         Text(
             text = "Ăn gì hôm nay!!!",
@@ -30,7 +31,7 @@ fun RecommendedSection(products: List<Product>) {
             verticalArrangement = Arrangement.spacedBy(5.dp)
         ) {
             items(products) { product ->
-                ProductItem(product = product)
+                ProductItem(product = product, navController =  navController)
             }
         }
     }

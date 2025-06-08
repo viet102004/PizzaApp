@@ -1,7 +1,9 @@
-package com.example.pizza_app.ui.home
+package com.example.pizza_app.data.model
 
-class Product (
+data class Product (
+    val id: Int,
     val name: String,
     val price: Int,
-    val imageRes: Int
+    val imageRes: Int,
+    val description: String = ""
 )

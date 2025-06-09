@@ -25,7 +25,7 @@ import androidx.navigation.NavController
 @Composable
 fun UpdateNameScreen(navController: NavController) {
     var ho by remember { mutableStateOf("Hoàng") }
-    var tenDem by remember { mutableStateOf("Việt") }
+    var tenDem by remember { mutableStateOf("") }
     var ten by remember { mutableStateOf("Việt") }
 
     Column(

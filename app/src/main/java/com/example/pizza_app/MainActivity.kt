@@ -14,14 +14,12 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.navigation.compose.rememberNavController
 import com.example.pizza_app.ui.MainScreen
 import com.example.pizza_app.ui.auth.LoginScreen
-import com.example.pizza_app.ui.setFullScreen
 import com.example.pizza_app.ui.theme.Pizza_appTheme
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        //enableEdgeToEdge()
-        //setFullScreen()
+        enableEdgeToEdge()
         setContent {
             Pizza_appTheme {
                 val navController = rememberNavController()

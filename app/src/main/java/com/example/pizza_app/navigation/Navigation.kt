@@ -56,7 +56,6 @@ fun AppNavigation(navController: NavHostController) {
         composable("settings") { SettingsScreen() }
         composable("login") { LoginScreen() }
         composable("product_detail") { ProductDetailScreen(navController) }
-
         composable("update_name") { UpdateNameScreen(navController) }
         composable("update_phone") { UpdatePhoneScreen(navController) }
         composable("update_email") { UpdateEmailScreen(navController) }

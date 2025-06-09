@@ -40,21 +40,21 @@ android {
 }
 
 dependencies {
-    implementation ("androidx.compose.material:material-icons-extended")
-    implementation ("androidx.compose.ui:ui:1.6.7") // Hoặc phiên bản mới nhất
-    implementation ("androidx.compose.material:material:1.6.7")
-    implementation ("androidx.compose.ui:ui-graphics:1.6.7")
-    implementation ("androidx.navigation:navigation-compose:2.7.7")
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.ui)
+    implementation ("androidx.compose.material:material-icons-extended")
+    implementation ("androidx.compose.ui:ui:1.6.7") // Hoặc phiên bản mới nhất
+    implementation ("androidx.compose.material:material:1.6.7")
+    implementation ("androidx.compose.ui:ui-graphics:1.6.7")
+    implementation ("androidx.navigation:navigation-compose:2.7.7")
     implementation(libs.androidx.ui.graphics)
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
-    implementation(libs.androidx.navigation.runtime.android)
+    implementation(libs.androidx.navigation.compose.android)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)

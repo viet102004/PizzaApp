@@ -4,6 +4,7 @@ import androidx.compose.runtime.Composable
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.compose.navigation
 import com.example.pizza_app.ui.cart.CartScreen
 import com.example.pizza_app.ui.home.HomeScreen
 import com.example.pizza_app.ui.order.OrderScreen
@@ -18,6 +19,11 @@ import com.example.pizza_app.ui.profile.SettingsScreen
 import com.example.pizza_app.ui.auth.LoginScreen
 import com.example.pizza_app.ui.home.ProductDetailScreen
 import com.example.pizza_app.ui.home.ProductSection
+import com.example.pizza_app.ui.profile.UpdateDOBScreen
+import com.example.pizza_app.ui.profile.UpdateEmailScreen
+import com.example.pizza_app.ui.profile.UpdateNameScreen
+import com.example.pizza_app.ui.profile.UpdatePasswordScreen
+import com.example.pizza_app.ui.profile.UpdatePhoneScreen
 
 @Composable
 fun AppNavigation(navController: NavHostController) {
@@ -44,12 +50,18 @@ fun AppNavigation(navController: NavHostController) {
         }
         composable("wallet") { WalletScreen() }
         composable("vouchers") { VouchersScreen() }
-        composable("profile_details") { ProfileDetailsScreen() }
+        composable("profile_details") { ProfileDetailsScreen(navController) }
         composable("address") { AddressScreen() }
         composable("support_chat") { SupportChatScreen() }
         composable("settings") { SettingsScreen() }
         composable("login") { LoginScreen() }
         composable("product_detail") { ProductDetailScreen(navController) }
+
+        composable("update_name") { UpdateNameScreen(navController) }
+        composable("update_phone") { UpdatePhoneScreen(navController) }
+        composable("update_email") { UpdateEmailScreen(navController) }
+        composable("update_dob") { UpdateDOBScreen(navController) }
+        composable("update_password") { UpdatePasswordScreen(navController) }
 
     }
 }

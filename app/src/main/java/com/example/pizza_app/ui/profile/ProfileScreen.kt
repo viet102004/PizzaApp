@@ -40,12 +40,12 @@ fun ProfileScreen(
             modifier = Modifier
                 .fillMaxWidth()
                 .clip(RoundedCornerShape(16.dp))
-                .background(Color(0xFFC8C8A9)) // màu xanh rêu nhạt
+                .background(Color(0xFFC8C8A9))
                 .padding(16.dp)
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Image(
-                    painter = painterResource(id = R.drawable.pizza2), // Thay avatar tại đây
+                    painter = painterResource(id = R.drawable.avatar),
                     contentDescription = "Avatar",
                     modifier = Modifier
                         .size(60.dp)

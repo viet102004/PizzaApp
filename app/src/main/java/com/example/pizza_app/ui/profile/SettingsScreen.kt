@@ -8,6 +8,6 @@ import androidx.compose.ui.unit.sp
 @Composable
 fun SettingsScreen() {
     Column {
-        Text("Đây là màn hình Ví", fontSize = 20.sp)
+        Text("Đây là màn cài đặt", fontSize = 20.sp)
     }
 }

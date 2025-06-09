@@ -52,14 +52,16 @@ fun MainScreen(navController: NavHostController) {
 
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
-
     Box(modifier = Modifier.fillMaxSize()) {
         // Nội dung chính
         Box(modifier = Modifier.fillMaxSize()) {
             AppNavigation(navController)
         }
 
-        if (currentRoute != "login" && currentRoute != "product_detail") {
+        if (currentRoute != "login" && currentRoute != "product_detail" && currentRoute != "profile_details"
+            && currentRoute != "update_name" && currentRoute != "update_password" && currentRoute != "update_email"
+            && currentRoute != "update_phone" && currentRoute != "update_dob"
+            ) {
             BottomNavBar(
                 items = items,
                 navController = navController,

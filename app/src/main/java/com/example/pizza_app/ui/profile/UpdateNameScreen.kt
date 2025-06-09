@@ -24,9 +24,7 @@ import androidx.navigation.NavController
 
 @Composable
 fun UpdateNameScreen(navController: NavController) {
-    var ho by remember { mutableStateOf("Hoàng") }
-    var tenDem by remember { mutableStateOf("") }
-    var ten by remember { mutableStateOf("Việt") }
+    var hoTen by remember { mutableStateOf("Hoàng Việt") }
 
     Column(
         modifier = Modifier
@@ -58,32 +56,11 @@ fun UpdateNameScreen(navController: NavController) {
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        // Trường nhập Họ
-        OutlinedTextField(
-            value = ho,
-            onValueChange = { ho = it },
-            label = { Text("Họ") },
-            modifier = Modifier.fillMaxWidth(),
-            singleLine = true
-        )
-
-        Spacer(modifier = Modifier.height(12.dp))
-
-        // Trường nhập Tên đệm
-        OutlinedTextField(
-            value = tenDem,
-            onValueChange = { tenDem = it },
-            label = { Text("Tên đệm") },
-            modifier = Modifier.fillMaxWidth(),
-            singleLine = true
-        )
-
-        Spacer(modifier = Modifier.height(12.dp))
 
         // Trường nhập Tên
         OutlinedTextField(
-            value = ten,
-            onValueChange = { ten = it },
+            value = hoTen,
+            onValueChange = { hoTen = it },
             label = { Text("Tên") },
             modifier = Modifier.fillMaxWidth(),
             singleLine = true

@@ -26,26 +26,27 @@ fun UpdateEmailScreen(navController: NavController) {
             .padding(16.dp)
     ) {
         // Header
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Icon(
-                imageVector = Icons.Default.ArrowBack,
-                contentDescription = "Back",
-                modifier = Modifier
-                    .size(24.dp)
-                    .clickable { navController.popBackStack() }
-            )
-            Spacer(modifier = Modifier.width(12.dp))
-            Text(
-                text = "Thay đổi email",
-                style = MaterialTheme.typography.h6.copy(fontWeight = FontWeight.Bold),
-                modifier = Modifier.weight(1f),
-                textAlign = TextAlign.Center
-            )
-            Spacer(modifier = Modifier.width(36.dp))
-        }
+
+//        Row(
+//            verticalAlignment = Alignment.CenterVertically,
+//            modifier = Modifier.fillMaxWidth()
+//        ) {
+//            Icon(
+//                imageVector = Icons.Default.ArrowBack,
+//                contentDescription = "Back",
+//                modifier = Modifier
+//                    .size(24.dp)
+//                    .clickable { navController.popBackStack() }
+//            )
+//            Spacer(modifier = Modifier.width(12.dp))
+//            Text(
+//                text = "Thay đổi email",
+//                style = MaterialTheme.typography.h6.copy(fontWeight = FontWeight.Bold),
+//                modifier = Modifier.weight(1f),
+//                textAlign = TextAlign.Center
+//            )
+//            Spacer(modifier = Modifier.width(36.dp))
+//        }
 
         Spacer(modifier = Modifier.height(24.dp))
 

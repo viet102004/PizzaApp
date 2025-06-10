@@ -28,6 +28,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.QrCode
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Minimize
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.example.pizza_app.R
@@ -161,7 +162,7 @@ fun WalletScreen(
                     )
 
                     WalletActionButton(
-                        icon = Icons.Default.CameraAlt,
+                        icon = Icons.Default.Minimize,
                         label = "Rút tiền",
                         onClick = onWithdrawClick
                     )
@@ -248,10 +249,4 @@ private fun WalletActionButton(
             maxLines = 1
         )
     }
-}
-
-@Preview(showBackground = true)
-@Composable
-fun WalletScreenPreview() {
-    WalletScreen(navController = rememberNavController())
 }

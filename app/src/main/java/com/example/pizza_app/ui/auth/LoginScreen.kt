@@ -18,10 +18,11 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavController
 import java.text.Normalizer
 
 @Composable
-fun LoginScreen() {
+fun LoginScreen(navController : NavController) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
@@ -94,7 +95,7 @@ fun LoginScreen() {
 
             // Login Button
             Button(
-                onClick = { /* Handle login */ },
+                onClick = { navController.navigate("home") },
                 modifier = Modifier
                     .fillMaxWidth(0.8f)
                     .height(50.dp),

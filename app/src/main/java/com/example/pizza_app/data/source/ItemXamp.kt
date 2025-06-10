@@ -45,14 +45,45 @@ object ItemXamp {
         Category("Tráng miệng", R.drawable.ic_dessert),
         Category("Khuyến mãi", R.drawable.ic_discount)
     )
-    val cartItems =
-        mutableStateListOf(
-            CartItem("Pizza Phô mai", "Lớn", 975.000, R.drawable.pizza2, 1),
-            CartItem("Pizza Phô mai", "Lớn", 750.000, R.drawable.pizza2, 1),
-            CartItem("Pizza Phô mai", "Lớn", 750.000, R.drawable.pizza2, 1),
-            CartItem("Pizza Phô mai", "Lớn", 750.000, R.drawable.pizza2, 1),
-            CartItem("Pizza Phô mai", "Lớn", 520.000, R.drawable.pizza2, 1)
+
+    val sampleCartItems = listOf(
+        CartItem(
+            id = "1",
+            name = "Pizza Margherita",
+            size = "M",
+            thickness = "Mỏng",
+            price = 149000.0,
+            quantity = 1,
+            img = R.drawable.pizza2
+        ),
+        CartItem(
+            id = "2",
+            name = "Pizza Pepperoni",
+            size = "L",
+            thickness = "Dày",
+            price = 199000.0,
+            quantity = 1,
+            img = R.drawable.pizza2
+        ),
+        CartItem(
+            id = "3",
+            name = "Pizza Hải Sản",
+            size = "XL",
+            thickness = "Vừa",
+            price = 299000.0,
+            quantity = 1,
+            img = R.drawable.pizza2
+        ),
+        CartItem(
+            id = "4",
+            name = "Pizza Thịt Nướng",
+            size = "M",
+            thickness = "Dày",
+            price = 179000.0,
+            quantity = 1,
+            img = R.drawable.pizza2
         )
+    )
 
 
 }

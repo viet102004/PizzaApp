@@ -4,5 +4,5 @@ import androidx.annotation.DrawableRes
 
 data class Category(
     val name: String,
-    @DrawableRes val iconRes: Int // nếu có icon riêng cho mỗi danh mục
+    @DrawableRes val iconRes: Int
 )

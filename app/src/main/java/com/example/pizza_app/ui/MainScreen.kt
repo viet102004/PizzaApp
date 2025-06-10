@@ -9,6 +9,8 @@ import androidx.compose.material.IconButton
 import androidx.compose.material.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -34,47 +36,56 @@ import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowInsetsControllerCompat
 
-// Hàm này nên được gọi trong Activity để đặt chế độ full screen
-fun ComponentActivity.setFullScreen() {
-    val windowInsetsController = WindowCompat.getInsetsController(window, window.decorView)
-    windowInsetsController.systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
-    WindowCompat.setDecorFitsSystemWindows(window, false) // Bỏ các insets hệ thống
-}
+private val bottomNavItems = listOf(
+    BottomNavItem("home", Icons.Default.Home, "Home"),
+    BottomNavItem("cart", Icons.Default.ShoppingCart, "Cart"),
+    BottomNavItem("order", Icons.Default.List, "Orders"),
+    BottomNavItem("profile", Icons.Default.Person, "Profile")
+)
+
+private val routesWithoutBottomNav = setOf(
+    "login", "product_detail", "profile_details",
+    "update_name", "update_password", "update_email",
+    "update_phone", "update_dob", "pay"
+)
 
 @Composable
 fun MainScreen(navController: NavHostController) {
-    val items = listOf(
-        BottomNavItem("home", Icons.Default.Home, "Home"),
-        BottomNavItem("cart", Icons.Default.ShoppingCart, "Cart"),
-        BottomNavItem("order", Icons.Default.List, "Orders"),
-        BottomNavItem("profile", Icons.Default.Person, "Profile")
-    )
-
     val navBackStackEntry by navController.currentBackStackEntryAsState()
-    val currentRoute = navBackStackEntry?.destination?.route
+
+    val currentRoute by remember {
+        derivedStateOf { navBackStackEntry?.destination?.route }
+    }
+
+    val shouldShowBottomNav by remember {
+        derivedStateOf {
+            currentRoute !in routesWithoutBottomNav
+        }
+    }
+
+    val onNavigate = remember {
+        { item: BottomNavItem ->
+            navController.navigate(item.route) {
+                popUpTo(navController.graph.startDestinationId) { saveState = true }
+                launchSingleTop = true
+                restoreState = true
+            }
+        }
+    }
+
     Box(modifier = Modifier.fillMaxSize()) {
         // Nội dung chính
-        Box(modifier = Modifier.fillMaxSize()) {
-            AppNavigation(navController)
-        }
+        AppNavigation(navController)
 
-        if (currentRoute != "login" && currentRoute != "product_detail" && currentRoute != "profile_details"
-            && currentRoute != "update_name" && currentRoute != "update_password" && currentRoute != "update_email"
-            && currentRoute != "update_phone" && currentRoute != "update_dob"
-            ) {
+        if (shouldShowBottomNav) {
             BottomNavBar(
-                items = items,
+                items = bottomNavItems,
                 navController = navController,
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
-                    .offset(y = (-20).dp)
-            ) {
-                navController.navigate(it.route) {
-                    popUpTo(navController.graph.startDestinationId) { saveState = true }
-                    launchSingleTop = true
-                    restoreState = true
-                }
-            }
+                    .offset(y = (-20).dp),
+                onItemClick = onNavigate
+            )
         }
     }
 }

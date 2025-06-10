@@ -476,8 +476,7 @@ fun PayScreen(navController: NavController) {
         // Bottom section - Tổng tiền và nút đặt món (cố định ở dưới)
         Card(
             modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = 80.dp), // Thêm padding để tránh bottom navigation
+                .fillMaxWidth(), // Thêm padding để tránh bottom navigation
             colors = CardDefaults.cardColors(containerColor = Color.White),
             elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
         ) {
@@ -522,6 +521,8 @@ fun PayScreen(navController: NavController) {
                         fontWeight = FontWeight.Bold
                     )
                 }
+
+                Spacer(modifier = Modifier.height(16.dp))
             }
         }
     }

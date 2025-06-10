@@ -25,7 +25,6 @@ import androidx.navigation.NavController
 @Composable
 fun UpdateNameScreen(navController: NavController) {
     var hoTen by remember { mutableStateOf("Hoàng Việt") }
-
     Column(
         modifier = Modifier
             .fillMaxSize()

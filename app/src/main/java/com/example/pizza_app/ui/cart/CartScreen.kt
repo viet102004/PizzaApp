@@ -22,11 +22,12 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavController
 import com.example.pizza_app.R
 import com.example.pizza_app.data.source.ItemXamp.cartItems
 
 @Composable
-fun CartScreen() {
+fun CartScreen(navController: NavController) {
     val subTotal = cartItems.sumOf { it.price * it.quantity }
     val totalCost = subTotal
 
@@ -115,7 +116,7 @@ fun CartScreen() {
                     Spacer(modifier = Modifier.height(8.dp))
 
                     Button(
-                        onClick = { /* TODO: Xử lý thanh toán */ },
+                        onClick = { navController.navigate("pay") },
                         colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFFC107)),
                         shape = RoundedCornerShape(50),
                         modifier = Modifier

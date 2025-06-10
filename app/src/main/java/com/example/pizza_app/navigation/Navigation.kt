@@ -17,6 +17,7 @@ import com.example.pizza_app.ui.profile.AddressScreen
 import com.example.pizza_app.ui.profile.SupportChatScreen
 import com.example.pizza_app.ui.profile.SettingsScreen
 import com.example.pizza_app.ui.auth.LoginScreen
+import com.example.pizza_app.ui.cart.PayScreen
 import com.example.pizza_app.ui.home.ProductDetailScreen
 import com.example.pizza_app.ui.home.ProductSection
 import com.example.pizza_app.ui.profile.UpdateDOBScreen
@@ -29,7 +30,7 @@ import com.example.pizza_app.ui.profile.UpdatePhoneScreen
 fun AppNavigation(navController: NavHostController) {
     NavHost(navController = navController, startDestination = "home") {
         composable("home") { HomeScreen(navController) }
-        composable("cart") { CartScreen() }
+        composable("cart") { CartScreen(navController) }
         composable("order") {
             OrderScreen(navController)
         }
@@ -55,6 +56,7 @@ fun AppNavigation(navController: NavHostController) {
         composable("support_chat") { SupportChatScreen() }
         composable("settings") { SettingsScreen() }
         composable("login") { LoginScreen() }
+        composable ("pay"){ PayScreen(navController) }
         composable("product_detail") { ProductDetailScreen(navController) }
         composable("update_name") { UpdateNameScreen(navController) }
         composable("update_phone") { UpdatePhoneScreen(navController) }

@@ -48,7 +48,7 @@ fun AppNavigation(navController: NavHostController) {
                 }
             )
         }
-        composable("wallet") { WalletScreen() }
+        composable("wallet") { WalletScreen(navController) }
         composable("vouchers") { VouchersScreen() }
         composable("profile_details") { ProfileDetailsScreen(navController) }
         composable("address") { AddressScreen() }

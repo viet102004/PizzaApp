@@ -13,7 +13,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.navigation.compose.rememberNavController
 import com.example.pizza_app.ui.MainScreen
+import com.example.pizza_app.ui.auth.ForgotPasswordScreen
 import com.example.pizza_app.ui.auth.LoginScreen
+import com.example.pizza_app.ui.auth.RegisterScreen
 import com.example.pizza_app.ui.theme.Pizza_appTheme
 
 class MainActivity : ComponentActivity() {

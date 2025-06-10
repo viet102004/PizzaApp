@@ -26,6 +26,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavController
 import com.example.pizza_app.data.source.ItemXamp.sampleCartItems
 import java.text.DecimalFormat
 
@@ -38,7 +39,7 @@ fun formatCurrency(amount: Double): String {
 
 
 @Composable
-fun CartScreen() {
+fun CartScreen(navController: NavController) {
     var cartItems by remember { mutableStateOf(sampleCartItems) }
 
     val subtotal by remember {
@@ -129,10 +130,9 @@ fun CartScreen() {
                 }
             }
 
-            // Checkout Section
             CheckoutSection(
                 subtotal = subtotal,
-                onCheckout = { /* TODO: Navigate to checkout */ }
+                onCheckout = { navController.navigate("pay") }
             )
         }
     }

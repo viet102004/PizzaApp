@@ -30,7 +30,7 @@ import com.example.pizza_app.ui.profile.UpdatePhoneScreen
 fun AppNavigation(navController: NavHostController) {
     NavHost(navController = navController, startDestination = "home") {
         composable("home") { HomeScreen(navController) }
-        composable("cart") { CartScreen() }
+        composable("cart") { CartScreen(navController) }
         composable("order") {
             OrderScreen(navController)
         }

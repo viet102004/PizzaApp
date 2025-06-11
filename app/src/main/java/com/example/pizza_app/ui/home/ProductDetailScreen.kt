@@ -92,7 +92,7 @@ fun ProductDetailScreen(navController:NavController) {
                         modifier = Modifier
                             .size(36.dp)
                             .background(Color.White, CircleShape)
-                            .clickable { /* TODO: Handle favorite */ },
+                            .clickable { navController.navigate("favorite") },
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(

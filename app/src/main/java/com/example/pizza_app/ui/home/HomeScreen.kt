@@ -39,7 +39,7 @@ import com.example.pizza_app.data.source.ItemXamp
 fun HomeScreen(navController: NavController) {
     Column(modifier = Modifier.fillMaxSize()) {
         Spacer(modifier = Modifier.height(16.dp))
-        SearchBar()
+        SearchBar(navController)
         Spacer(modifier = Modifier.height(16.dp))
         PromoBanner()
         Spacer(modifier = Modifier.height(16.dp))

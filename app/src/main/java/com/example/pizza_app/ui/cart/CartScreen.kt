@@ -91,15 +91,6 @@ fun CartScreen(navController: NavController) {
                     }
                 }
             },
-            actions = {
-                IconButton(onClick = { /* TODO: Navigate to favorites */ }) {
-                    Icon(
-                        imageVector = Icons.Default.FavoriteBorder,
-                        contentDescription = "Yêu thích",
-                        tint = Color.Black
-                    )
-                }
-            },
             colors = TopAppBarDefaults.topAppBarColors(
                 containerColor = Color.Transparent
             )

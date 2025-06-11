@@ -21,7 +21,6 @@ import com.example.pizza_app.ui.cart.PayScreen
 import com.example.pizza_app.ui.home.FavoriteScreen
 import com.example.pizza_app.ui.home.ProductDetailScreen
 import com.example.pizza_app.ui.home.ProductSection
-import com.example.pizza_app.ui.home.SearchScreen
 import com.example.pizza_app.ui.profile.UpdateDOBScreen
 import com.example.pizza_app.ui.profile.UpdateEmailScreen
 import com.example.pizza_app.ui.profile.UpdateNameScreen
@@ -59,7 +58,6 @@ fun AppNavigation(navController: NavHostController) {
         composable("settings") { SettingsScreen() }
         composable("login") { LoginScreen(navController) }
         composable ("pay"){ PayScreen(navController) }
-        composable ("search"){ SearchScreen(navController) }
         composable ("favorite"){ FavoriteScreen(navController) }
         composable("product_detail") { ProductDetailScreen(navController) }
         composable("update_name") { UpdateNameScreen(navController) }

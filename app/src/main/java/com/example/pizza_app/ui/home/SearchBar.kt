@@ -16,9 +16,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.material3.*
+import androidx.navigation.NavController
 
 @Composable
-fun SearchBar() {
+fun SearchBar(navController: NavController) {
     var searchQuery by remember { mutableStateOf("") }
 
     Row(

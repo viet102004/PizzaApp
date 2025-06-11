@@ -41,13 +41,17 @@ android {
 
 dependencies {
 
+    implementation("com.google.maps.android:maps-compose:2.11.4")
+    implementation("com.google.android.gms:play-services-maps:18.2.0")
+    implementation("com.google.android.gms:play-services-location:21.0.1")
+
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.ui)
     implementation ("androidx.compose.material:material-icons-extended")
-    implementation ("androidx.compose.ui:ui:1.6.7") // Hoặc phiên bản mới nhất
+    implementation ("androidx.compose.ui:ui:1.6.7")
     implementation ("androidx.compose.material:material:1.6.7")
     implementation ("androidx.compose.ui:ui-graphics:1.6.7")
     implementation ("androidx.navigation:navigation-compose:2.7.7")

@@ -25,8 +25,6 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.draw.alpha
 import androidx.navigation.NavController
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.delay
-import java.util.*
 import kotlin.math.abs
 
 @Composable
@@ -132,7 +130,6 @@ fun UpdateDOBScreen(navController: NavController) {
             }
 
             Spacer(modifier = Modifier.height(16.dp))
-
         }
     }
 
@@ -225,52 +222,12 @@ fun InfiniteScrollDatePickerDialog(
 
                         // Year Picker
                         InfiniteScrollPicker(
-                            items = (1950..2030).map { it.toString() },
+                            items = (1950..2025).map { it.toString() },
                             selectedIndex = selectedYear - 1950,
                             onItemSelected = { index -> selectedYear = 1950 + index },
                             modifier = Modifier.weight(1f)
                         )
                     }
-
-                    // HIGHLIGHTED SELECTION INDICATORS
-                    // Top separator line
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(1.dp)
-                            .background(Color(0xFFFF69B4).copy(alpha = 0.3f))
-                            .align(Alignment.Center)
-                            .offset(y = (-20).dp)
-                    )
-
-                    // Main selection indicator (middle line) - HIGHLIGHTED
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(3.dp)
-                            .background(
-                                brush = Brush.horizontalGradient(
-                                    colors = listOf(
-                                        Color.Transparent,
-                                        Color(0xFFFF69B4),
-                                        Color(0xFFFF1493),
-                                        Color(0xFFFF69B4),
-                                        Color.Transparent
-                                    )
-                                )
-                            )
-                            .align(Alignment.Center)
-                    )
-
-                    // Bottom separator line
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(1.dp)
-                            .background(Color(0xFFFF69B4).copy(alpha = 0.3f))
-                            .align(Alignment.Center)
-                            .offset(y = 20.dp)
-                    )
 
                     // Selection background highlight
                     Box(
@@ -320,7 +277,6 @@ fun InfiniteScrollPicker(
     modifier: Modifier = Modifier
 ) {
     val listState = rememberLazyListState()
-    val coroutineScope = rememberCoroutineScope()
 
     // Optimized: Only create 100 repetitions instead of 1000
     val infiniteItems = remember(items) {
@@ -336,9 +292,31 @@ fun InfiniteScrollPicker(
     val middleStart = remember(items) { 50 * items.size }
     val itemHeight = 40.dp
 
-    LaunchedEffect(selectedIndex) {
-        val targetIndex = middleStart + selectedIndex
-        listState.animateScrollToItem(targetIndex)
+    // Khởi tạo vị trí ban đầu của list ở giữa
+    LaunchedEffect(Unit) {
+        val initialIndex = middleStart + selectedIndex
+        listState.scrollToItem(initialIndex)
+    }
+
+    // Chỉ tự động chọn item nằm trong highlight zone khi user dừng scroll (không auto-scroll)
+    LaunchedEffect(listState.isScrollInProgress) {
+        if (!listState.isScrollInProgress) {
+            val layoutInfo = listState.layoutInfo
+            val viewportCenter = layoutInfo.viewportSize.height / 2
+
+            // Tìm item nằm trong highlight zone
+            val highlightItem = layoutInfo.visibleItemsInfo.find { itemInfo ->
+                val itemCenter = itemInfo.offset + itemInfo.size / 2
+                abs(itemCenter - viewportCenter) < 20 // Cùng threshold với highlight zone
+            }
+
+            highlightItem?.let { item ->
+                val actualIndex = item.index % items.size
+                if (actualIndex != selectedIndex) {
+                    onItemSelected(actualIndex) // Tự động chọn item trong highlight zone
+                }
+            }
+        }
     }
 
     LazyColumn(
@@ -362,70 +340,41 @@ fun InfiniteScrollPicker(
                 else -> 0.2f  // Distant items
             }
 
+            // Check if this item is currently in the highlight zone (center area)
+            val isInHighlightZone = remember(listState, index) {
+                derivedStateOf {
+                    val layoutInfo = listState.layoutInfo
+                    val viewportCenter = layoutInfo.viewportSize.height / 2
+                    val itemInfo = layoutInfo.visibleItemsInfo.find { it.index == index }
+                    itemInfo?.let {
+                        val itemCenter = it.offset + it.size / 2
+                        abs(itemCenter - viewportCenter) < 20 // Item trong vùng highlight (20dp threshold)
+                    } ?: false
+                }
+            }.value
+
             Text(
                 text = item,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(itemHeight)
                     .padding(vertical = 8.dp)
-                    .alpha(alpha),
-                fontSize = if (isSelected) 20.sp else if (distance <= 1) 18.sp else 16.sp,
-                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                color = if (isSelected) Color(0xFFFF1493) else Color.Black,
-                textAlign = TextAlign.Center
-            )
-        }
-    }
-
-    // SNAP-TO-ITEM ALGORITHM
-    LaunchedEffect(listState.isScrollInProgress) {
-        if (!listState.isScrollInProgress) {
-            delay(50) // Small delay to ensure scroll has fully stopped
-
-            val visibleItemsInfo = listState.layoutInfo.visibleItemsInfo
-            if (visibleItemsInfo.isNotEmpty()) {
-                val viewportCenter = listState.layoutInfo.viewportSize.height / 2
-
-                // Find the item closest to center
-                val centerItem = visibleItemsInfo.minByOrNull { itemInfo ->
-                    abs((itemInfo.offset + itemInfo.size / 2) - viewportCenter)
-                }
-
-                centerItem?.let { item ->
-                    val actualIndex = item.index % items.size
-                    val itemCenter = item.offset + item.size / 2
-                    val distanceFromCenter = abs(itemCenter - viewportCenter)
-
-                    val snapThreshold = itemHeight.value * 0.3f // 30% of item height
-
-                    if (distanceFromCenter < snapThreshold) {
+                    .alpha(alpha)
+                    .clickable {
+                        // Chỉ cho phép chọn bằng tay (click)
                         if (actualIndex != selectedIndex) {
                             onItemSelected(actualIndex)
                         }
-                        else{}
-                    } else {
-                        coroutineScope.launch {
-                            val targetIndex = if (itemCenter < viewportCenter) {
-                                // Item is above center, snap to next item
-                                val nextIndex = (item.index + 1) % infiniteItems.size
-                                nextIndex
-                            } else {
-                                // Item is below center, snap to current item
-                                item.index
-                            }
-
-                            listState.animateScrollToItem(targetIndex)
-
-                            // Update selection after snap
-                            delay(100)
-                            val newActualIndex = targetIndex % items.size
-                            if (newActualIndex != selectedIndex) {
-                                onItemSelected(newActualIndex)
-                            }
-                        }
-                    }
-                }
-            }
+                    },
+                fontSize = if (isSelected) 20.sp else if (distance <= 1) 18.sp else 16.sp,
+                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                color = when {
+                    isSelected -> Color(0xFFFF1493) // Màu hồng đậm khi được chọn chính thức
+                    isInHighlightZone -> Color(0xFFFF69B4) // Màu hồng vừa khi nằm trong vùng highlight
+                    else -> Color.Black // Màu đen bình thường
+                },
+                textAlign = TextAlign.Center
+            )
         }
     }
 }

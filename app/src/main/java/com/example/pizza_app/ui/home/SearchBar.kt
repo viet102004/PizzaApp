@@ -31,7 +31,7 @@ fun SearchBar() {
         OutlinedTextField(
             value = searchQuery,
             onValueChange = { searchQuery = it },
-            placeholder = { Text("Search here...") },
+            placeholder = {  },
             leadingIcon = {
                 Icon(imageVector = Icons.Default.Search, contentDescription = "Search")
             },

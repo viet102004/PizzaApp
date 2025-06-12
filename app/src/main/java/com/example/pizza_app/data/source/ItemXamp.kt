@@ -20,7 +20,18 @@ object ItemXamp {
         Product( 8,"BBQ Chicken Pizza", 129000, R.drawable.pizza6, "Pizza Tuyệt vời"),
         Product( 9,"BBQ Chicken Pizza", 129000, R.drawable.pizza6, "Pizza Tuyệt vời"),
         Product( 10,"BBQ Chicken Pizza", 129000, R.drawable.pizza6, "Pizza Tuyệt vời"),
-    )
+        Product( 11,"BBQ Chicken Pizza", 129000, R.drawable.pizza6, "Pizza Tuyệt vời"),
+        Product( 12,"BBQ Chicken Pizza", 129000, R.drawable.pizza6, "Pizza Tuyệt vời"),
+        Product( 13,"BBQ Chicken Pizza", 129000, R.drawable.pizza6, "Pizza Tuyệt vời"),
+        Product( 14,"BBQ Chicken Pizza", 129000, R.drawable.pizza6, "Pizza Tuyệt vời"),
+        Product( 15,"BBQ Chicken Pizza", 129000, R.drawable.pizza6, "Pizza Tuyệt vời"),
+        Product( 16,"BBQ Chicken Pizza", 129000, R.drawable.pizza6, "Pizza Tuyệt vời"),
+        Product( 17,"BBQ Chicken Pizza", 129000, R.drawable.pizza6, "Pizza Tuyệt vời"),
+        Product( 18,"BBQ Chicken Pizza", 129000, R.drawable.pizza6, "Pizza Tuyệt vời"),
+        Product( 18,"BBQ Chicken Pizza", 129000, R.drawable.pizza6, "Pizza Tuyệt vời"),
+        Product( 19,"BBQ Chicken Pizza", 129000, R.drawable.pizza6, "Pizza Tuyệt vời")
+        )
+
     val sampleOrders = listOf(
         Order(
             storeName = "Pizza KimChi",

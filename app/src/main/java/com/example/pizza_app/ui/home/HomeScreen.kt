@@ -1,3 +1,4 @@
+// HomeScreen.kt
 package com.example.pizza_app.ui.home
 
 import androidx.compose.foundation.Image
@@ -23,6 +24,10 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -35,16 +40,33 @@ import com.example.pizza_app.R
 import com.example.pizza_app.data.model.Product
 import com.example.pizza_app.data.source.ItemXamp
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(navController: NavController) {
-    Column(modifier = Modifier.fillMaxSize()) {
-        Spacer(modifier = Modifier.height(16.dp))
-        SearchBar(navController)
-        Spacer(modifier = Modifier.height(16.dp))
-        PromoBanner()
-        Spacer(modifier = Modifier.height(16.dp))
-        CategorySection()
-        Spacer(modifier = Modifier.height(16.dp))
-        ProductSection(products = ItemXamp.sampleProducts, navController)
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { SearchBar() }, // SearchBar làm title của TopAppBar
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = Color.White,
+                    titleContentColor = Color.Black
+                ),
+                modifier = Modifier.height(80.dp) // Tăng chiều cao để chứa SearchBar
+            )
+        }
+    ) { paddingValues ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues) // Padding từ Scaffold
+                .verticalScroll(rememberScrollState())
+        ) {
+            Spacer(modifier = Modifier.height(16.dp))
+            PromoBanner()
+            Spacer(modifier = Modifier.height(16.dp))
+            CategorySection()
+            Spacer(modifier = Modifier.height(16.dp))
+            ProductSection(products = ItemXamp.sampleProducts, navController)
+        }
     }
 }

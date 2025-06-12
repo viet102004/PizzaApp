@@ -9,18 +9,17 @@ import com.example.pizza_app.ui.cart.CartScreen
 import com.example.pizza_app.ui.home.HomeScreen
 import com.example.pizza_app.ui.order.OrderScreen
 import com.example.pizza_app.ui.profile.ProfileScreen
-import com.example.pizza_app.ui.profile.ProfileItem
 import com.example.pizza_app.ui.wallet.WalletScreen
 import com.example.pizza_app.ui.vouchers.VouchersScreen
 import com.example.pizza_app.ui.profile.ProfileDetailsScreen
 import com.example.pizza_app.ui.profile.AddressScreen
 import com.example.pizza_app.ui.profile.SupportChatScreen
-import com.example.pizza_app.ui.profile.SettingsScreen
 import com.example.pizza_app.ui.auth.LoginScreen
 import com.example.pizza_app.ui.cart.PayScreen
 import com.example.pizza_app.ui.home.FavoriteScreen
 import com.example.pizza_app.ui.home.ProductDetailScreen
 import com.example.pizza_app.ui.home.ProductSection
+import com.example.pizza_app.ui.settings.SettingsScreen
 import com.example.pizza_app.ui.profile.UpdateDOBScreen
 import com.example.pizza_app.ui.profile.UpdateEmailScreen
 import com.example.pizza_app.ui.profile.UpdateNameScreen
@@ -65,5 +64,7 @@ fun AppNavigation(navController: NavHostController) {
         composable("update_email") { UpdateEmailScreen(navController) }
         composable("update_dob") { UpdateDOBScreen(navController) }
         composable("update_password") { UpdatePasswordScreen(navController) }
+        composable("settings") { SettingsScreen() }
+
     }
 }

@@ -110,7 +110,6 @@ fun WalletScreen(
                         ),
                     contentAlignment = Alignment.Center
                 ) {
-                    // Skull icon placeholder - replace with actual image
                     Image(
                         painter = painterResource(id = R.drawable.avatar),
                         contentDescription = "Avatar",

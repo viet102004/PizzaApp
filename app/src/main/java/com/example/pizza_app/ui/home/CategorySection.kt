@@ -18,9 +18,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.pizza_app.data.source.ItemXamp.sampleCategories
 import androidx.compose.ui.res.painterResource
+import androidx.navigation.NavController
 
 @Composable
-fun CategorySection() {
+fun CategorySection(navController: NavController) {
     Column {
         Row(
             modifier = Modifier.fillMaxWidth()
@@ -29,7 +30,7 @@ fun CategorySection() {
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text("Select by Category", fontWeight = FontWeight.Bold)
-            Box(modifier = Modifier.clickable{}) {
+            Box(modifier = Modifier.clickable{navController.navigate("all_categories")}) {
                 Text("See all", color = Color(0xFFFFB700), fontWeight = FontWeight.Medium)
             }
         }

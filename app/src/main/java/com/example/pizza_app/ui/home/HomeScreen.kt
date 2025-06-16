@@ -51,7 +51,7 @@ fun HomeScreen(navController: NavController) {
                     containerColor = Color.White,
                     titleContentColor = Color.Black
                 ),
-                modifier = Modifier.height(80.dp) // Tăng chiều cao để chứa SearchBar
+                modifier = Modifier.height(80.dp)
             )
         }
     ) { paddingValues ->
@@ -64,7 +64,7 @@ fun HomeScreen(navController: NavController) {
             Spacer(modifier = Modifier.height(16.dp))
             PromoBanner()
             Spacer(modifier = Modifier.height(16.dp))
-            CategorySection()
+            CategorySection(navController)
             Spacer(modifier = Modifier.height(16.dp))
             ProductSection(products = ItemXamp.sampleProducts, navController)
         }

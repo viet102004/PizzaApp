@@ -46,7 +46,8 @@ private val bottomNavItems = listOf(
 private val routesWithoutBottomNav = setOf(
     "login", "product_detail", "profile_details",
     "update_name", "update_password", "update_email",
-    "update_phone", "update_dob", "pay", "wallet", "settings"
+    "update_phone", "update_dob", "pay", "wallet", "settings",
+    "all_categories", "vouchers"
 )
 
 @Composable

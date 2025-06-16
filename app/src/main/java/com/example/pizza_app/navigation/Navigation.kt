@@ -5,17 +5,18 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.navigation
+import com.example.pizza_app.data.source.ItemXamp
 import com.example.pizza_app.ui.cart.CartScreen
 import com.example.pizza_app.ui.home.HomeScreen
 import com.example.pizza_app.ui.order.OrderScreen
 import com.example.pizza_app.ui.profile.ProfileScreen
 import com.example.pizza_app.ui.wallet.WalletScreen
-import com.example.pizza_app.ui.vouchers.VouchersScreen
 import com.example.pizza_app.ui.profile.ProfileDetailsScreen
 import com.example.pizza_app.ui.profile.AddressScreen
 import com.example.pizza_app.ui.profile.SupportChatScreen
 import com.example.pizza_app.ui.auth.LoginScreen
 import com.example.pizza_app.ui.cart.PayScreen
+import com.example.pizza_app.ui.home.AllCategoriesScreen
 import com.example.pizza_app.ui.home.FavoriteScreen
 import com.example.pizza_app.ui.home.ProductDetailScreen
 import com.example.pizza_app.ui.home.ProductSection
@@ -25,6 +26,7 @@ import com.example.pizza_app.ui.profile.UpdateEmailScreen
 import com.example.pizza_app.ui.profile.UpdateNameScreen
 import com.example.pizza_app.ui.profile.UpdatePasswordScreen
 import com.example.pizza_app.ui.profile.UpdatePhoneScreen
+import com.example.pizza_app.ui.vouchers.VoucherScreen
 
 @Composable
 fun AppNavigation(navController: NavHostController) {
@@ -50,7 +52,7 @@ fun AppNavigation(navController: NavHostController) {
             )
         }
         composable("wallet") { WalletScreen(navController) }
-        composable("vouchers") { VouchersScreen() }
+        composable("vouchers") { VoucherScreen(navController) }
         composable("profile_details") { ProfileDetailsScreen(navController) }
         composable("address") { AddressScreen() }
         composable("support_chat") { SupportChatScreen() }
@@ -64,7 +66,26 @@ fun AppNavigation(navController: NavHostController) {
         composable("update_email") { UpdateEmailScreen(navController) }
         composable("update_dob") { UpdateDOBScreen(navController) }
         composable("update_password") { UpdatePasswordScreen(navController) }
-        composable("settings") { SettingsScreen() }
+
+        composable("settings") {
+            SettingsScreen(
+                onNavigateBack = { navController.popBackStack() }
+            )
+        }
+
+
+        composable("all_categories") {
+            AllCategoriesScreen(
+                categories = ItemXamp.sampleCategories,
+                onCategoryClick = { category ->
+                    // Xử lý khi click vào danh mục
+                },
+                onBackClick = {
+                    navController.popBackStack()
+                }
+            )
+        }
+
 
     }
 }

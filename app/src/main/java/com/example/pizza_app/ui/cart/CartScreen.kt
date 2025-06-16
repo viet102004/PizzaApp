@@ -4,6 +4,7 @@ package com.example.pizza_app.ui.cart
 
 import CartItemCard
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -76,20 +77,39 @@ fun CartScreen(navController: NavController) {
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = "Giỏ Hàng",
-                        fontSize = 20.sp,
+                        text = "Giỏ hàng",
+                        fontSize = 26.sp,
                         fontWeight = FontWeight.Bold,
                         color = Color.Black
                     )
                     if (cartItems.isNotEmpty()) {
                         Text(
                             text = " (${totalUniqueItems.toString().padStart(2, '0')})",
-                            fontSize = 20.sp,
+                            fontSize = 26.sp,
                             fontWeight = FontWeight.Bold,
                             color = Color.Black
                         )
                     }
                 }
+            },
+            actions = {
+                // Icon Favorite với background tròn
+                Box(
+                    modifier = Modifier
+                        .size(40.dp)
+                        .background(Color(0xFFFFB700), shape = CircleShape)
+                        .clickable { /* TODO: Favorites */ },
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        Icons.Default.FavoriteBorder,
+                        contentDescription = "Yêu thích",
+                        tint = Color.White,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+
+                Spacer(modifier = Modifier.width(16.dp))
             },
             colors = TopAppBarDefaults.topAppBarColors(
                 containerColor = Color.Transparent
@@ -242,7 +262,7 @@ private fun EmptyCartScreen() {
                 .fillMaxWidth(0.7f)
                 .height(48.dp),
             colors = ButtonDefaults.buttonColors(
-                containerColor = Color(0xFFFF6B35)
+                containerColor = Color(0xFFFFB700)
             ),
             shape = RoundedCornerShape(24.dp)
         ) {
@@ -255,4 +275,3 @@ private fun EmptyCartScreen() {
         }
     }
 }
-

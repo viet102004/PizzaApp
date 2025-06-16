@@ -4,7 +4,9 @@ package com.example.pizza_app.ui.profile
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -35,14 +37,41 @@ fun ProfileScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFFF5F5F5))
+            .background(Color(0xFFF8F9FA))
     ) {
+        // Header giống OrderScreen
         TopAppBar(
             title = {
-
+                Text(
+                    text = "Hồ sơ của tôi",
+                    fontSize = 26.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.Black
+                )
             },
-            navigationIcon = {
+            actions = {
 
+
+
+                Spacer(modifier = Modifier.width(12.dp))
+
+                // Icon Favorite với background tròn
+                Box(
+                    modifier = Modifier
+                        .size(40.dp)
+                        .background(Color(0xFFFFB700), shape = CircleShape)
+                        .clickable { /* TODO: Favorites */ },
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        Icons.Default.FavoriteBorder,
+                        contentDescription = "Yêu thích",
+                        tint = Color.White,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+
+                Spacer(modifier = Modifier.width(16.dp))
             },
             colors = TopAppBarDefaults.topAppBarColors(
                 containerColor = Color.Transparent
@@ -52,7 +81,7 @@ fun ProfileScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(16.dp),
+                .padding(start = 16.dp, end = 16.dp, bottom = 16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Card(

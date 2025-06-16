@@ -55,7 +55,7 @@ fun AppNavigation(navController: NavHostController) {
         composable("vouchers") { VoucherScreen(navController) }
         composable("profile_details") { ProfileDetailsScreen(navController) }
         composable("address") { AddressScreen() }
-        composable("support_chat") { SupportChatScreen() }
+        composable("support_chat") { SupportChatScreen(navController) }
         composable("settings") { SettingsScreen() }
         composable("login") { LoginScreen(navController) }
         composable ("pay"){ PayScreen(navController) }

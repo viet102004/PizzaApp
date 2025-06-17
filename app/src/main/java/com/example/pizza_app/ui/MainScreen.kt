@@ -31,6 +31,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.core.view.WindowCompat
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.ui.platform.LocalView
@@ -46,7 +47,8 @@ private val bottomNavItems = listOf(
 private val routesWithoutBottomNav = setOf(
     "login", "product_detail", "profile_details",
     "update_name", "update_password", "update_email",
-    "update_phone", "update_dob", "pay", "wallet", "settings"
+    "update_phone", "update_dob", "pay", "wallet", "settings",
+    "support_chat","forgot_password","register"
 )
 
 @Composable
@@ -83,7 +85,7 @@ fun MainScreen(navController: NavHostController) {
                 navController = navController,
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
-                    .offset(y = (-20).dp),
+                    .fillMaxWidth(), // Thêm dòng này để rộng ra full trái và phải
                 onItemClick = onNavigate
             )
         }

@@ -111,11 +111,11 @@ fun LoginScreen(navController : NavController) {
                 horizontalArrangement = Arrangement.Center
             ) {
                 Column(){
-                    TextButton(onClick = { /* Handle forgot password */ }) {
+                    TextButton(onClick = { navController.navigate("forgot_password") }) {
                         Text("Quên mật khẩu", color = Color.Blue)
                     }
                     Spacer(modifier = Modifier.width(16.dp))
-                    TextButton(onClick = { /* Handle sign up */ }) {
+                    TextButton(onClick = {navController.navigate("register") }) {
                         Text("Tạo tài khoản", color = Color.Blue)
                     }
                 }

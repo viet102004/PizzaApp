@@ -32,31 +32,54 @@ import androidx.navigation.compose.rememberNavController
 import com.example.pizza_app.data.model.Product
 import com.example.pizza_app.navigation.AppNavigation
 
-
 @Composable
-fun ProductItem(product: Product, navController:NavController) {
+fun ProductItem(product: Product, navController: NavController) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(4.dp)
-            .clickable{ navController.navigate("product_detail") },
+            .padding(
+                start = 4.dp,
+                end = 4.dp,
+                top = 4.dp,
+                bottom = 8.dp // Tăng padding bottom cho mỗi item
+            )
+            .clickable { navController.navigate("product_detail") },
         elevation = 4.dp
     ) {
-        Column(modifier = Modifier.padding(8.dp)) {
-            Box {
+        Column(
+            modifier = Modifier
+                .padding(8.dp)
+                .fillMaxWidth()
+        ) {
+            Box(
+                modifier = Modifier.fillMaxWidth()
+            ) {
                 Image(
                     painter = painterResource(id = product.imageRes),
                     contentDescription = product.name,
                     modifier = Modifier
-                        .height(100.dp)
+                        .height(120.dp) // Tăng chiều cao hình ảnh
                         .fillMaxWidth(),
                     contentScale = ContentScale.Crop
                 )
             }
 
             Spacer(modifier = Modifier.height(8.dp))
-            Text(text = product.name, style = MaterialTheme.typography.body1)
-            Text(text = "${product.price}đ", style = MaterialTheme.typography.body2)
+
+            Text(
+                text = product.name,
+                style = MaterialTheme.typography.body1,
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            Spacer(modifier = Modifier.height(4.dp))
+
+            Text(
+                text = "${product.price}đ",
+                style = MaterialTheme.typography.body2,
+                color = MaterialTheme.colors.primary,
+                modifier = Modifier.fillMaxWidth()
+            )
         }
     }
 }

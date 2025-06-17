@@ -13,9 +13,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavController
 
 @Composable
-fun ForgotPasswordScreen() {
+fun ForgotPasswordScreen(
+    navController: NavController
+) {
     var email by remember { mutableStateOf("") }
 
     Box(
@@ -36,7 +39,7 @@ fun ForgotPasswordScreen() {
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 IconButton(
-                    onClick = { /* Handle back navigation */ }
+                    onClick = { navController.popBackStack() }
                 ) {
                     Icon(
                         imageVector = Icons.Default.ArrowBack,
@@ -106,3 +109,10 @@ fun ForgotPasswordScreen() {
         }
     }
 }
+
+// Cách sử dụng trong NavHost
+/*
+composable("forgot_password") {
+    ForgotPasswordScreen(navController = navController)
+}
+*/

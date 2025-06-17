@@ -6,6 +6,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.navigation
 import com.example.pizza_app.data.source.ItemXamp
+import com.example.pizza_app.ui.auth.ForgotPasswordScreen
 import com.example.pizza_app.ui.cart.CartScreen
 import com.example.pizza_app.ui.home.HomeScreen
 import com.example.pizza_app.ui.order.OrderScreen
@@ -15,6 +16,7 @@ import com.example.pizza_app.ui.profile.ProfileDetailsScreen
 import com.example.pizza_app.ui.profile.AddressScreen
 import com.example.pizza_app.ui.profile.SupportChatScreen
 import com.example.pizza_app.ui.auth.LoginScreen
+import com.example.pizza_app.ui.auth.RegisterScreen
 import com.example.pizza_app.ui.cart.PayScreen
 import com.example.pizza_app.ui.home.AllCategoriesScreen
 import com.example.pizza_app.ui.home.FavoriteScreen
@@ -54,7 +56,9 @@ fun AppNavigation(navController: NavHostController) {
         composable("wallet") { WalletScreen(navController) }
         composable("vouchers") { VoucherScreen(navController) }
         composable("profile_details") { ProfileDetailsScreen(navController) }
-        composable("address") { AddressScreen() }
+        composable("address") { AddressScreen(navController) }
+        composable ("register"){ RegisterScreen(navController) }
+        composable ("forgot_password"){ ForgotPasswordScreen(navController) }
         composable("support_chat") { SupportChatScreen(navController) }
         composable("settings") { SettingsScreen() }
         composable("login") { LoginScreen(navController) }

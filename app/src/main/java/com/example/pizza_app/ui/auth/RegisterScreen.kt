@@ -17,10 +17,11 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavController
 
 @Composable
 fun RegisterScreen(
-    onBackClick: () -> Unit = {},
+    navController: NavController,
     onRegisterClick: (String, String, String) -> Unit = { _, _, _ -> }
 ) {
     var email by remember { mutableStateOf("") }
@@ -47,7 +48,7 @@ fun RegisterScreen(
                 .padding(top = 24.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            IconButton(onClick = onBackClick) {
+            IconButton(onClick = { navController.popBackStack() }) {
                 Icon(
                     imageVector = Icons.Default.ArrowBack,
                     contentDescription = "Quay lại",
@@ -187,3 +188,15 @@ fun RegisterScreen(
         }
     }
 }
+
+// Cách sử dụng trong NavHost
+/*
+composable("register") {
+    RegisterScreen(
+        navController = navController,
+        onRegisterClick = { email, password, confirmPassword ->
+            // Handle register logic
+        }
+    )
+}
+*/

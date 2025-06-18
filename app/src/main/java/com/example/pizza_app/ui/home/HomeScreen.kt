@@ -3,6 +3,8 @@ package com.example.pizza_app.ui.home
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -19,13 +21,15 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.Button
 import androidx.compose.material.Card
 import androidx.compose.material.MaterialTheme
-import androidx.compose.material.Text
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
@@ -33,32 +37,131 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.pizza_app.R
 import com.example.pizza_app.data.model.Product
 import com.example.pizza_app.data.source.ItemXamp
 
+@Composable
+fun PizzaKimchiLogo() {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier.padding(vertical = 4.dp)
+    ) {
+        // Pizza icon với gradient
+        Box(
+            modifier = Modifier
+                .size(36.dp)
+                .background(
+                    brush = androidx.compose.ui.graphics.Brush.radialGradient(
+                        colors = listOf(
+                            Color(0xFFFFB700), // Vàng cam
+                            Color(0xFFFF8F00)  // Cam đậm
+                        )
+                    ),
+                    shape = CircleShape
+                ),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                text = "🍕",
+                fontSize = 20.sp
+            )
+        }
+
+        Spacer(modifier = Modifier.width(8.dp))
+
+        // Text logo
+        Column {
+            Text(
+                text = "Pizza",
+                fontSize = 22.sp,
+                fontWeight = FontWeight.Bold,
+                color = Color(0xFFFF8F00),
+                lineHeight = 22.sp
+            )
+            Text(
+                text = "KimChi",
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Medium,
+                color = Color(0xFFE53935), // Màu đỏ kimchi
+                lineHeight = 16.sp
+            )
+        }
+
+        Spacer(modifier = Modifier.width(6.dp))
+
+        // Kimchi accent
+        Text(
+            text = "🌶️",
+            fontSize = 18.sp
+        )
+    }
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(navController: NavController) {
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { SearchBar() }, // SearchBar làm title của TopAppBar
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color.White,
-                    titleContentColor = Color.Black
-                ),
-                modifier = Modifier.height(80.dp)
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color(0xFFF8F9FA))
+    ) {
+        // Header với style giống OrderScreen
+        TopAppBar(
+            title = {
+                PizzaKimchiLogo()
+            },
+            actions = {
+                // Icon Search với background tròn
+                Box(
+                    modifier = Modifier
+                        .size(40.dp)
+                        .background(Color(0xFFFFB700), shape = CircleShape)
+                        .clickable { /* TODO: Search */ },
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        Icons.Default.Search,
+                        contentDescription = "Tìm kiếm",
+                        tint = Color.White,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+
+                Spacer(modifier = Modifier.width(12.dp))
+
+                // Icon Profile với background tròn
+                Box(
+                    modifier = Modifier
+                        .size(40.dp)
+                        .background(Color(0xFFFFB700), shape = CircleShape)
+                        .clickable { /* TODO: Profile */ },
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        Icons.Default.Person,
+                        contentDescription = "Tài khoản",
+                        tint = Color.White,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+
+                Spacer(modifier = Modifier.width(16.dp))
+            },
+            colors = TopAppBarDefaults.topAppBarColors(
+                containerColor = Color.Transparent
             )
-        }
-    ) { paddingValues ->
+        )
+
+        // Nội dung chính
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(paddingValues) // Padding từ Scaffold
                 .verticalScroll(rememberScrollState())
         ) {
             Spacer(modifier = Modifier.height(16.dp))

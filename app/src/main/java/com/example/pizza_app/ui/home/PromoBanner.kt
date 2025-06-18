@@ -78,7 +78,8 @@ fun PromoBanner(
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .height(160.dp),
+            .height(160.dp)
+            .padding(start = 8.dp, end = 8.dp),
         shape = RoundedCornerShape(16.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
     ) {

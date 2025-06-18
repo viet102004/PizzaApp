@@ -22,6 +22,7 @@ import androidx.compose.material.Button
 import androidx.compose.material.Card
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Search
@@ -144,8 +145,8 @@ fun HomeScreen(navController: NavController) {
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
-                        Icons.Default.Person,
-                        contentDescription = "Tài khoản",
+                        Icons.Default.FavoriteBorder,
+                        contentDescription = "Yêu Thích",
                         tint = Color.White,
                         modifier = Modifier.size(20.dp)
                     )

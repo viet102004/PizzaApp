@@ -32,17 +32,18 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.pizza_app.R
+import com.example.pizza_app.data.source.UserManager
 
 @Composable
 fun ProfileDetailsScreen(navController: NavController) {
-    val userAvatar = painterResource(id = R.drawable.avatar)
+    val user = UserManager.currentUser
 
     Column(
         modifier = Modifier
             .fillMaxSize()
             .background(Color(0xFFF5F5F5))
     ) {
-        // Header với TopAppBar
+        // Header
         TopAppBar(
             title = {
                 Text(
@@ -72,6 +73,7 @@ fun ProfileDetailsScreen(navController: NavController) {
                 .padding(start = 16.dp, end = 16.dp, bottom = 16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
+            // Avatar
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(16.dp),
@@ -83,7 +85,7 @@ fun ProfileDetailsScreen(navController: NavController) {
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Image(
-                        painter = userAvatar,
+                        painter = painterResource(id = R.drawable.avatar), // bạn có thể dùng Coil nếu muốn load từ URL
                         contentDescription = "Avatar",
                         modifier = Modifier
                             .size(100.dp)
@@ -106,7 +108,6 @@ fun ProfileDetailsScreen(navController: NavController) {
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Profile Info Card
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(16.dp),
@@ -116,19 +117,35 @@ fun ProfileDetailsScreen(navController: NavController) {
                 Column(
                     modifier = Modifier.padding(16.dp)
                 ) {
-                    ProfileInfoItem(label = "Họ và tên", value = "Hoàng Việt") {
+                    ProfileInfoItem(
+                        label = "Họ và tên",
+                        value = user?.ho_ten ?: "(Chưa cập nhật)"
+                    ) {
                         navController.navigate("update_name")
                     }
-                    ProfileInfoItem(label = "Số điện thoại", value = "+84******426") {
+                    ProfileInfoItem(
+                        label = "Số điện thoại",
+                        value = user?.so_dien_thoai ?: "(Chưa có)"
+                    ) {
                         navController.navigate("update_phone")
                     }
-                    ProfileInfoItem(label = "Email", value = "v****t@gmail.com") {
+                    ProfileInfoItem(
+                        label = "Email",
+                        value = user?.email ?: "(Chưa có)"
+                    ) {
                         navController.navigate("update_email")
                     }
-                    ProfileInfoItem(label = "Ngày sinh", value = "19 tháng 10, 2004") {
+                    ProfileInfoItem(
+                        label = "Ngày sinh",
+                        value = "Chưa cập nhật" // nếu có thêm trường ngày sinh, thay ở đây
+                    ) {
                         navController.navigate("update_dob")
                     }
-                    ProfileInfoItem(label = "Mật khẩu", value = "***", isLast = true) {
+                    ProfileInfoItem(
+                        label = "Mật khẩu",
+                        value = "***",
+                        isLast = true
+                    ) {
                         navController.navigate("update_password")
                     }
                 }

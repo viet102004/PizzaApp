@@ -2,13 +2,17 @@ package com.example.pizza_app.navigation
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.navigation
+import com.example.pizza_app.data.model.User
 import com.example.pizza_app.data.source.ItemXamp
+import com.example.pizza_app.data.source.UserManager
 import com.example.pizza_app.ui.auth.ForgotPasswordScreen
 import com.example.pizza_app.ui.cart.CartScreen
 import com.example.pizza_app.ui.home.HomeScreen
@@ -42,14 +46,16 @@ fun AppNavigation(navController: NavHostController) {
         composable("order") {
             OrderScreen(navController)
         }
+
         composable("profile") {
+            val user by remember { derivedStateOf { UserManager.currentUser } }
+
             ProfileScreen(
-                isLoggedIn = true,
-                userName = "Hoàng Việt",
-                points = 1000,
+                isLoggedIn = user != null,
                 onLogout = {
+                    UserManager.currentUser = null
                     navController.navigate("login") {
-                        popUpTo("profile") { inclusive = true }
+                        popUpTo(0) { inclusive = true }
                     }
                 },
                 onNavigateTo = { destination ->
@@ -57,6 +63,8 @@ fun AppNavigation(navController: NavHostController) {
                 }
             )
         }
+
+
         composable("wallet") { WalletScreen(navController) }
         composable("vouchers") { VoucherScreen(navController) }
         composable("profile_details") { ProfileDetailsScreen(navController) }
@@ -68,7 +76,14 @@ fun AppNavigation(navController: NavHostController) {
         composable("login") { LoginScreen(navController) }
         composable ("pay"){ PayScreen(navController) }
         composable ("favorite"){ FavoriteScreen(navController) }
-        composable("product_detail") { ProductDetailScreen(navController) }
+
+        composable("product_detail/{id}") { backStackEntry ->
+            val id = backStackEntry.arguments?.getString("id")?.toIntOrNull()
+            if (id != null) {
+                ProductDetailScreen(navController = navController, maSanPham = id)
+            }
+        }
+
         composable("update_name") { UpdateNameScreen(navController) }
         composable("update_phone") { UpdatePhoneScreen(navController) }
         composable("update_email") { UpdateEmailScreen(navController) }
@@ -80,7 +95,6 @@ fun AppNavigation(navController: NavHostController) {
                 onNavigateBack = { navController.popBackStack() }
             )
         }
-
 
         composable("all_categories") {
             val categoryViewModel: CategoryViewModel = viewModel()

@@ -15,31 +15,33 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.navigation.NavController
+import coil.compose.rememberAsyncImagePainter
 import com.example.pizza_app.R
+import com.example.pizza_app.data.source.UserManager
+import com.example.pizza_app.data.source.getFullImageUrl
 import com.example.pizza_app.ui.profile.ProfileItem
 
 @Composable
 fun ProfileScreen(
     isLoggedIn: Boolean,
-    userName: String = "Hoàng Việt",
-    points: Int = 1000,
     onLogout: () -> Unit,
     onNavigateTo: (String) -> Unit
 ) {
+    val user = UserManager.currentUser
+    val displayName = user?.ho_ten ?: "Khách"
+    val avatarUrl = user?.anh_dai_dien ?: ""
+
     Column(
         modifier = Modifier
             .fillMaxSize()
             .background(Color(0xFFF8F9FA))
     ) {
-        // Header giống OrderScreen
         TopAppBar(
             title = {
                 Text(
@@ -50,12 +52,7 @@ fun ProfileScreen(
                 )
             },
             actions = {
-
-
-
                 Spacer(modifier = Modifier.width(12.dp))
-
-                // Icon Favorite với background tròn
                 Box(
                     modifier = Modifier
                         .size(40.dp)
@@ -70,7 +67,6 @@ fun ProfileScreen(
                         modifier = Modifier.size(20.dp)
                     )
                 }
-
                 Spacer(modifier = Modifier.width(16.dp))
             },
             colors = TopAppBarDefaults.topAppBarColors(
@@ -84,6 +80,7 @@ fun ProfileScreen(
                 .padding(start = 16.dp, end = 16.dp, bottom = 16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
+            // Thông tin người dùng
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(16.dp),
@@ -94,24 +91,35 @@ fun ProfileScreen(
                     modifier = Modifier.padding(16.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Image(
-                        painter = painterResource(id = R.drawable.avatar),
-                        contentDescription = "Avatar",
-                        modifier = Modifier
-                            .size(60.dp)
-                            .clip(RoundedCornerShape(50)),
-                        contentScale = ContentScale.Crop
-                    )
+                    if (avatarUrl.isNotBlank()) {
+                        Image(
+                            painter = rememberAsyncImagePainter(getFullImageUrl(avatarUrl)),
+                            contentDescription = "Avatar",
+                            modifier = Modifier
+                                .size(60.dp)
+                                .clip(CircleShape),
+                            contentScale = ContentScale.Crop
+                        )
+                    } else {
+                        Image(
+                            painter = painterResource(id = R.drawable.avatar),
+                            contentDescription = "Avatar",
+                            modifier = Modifier
+                                .size(60.dp)
+                                .clip(CircleShape),
+                            contentScale = ContentScale.Crop
+                        )
+                    }
                     Spacer(modifier = Modifier.width(12.dp))
                     Column {
                         Text(
-                            text = userName,
+                            text = displayName,
                             fontSize = 18.sp,
                             fontWeight = FontWeight.Bold,
                             color = Color.Black
                         )
                         Text(
-                            text = "Số điểm: $points Điểm",
+                            text = "Số điểm: 1000 Điểm",
                             fontSize = 14.sp,
                             color = Color.Red
                         )
@@ -121,7 +129,7 @@ fun ProfileScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Menu Items Card
+            // Menu
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(16.dp),
@@ -152,7 +160,6 @@ fun ProfileScreen(
 
             Spacer(modifier = Modifier.height(32.dp))
 
-            // Logout Button
             Button(
                 onClick = { onLogout() },
                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF3E2723)),

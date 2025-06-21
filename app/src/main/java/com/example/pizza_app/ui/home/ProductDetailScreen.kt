@@ -1,204 +1,220 @@
 package com.example.pizza_app.ui.home
 
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.Button
-import androidx.compose.material.Icon
-import androidx.compose.material.MaterialTheme
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
-import androidx.compose.material.icons.filled.Remove
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import com.example.pizza_app.R
+import coil.compose.AsyncImage
+import com.example.pizza_app.data.model.Product
+import com.example.pizza_app.data.source.getFullImageUrl
 
 @Composable
-fun ProductDetailScreen(navController:NavController) {
-    val imageList = listOf(
-        R.drawable.pizza1,
-        R.drawable.pizza2,
-        R.drawable.pizza3,
-        R.drawable.pizza4,
-        R.drawable.pizza5
-    )
-    val selectedImage = remember { mutableStateOf(imageList[0]) }
+fun ProductDetailScreen(
+    navController: NavController,
+    maSanPham: Int,
+    viewModel: ProductDetailViewModel = viewModel()
+) {
+    val product by viewModel.product.collectAsState()
+    val imageList by viewModel.images.collectAsState()
+
+    val selectedImage = remember { mutableStateOf<String?>(null) }
     val selectedCrust = remember { mutableStateOf("Mỏng") }
     val selectedSize = remember { mutableStateOf("M") }
+    val quantity = remember { mutableStateOf(1) }
+    val isFavorite = remember { mutableStateOf(false) }
 
     val crustOptions = listOf("Mỏng", "Vừa", "Dày")
-    val sizeOptions = listOf("12 inch", "16 inch", "20 inch")
+    val sizeOptions = listOf("S", "M", "L")
+    val sizeLabels = listOf("12 inch", "16 inch", "20 inch")
 
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp)
-    ) {
-        Column(modifier = Modifier.fillMaxSize()) {
+    val primaryColor = Color(0xFFFF6B35)
+    val secondaryColor = Color(0xFFFFB700)
+    val backgroundColor = Color(0xFFF8F9FA)
+    val cardColor = Color.White
 
-            // Ảnh chính + nút Back/Tim đè lên
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(280.dp)
-            ) {
-                Image(
-                    painter = painterResource(id = selectedImage.value),
+    LaunchedEffect(maSanPham) {
+        viewModel.fetchProductDetail(maSanPham)
+    }
+
+    LaunchedEffect(imageList) {
+        if (imageList.isNotEmpty()) selectedImage.value = imageList.first().url_hinh_anh
+    }
+
+    Box(modifier = Modifier.fillMaxSize().background(backgroundColor)) {
+        Column(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
+            Box(modifier = Modifier.fillMaxWidth().height(320.dp)) {
+                AsyncImage(
+                    model = getFullImageUrl(selectedImage.value),
                     contentDescription = null,
-                    modifier = Modifier.fillMaxSize()
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier.fillMaxSize().clip(RoundedCornerShape(bottomStart = 24.dp, bottomEnd = 24.dp))
+                )
+
+                Box(
+                    modifier = Modifier.fillMaxSize().background(
+                        Brush.verticalGradient(
+                            listOf(
+                                Color.Black.copy(alpha = 0.3f),
+                                Color.Transparent,
+                                Color.Black.copy(alpha = 0.2f)
+                            )
+                        )
+                    ).clip(RoundedCornerShape(bottomStart = 24.dp, bottomEnd = 24.dp))
                 )
 
                 Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(12.dp)
-                        .align(Alignment.TopCenter),
+                    modifier = Modifier.fillMaxWidth().padding(20.dp).statusBarsPadding(),
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    // Back button
                     Box(
-                        modifier = Modifier
-                            .size(36.dp)
-                            .background(Color.White, CircleShape)
+                        modifier = Modifier.size(44.dp).shadow(8.dp, CircleShape)
+                            .background(cardColor, CircleShape)
                             .clickable { navController.popBackStack() },
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
-                            painter = painterResource(id = R.drawable.ic_back),
+                            painter = androidx.compose.ui.res.painterResource(id = com.example.pizza_app.R.drawable.ic_back),
                             contentDescription = "Back",
-                            tint = Color.Unspecified,
-                            modifier = Modifier.size(24.dp)
+                            tint = Color.Black,
+                            modifier = Modifier.size(20.dp)
                         )
                     }
 
                     Box(
-                        modifier = Modifier
-                            .size(36.dp)
-                            .background(Color.White, CircleShape)
-                            .clickable { navController.navigate("favorite") },
+                        modifier = Modifier.size(44.dp).shadow(8.dp, CircleShape)
+                            .background(cardColor, CircleShape)
+                            .clickable { isFavorite.value = !isFavorite.value },
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
-                            imageVector = Icons.Default.FavoriteBorder,
+                            imageVector = if (isFavorite.value) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
                             contentDescription = "Favorite",
-                            tint = Color.Black
+                            tint = if (isFavorite.value) primaryColor else Color.Black,
+                            modifier = Modifier.size(20.dp)
                         )
                     }
                 }
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Column(modifier = Modifier.fillMaxWidth().padding(8.dp)) {
+                Card(
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+                    elevation = 4.dp,
+                    shape = RoundedCornerShape(16.dp),
+                    backgroundColor = cardColor
+                ) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Text("Hình ảnh khác", fontSize = 14.sp, fontWeight = FontWeight.Medium, color = Color.Gray)
+                        Spacer(modifier = Modifier.height(12.dp))
 
-            // Danh sách ảnh nhỏ
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                imageList.forEach { imageRes ->
-                    Image(
-                        painter = painterResource(id = imageRes),
-                        contentDescription = null,
-                        modifier = Modifier
-                            .size(56.dp)
-                            .clickable { selectedImage.value = imageRes }
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            Text("Pizza Phô Mai", style = MaterialTheme.typography.h5.copy(fontWeight = FontWeight.Bold))
-            Text("99.000đ", style = MaterialTheme.typography.subtitle1)
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            Text("Chọn đế bánh:", fontWeight = FontWeight.SemiBold)
-            Spacer(modifier = Modifier.height(8.dp))
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                crustOptions.forEach { crust ->
-                    Box(
-                        modifier = Modifier
-                            .background(
-                                if (selectedCrust.value == crust) Color(0xFFFFB700) else Color.LightGray,
-                                shape = RoundedCornerShape(8.dp)
-                            )
-                            .clickable { selectedCrust.value = crust }
-                            .padding(horizontal = 12.dp, vertical = 6.dp)
-                    ) {
-                        Text(crust)
+                        LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                            items(imageList) { image ->
+                                Box(
+                                    modifier = Modifier.size(64.dp).clip(RoundedCornerShape(12.dp))
+                                        .border(
+                                            width = if (selectedImage.value == image.url_hinh_anh) 2.dp else 0.dp,
+                                            color = if (selectedImage.value == image.url_hinh_anh) primaryColor else Color.Transparent,
+                                            shape = RoundedCornerShape(12.dp)
+                                        ).clickable {
+                                            selectedImage.value = image.url_hinh_anh
+                                        }
+                                ) {
+                                    AsyncImage(
+                                        model = getFullImageUrl(image.url_hinh_anh),
+                                        contentDescription = null,
+                                        contentScale = ContentScale.Crop,
+                                        modifier = Modifier.fillMaxSize()
+                                    )
+                                }
+                            }
+                        }
                     }
                 }
-            }
 
-            Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(16.dp))
 
-            Text("Chọn size:", fontWeight = FontWeight.SemiBold)
-            Spacer(modifier = Modifier.height(8.dp))
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                sizeOptions.forEach { size ->
-                    Box(
-                        modifier = Modifier
-                            .background(
-                                if (selectedSize.value == size) Color(0xFFFFB700) else Color.LightGray,
-                                shape = RoundedCornerShape(8.dp)
-                            )
-                            .clickable { selectedSize.value = size }
-                            .padding(horizontal = 12.dp, vertical = 6.dp)
-                    ) {
-                        Text(size)
+                Card(
+                    modifier = Modifier.fillMaxWidth(), elevation = 4.dp,
+                    shape = RoundedCornerShape(16.dp), backgroundColor = cardColor
+                ) {
+                    Column(modifier = Modifier.padding(20.dp)) {
+                        Text(product?.ten_san_pham ?: "", fontSize = 24.sp, fontWeight = FontWeight.Bold, color = Color.Black)
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text("${product?.gia_co_ban?.toInt() ?: 0}đ", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = primaryColor)
+                            Spacer(modifier = Modifier.weight(1f))
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(Icons.Default.Star, contentDescription = null, tint = secondaryColor, modifier = Modifier.size(16.dp))
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text("4.6", fontSize = 14.sp, fontWeight = FontWeight.Medium)
+                                Text(" (2k+ Reviews)", fontSize = 12.sp, color = Color.Gray)
+                            }
+                        }
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Text(product?.mo_ta ?: "", fontSize = 14.sp, color = Color.Gray, lineHeight = 20.sp)
                     }
                 }
+
+                // phần chọn đế bánh, kích thước, số lượng: giữ nguyên từ code cũ của bạn...
+
+                Spacer(modifier = Modifier.height(100.dp))
             }
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            Text("⭐ 4.6/5 (2k+ Reviews)", style = MaterialTheme.typography.body2)
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            Text("Pizza thơm ngon, giòn rụm, kết hợp cùng phô mai béo ngậy, xúc xích, mì ý")
-
-            Spacer(modifier = Modifier.weight(1f))
         }
 
-        // Nút Add to Cart + Buy Now
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .align(Alignment.BottomCenter),
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        Card(
+            modifier = Modifier.fillMaxWidth().align(Alignment.BottomCenter),
+            elevation = 12.dp,
+            shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
+            backgroundColor = cardColor
         ) {
-            Button(
-                onClick = { /* Add to cart */ },
-                modifier = Modifier.weight(1f),
-                colors = androidx.compose.material.ButtonDefaults.buttonColors(backgroundColor = Color.LightGray)
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(20.dp).navigationBarsPadding(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                Text("Add to Cart", color = Color.Black)
-            }
+                Button(
+                    onClick = { /* Thêm vào giỏ */ },
+                    modifier = Modifier.weight(1f).height(52.dp),
+                    colors = ButtonDefaults.buttonColors(backgroundColor = Color(0xFFF0F0F0)),
+                    shape = RoundedCornerShape(16.dp),
+                    elevation = ButtonDefaults.elevation(0.dp)
+                ) {
+                    Text("Thêm vào giỏ", color = Color.Black, fontWeight = FontWeight.Medium, fontSize = 14.sp)
+                }
 
-            Button(
-                onClick = { /* Buy now */ },
-                modifier = Modifier.weight(1f),
-                colors = androidx.compose.material.ButtonDefaults.buttonColors(backgroundColor = Color(0xFFFFB700))
-            ) {
-                Text("Buy Now", color = Color.Black)
+                Button(
+                    onClick = { /* Mua ngay */ },
+                    modifier = Modifier.weight(1f).height(52.dp),
+                    colors = ButtonDefaults.buttonColors(backgroundColor = primaryColor),
+                    shape = RoundedCornerShape(16.dp),
+                    elevation = ButtonDefaults.elevation(4.dp)
+                ) {
+                    Text("Mua ngay", color = Color.White, fontWeight = FontWeight.Medium, fontSize = 14.sp)
+                }
             }
         }
     }

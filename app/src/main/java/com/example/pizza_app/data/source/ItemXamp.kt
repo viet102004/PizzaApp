@@ -9,29 +9,6 @@ import com.example.pizza_app.data.model.Order
 import com.example.pizza_app.data.model.Product
 
 object ItemXamp {
-    val sampleProducts = listOf(
-        Product( 1, "Pizza Margherita", 99000, R.drawable.pizza1, "Pizza Tuyệt vời"),
-        Product( 2,"Pepperoni Pizza", 119000, R.drawable.pizza2, "Pizza Tuyệt vời"),
-        Product( 3,"Seafood Pizza", 139000, R.drawable.pizza3, "Pizza Tuyệt vời"),
-        Product( 4,"Hawaiian Pizza", 109000, R.drawable.pizza4, "Pizza Tuyệt vời"),
-        Product( 5,"Veggie Pizza", 95000, R.drawable.pizza5, "Pizza Tuyệt vời"),
-        Product( 6,"BBQ Chicken Pizza", 129000, R.drawable.pizza6, "Pizza Tuyệt vời"),
-        Product( 7,"BBQ Chicken Pizza", 129000, R.drawable.pizza6, "Pizza Tuyệt vời"),
-        Product( 8,"BBQ Chicken Pizza", 129000, R.drawable.pizza6, "Pizza Tuyệt vời"),
-        Product( 9,"BBQ Chicken Pizza", 129000, R.drawable.pizza6, "Pizza Tuyệt vời"),
-        Product( 10,"BBQ Chicken Pizza", 129000, R.drawable.pizza6, "Pizza Tuyệt vời"),
-        Product( 11,"BBQ Chicken Pizza", 129000, R.drawable.pizza6, "Pizza Tuyệt vời"),
-        Product( 12,"BBQ Chicken Pizza", 129000, R.drawable.pizza6, "Pizza Tuyệt vời"),
-        Product( 13,"BBQ Chicken Pizza", 129000, R.drawable.pizza6, "Pizza Tuyệt vời"),
-        Product( 14,"BBQ Chicken Pizza", 129000, R.drawable.pizza6, "Pizza Tuyệt vời"),
-        Product( 15,"BBQ Chicken Pizza", 129000, R.drawable.pizza6, "Pizza Tuyệt vời"),
-        Product( 16,"BBQ Chicken Pizza", 129000, R.drawable.pizza6, "Pizza Tuyệt vời"),
-        Product( 17,"BBQ Chicken Pizza", 129000, R.drawable.pizza6, "Pizza Tuyệt vời"),
-        Product( 18,"BBQ Chicken Pizza", 129000, R.drawable.pizza6, "Pizza Tuyệt vời"),
-        Product( 18,"BBQ Chicken Pizza", 129000, R.drawable.pizza6, "Pizza Tuyệt vời"),
-        Product( 19,"BBQ Chicken Pizza", 129000, R.drawable.pizza6, "Pizza Tuyệt vời")
-        )
-
     val sampleOrders = listOf(
         Order(
             storeName = "Pizza KimChi",
@@ -47,14 +24,6 @@ object ItemXamp {
             items = listOf("Pizza Phô mai", "Coca", "Gà rán"),
             totalPrice = "249.000đ"
         )
-    )
-    val sampleCategories = listOf(
-        Category("Pizza", R.drawable.ic_pizza),
-        Category("Gà", R.drawable.ic_chicken),
-        Category("Nước", R.drawable.ic_drink),
-        Category("Mì Ý", R.drawable.ic_spaghetti),
-        Category("Tráng miệng", R.drawable.ic_dessert),
-        Category("Khuyến mãi", R.drawable.ic_discount)
     )
 
     val sampleCartItems = listOf(

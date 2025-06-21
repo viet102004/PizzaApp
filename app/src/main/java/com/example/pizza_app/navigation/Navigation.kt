@@ -1,6 +1,9 @@
 package com.example.pizza_app.navigation
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -19,6 +22,7 @@ import com.example.pizza_app.ui.auth.LoginScreen
 import com.example.pizza_app.ui.auth.RegisterScreen
 import com.example.pizza_app.ui.cart.PayScreen
 import com.example.pizza_app.ui.home.AllCategoriesScreen
+import com.example.pizza_app.ui.home.CategoryViewModel
 import com.example.pizza_app.ui.home.FavoriteScreen
 import com.example.pizza_app.ui.home.ProductDetailScreen
 import com.example.pizza_app.ui.home.ProductSection
@@ -79,10 +83,13 @@ fun AppNavigation(navController: NavHostController) {
 
 
         composable("all_categories") {
+            val categoryViewModel: CategoryViewModel = viewModel()
+            val categories by categoryViewModel.categories.collectAsState()
+
             AllCategoriesScreen(
-                categories = ItemXamp.sampleCategories,
+                categories = categories,
                 onCategoryClick = { category ->
-                    // Xử lý khi click vào danh mục
+
                 },
                 onBackClick = {
                     navController.popBackStack()

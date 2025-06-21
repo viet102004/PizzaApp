@@ -10,6 +10,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.example.pizza_app.data.model.Product
+
 @Composable
 fun ProductSection(products: List<Product>, navController: NavController) {
     Column(modifier = Modifier.padding(vertical = 8.dp)) {
@@ -23,12 +24,7 @@ fun ProductSection(products: List<Product>, navController: NavController) {
             modifier = Modifier
                 .fillMaxWidth()
                 .heightIn(max = 600.dp),
-            contentPadding = PaddingValues(
-                start = 8.dp,
-                end = 8.dp,
-                top = 0.dp,
-                bottom = 80.dp // Thêm padding bottom để tránh bị che bởi bottom navigation
-            ),
+            contentPadding = PaddingValues(bottom = 80.dp),
             horizontalArrangement = Arrangement.spacedBy(5.dp),
             verticalArrangement = Arrangement.spacedBy(5.dp)
         ) {

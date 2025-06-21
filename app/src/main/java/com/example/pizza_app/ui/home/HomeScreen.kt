@@ -1,6 +1,7 @@
 // HomeScreen.kt
 package com.example.pizza_app.ui.home
 
+import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -46,6 +47,10 @@ import androidx.navigation.NavController
 import com.example.pizza_app.R
 import com.example.pizza_app.data.model.Product
 import com.example.pizza_app.data.source.ItemXamp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.collectAsState
+
 
 @Composable
 fun PizzaKimchiLogo() {
@@ -105,14 +110,25 @@ fun PizzaKimchiLogo() {
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
+
 @Composable
 fun HomeScreen(navController: NavController) {
+
+    Log.d("HomeScreen", "HomeScreen được gọi")
+
+    val viewModel: HomeViewModel = viewModel()
+    val productList by viewModel.productList.collectAsState()
+    val categoryViewModel: CategoryViewModel = viewModel()
+    val categories by categoryViewModel.categories.collectAsState()
+    val bannerViewModel: BannerViewModel = viewModel()
+    val banners by bannerViewModel.bannerList.collectAsState()
+
+
     Column(
         modifier = Modifier
             .fillMaxSize()
             .background(Color(0xFFF8F9FA))
     ) {
-        // Header với style giống OrderScreen
         TopAppBar(
             title = {
                 PizzaKimchiLogo()
@@ -166,11 +182,11 @@ fun HomeScreen(navController: NavController) {
                 .verticalScroll(rememberScrollState())
         ) {
             Spacer(modifier = Modifier.height(16.dp))
-            PromoBanner()
+            PromoBanner(banners = banners)
             Spacer(modifier = Modifier.height(16.dp))
-            CategorySection(navController)
+            CategorySection(categories = categories, navController = navController)
             Spacer(modifier = Modifier.height(16.dp))
-            ProductSection(products = ItemXamp.sampleProducts, navController)
+            ProductSection(products = productList, navController = navController)
         }
     }
 }

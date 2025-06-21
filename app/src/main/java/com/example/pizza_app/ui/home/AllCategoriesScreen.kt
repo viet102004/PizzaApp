@@ -27,7 +27,9 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil.compose.AsyncImage
 import com.example.pizza_app.data.model.Category
+import com.example.pizza_app.data.source.getFullImageUrl
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -71,9 +73,9 @@ fun AllCategoriesScreen(
                         .fillMaxWidth()
                         .clickable { onCategoryClick(category) }
                 ) {
-                    Image(
-                        painter = painterResource(id = category.iconRes),
-                        contentDescription = category.name,
+                    AsyncImage(
+                        model = getFullImageUrl(category.hinh_anh),
+                        contentDescription = category.ten_danh_muc,
                         modifier = Modifier
                             .size(64.dp)
                             .clip(CircleShape)
@@ -81,7 +83,7 @@ fun AllCategoriesScreen(
                         contentScale = ContentScale.Crop
                     )
                     Spacer(modifier = Modifier.height(4.dp))
-                    Text(text = category.name, style = MaterialTheme.typography.bodySmall)
+                    Text(text = category.ten_danh_muc, style = MaterialTheme.typography.bodySmall)
                 }
             }
         }

@@ -16,12 +16,14 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.pizza_app.data.source.ItemXamp.sampleCategories
 import androidx.compose.ui.res.painterResource
 import androidx.navigation.NavController
+import coil.compose.AsyncImage
+import com.example.pizza_app.data.model.Category
+import com.example.pizza_app.data.source.getFullImageUrl
 
 @Composable
-fun CategorySection(navController: NavController) {
+fun CategorySection(categories: List<Category>, navController: NavController) {
     Column {
         Row(
             modifier = Modifier.fillMaxWidth()
@@ -29,16 +31,16 @@ fun CategorySection(navController: NavController) {
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text("Select by Category", fontWeight = FontWeight.Bold)
+            Text("Danh mục", fontWeight = FontWeight.Bold)
             Box(modifier = Modifier.clickable{navController.navigate("all_categories")}) {
-                Text("See all", color = Color(0xFFFFB700), fontWeight = FontWeight.Medium)
+                Text("Xem tất cả", color = Color(0xFFFFB700), fontWeight = FontWeight.Medium)
             }
         }
 
         Spacer(modifier = Modifier.height(12.dp))
 
         LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            items(sampleCategories) { category ->
+            items(categories) { category ->
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     modifier = Modifier.clickable{}
@@ -51,14 +53,14 @@ fun CategorySection(navController: NavController) {
                             .background(Color.White),
                         contentAlignment = Alignment.Center
                     ) {
-                        Image(
-                            painter = painterResource(id = category.iconRes),
-                            contentDescription = category.name,
+                        AsyncImage(
+                            model = getFullImageUrl(category.hinh_anh),
+                            contentDescription = category.ten_danh_muc,
                             modifier = Modifier.size(32.dp)
                         )
                     }
                     Spacer(modifier = Modifier.height(4.dp))
-                    Text(category.name, fontSize = 12.sp)
+                    Text(category.ten_danh_muc, fontSize = 12.sp)
                 }
             }
         }

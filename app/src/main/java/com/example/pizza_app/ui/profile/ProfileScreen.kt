@@ -15,6 +15,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
@@ -34,8 +35,9 @@ fun ProfileScreen(
     onNavigateTo: (String) -> Unit
 ) {
     val user = UserManager.currentUser
-    val displayName = user?.ho_ten ?: "Khách"
+    val displayName = if (isLoggedIn) user?.ho_ten ?: "Người dùng" else "Khách"
     val avatarUrl = user?.anh_dai_dien ?: ""
+
 
     Column(
         modifier = Modifier
@@ -91,7 +93,8 @@ fun ProfileScreen(
                     modifier = Modifier.padding(16.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    if (avatarUrl.isNotBlank()) {
+                    // Avatar - luôn hiển thị
+                    if (isLoggedIn && avatarUrl.isNotBlank()) {
                         Image(
                             painter = rememberAsyncImagePainter(getFullImageUrl(avatarUrl)),
                             contentDescription = "Avatar",
@@ -110,7 +113,9 @@ fun ProfileScreen(
                             contentScale = ContentScale.Crop
                         )
                     }
+
                     Spacer(modifier = Modifier.width(12.dp))
+
                     Column {
                         Text(
                             text = displayName,
@@ -118,61 +123,335 @@ fun ProfileScreen(
                             fontWeight = FontWeight.Bold,
                             color = Color.Black
                         )
-                        Text(
-                            text = "Số điểm: 1000 Điểm",
-                            fontSize = 14.sp,
-                            color = Color.Red
-                        )
+                        // Chỉ hiển thị text mô tả khi đã đăng nhập
+                        if (isLoggedIn) {
+                            Text(
+                                text = "Thành viên VIP",
+                                fontSize = 14.sp,
+                                color = Color(0xFFFFB700),
+                                fontWeight = FontWeight.Medium
+                            )
+                        }
                     }
                 }
             }
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Menu
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = Color.White),
-                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
-            ) {
-                Column {
-                    ProfileItem(icon = Icons.Default.AccountBalanceWallet, title = "Ví") {
-                        onNavigateTo("wallet")
+            // Nội dung chính - khác nhau giữa khách và người dùng đã đăng nhập
+            if (isLoggedIn) {
+                // Card điểm thưởng nổi bật với gradient và design mới
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { /* TODO: Navigate to points detail */ },
+                    shape = RoundedCornerShape(20.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color.White),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(
+                                brush = Brush.horizontalGradient(
+                                    colors = listOf(
+                                        Color(0xFFFFB700).copy(alpha = 0.15f),
+                                        Color(0xFFFF8F00).copy(alpha = 0.1f)
+                                    )
+                                )
+                            )
+                            .padding(20.dp)
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            // Icon với background gradient
+                            Box(
+                                modifier = Modifier
+                                    .size(56.dp)
+                                    .background(
+                                        brush = Brush.radialGradient(
+                                            colors = listOf(
+                                                Color(0xFFFFB700),
+                                                Color(0xFFFF8F00)
+                                            )
+                                        ),
+                                        shape = CircleShape
+                                    ),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    Icons.Default.Star,
+                                    contentDescription = null,
+                                    tint = Color.White,
+                                    modifier = Modifier.size(28.dp)
+                                )
+                            }
+
+                            Spacer(modifier = Modifier.width(16.dp))
+
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = "Điểm tích lũy hiện tại",
+                                    fontSize = 14.sp,
+                                    color = Color(0xFF666666),
+                                    fontWeight = FontWeight.Medium
+                                )
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Row(
+                                    verticalAlignment = Alignment.Bottom
+                                ) {
+                                    Text(
+                                        text = "1,000",
+                                        fontSize = 28.sp,
+                                        fontWeight = FontWeight.ExtraBold,
+                                        color = Color(0xFFFFB700)
+                                    )
+                                    Spacer(modifier = Modifier.width(4.dp))
+                                    Text(
+                                        text = "điểm",
+                                        fontSize = 16.sp,
+                                        fontWeight = FontWeight.Medium,
+                                        color = Color(0xFF666666),
+                                        modifier = Modifier.padding(bottom = 2.dp)
+                                    )
+                                }
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Text(
+                                    text = "Nhấn để xem chi tiết",
+                                    fontSize = 12.sp,
+                                    color = Color(0xFF999999)
+                                )
+                            }
+
+                            // Arrow với background tròn
+                            Box(
+                                modifier = Modifier
+                                    .size(32.dp)
+                                    .background(
+                                        Color(0xFFFFB700).copy(alpha = 0.2f),
+                                        shape = CircleShape
+                                    ),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    Icons.Default.ArrowForwardIos,
+                                    contentDescription = null,
+                                    tint = Color(0xFFFFB700),
+                                    modifier = Modifier.size(14.dp)
+                                )
+                            }
+                        }
                     }
-                    ProfileItem(icon = Icons.Default.CardGiftcard, title = "Kho voucher") {
-                        onNavigateTo("vouchers")
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // Grid menu với style mới
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color.White),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+                ) {
+                    Column(
+                        modifier = Modifier.padding(8.dp)
+                    ) {
+                        // Hàng đầu
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceEvenly
+                        ) {
+                            ProfileMenuItem(
+                                icon = Icons.Default.AccountBalanceWallet,
+                                title = "Ví",
+                                modifier = Modifier.weight(1f)
+                            ) { onNavigateTo("wallet") }
+
+                            ProfileMenuItem(
+                                icon = Icons.Default.CardGiftcard,
+                                title = "Voucher",
+                                modifier = Modifier.weight(1f)
+                            ) { onNavigateTo("vouchers") }
+
+                            ProfileMenuItem(
+                                icon = Icons.Default.Person,
+                                title = "Thông tin",
+                                modifier = Modifier.weight(1f)
+                            ) { onNavigateTo("profile_details") }
+                        }
+
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        // Hàng thứ hai
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceEvenly
+                        ) {
+                            ProfileMenuItem(
+                                icon = Icons.Default.LocationOn,
+                                title = "Địa chỉ",
+                                modifier = Modifier.weight(1f)
+                            ) { onNavigateTo("address") }
+
+                            ProfileMenuItem(
+                                icon = Icons.Default.Chat,
+                                title = "Hỗ trợ",
+                                modifier = Modifier.weight(1f)
+                            ) { onNavigateTo("support_chat") }
+
+                            ProfileMenuItem(
+                                icon = Icons.Default.Settings,
+                                title = "Cài đặt",
+                                modifier = Modifier.weight(1f)
+                            ) { onNavigateTo("settings") }
+                        }
                     }
-                    ProfileItem(icon = Icons.Default.Person, title = "Thông tin cá nhân") {
-                        onNavigateTo("profile_details")
+                }
+
+                Spacer(modifier = Modifier.height(24.dp))
+
+                // Nút đăng xuất với style mới
+                OutlinedButton(
+                    onClick = onLogout,
+                    shape = RoundedCornerShape(50),
+                    modifier = Modifier.fillMaxWidth(),
+                    border = androidx.compose.foundation.BorderStroke(
+                        2.dp,
+                        Color(0xFF3E2723)
+                    )
+                ) {
+                    Icon(
+                        Icons.Default.ExitToApp,
+                        contentDescription = null,
+                        tint = Color(0xFF3E2723),
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = "Đăng xuất",
+                        fontSize = 16.sp,
+                        color = Color(0xFF3E2723),
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            } else {
+                // Giao diện cho khách vãng lai - chỉ có 2 nút
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    // Nút đăng nhập
+                    Button(
+                        onClick = { onNavigateTo("login") },
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFFB700)),
+                        shape = RoundedCornerShape(50),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(
+                            text = "Đăng nhập",
+                            fontSize = 16.sp,
+                            color = Color.Black,
+                            fontWeight = FontWeight.Bold
+                        )
                     }
-                    ProfileItem(icon = Icons.Default.LocationOn, title = "Địa chỉ") {
-                        onNavigateTo("address")
+
+                    // Nút đăng ký
+                    OutlinedButton(
+                        onClick = { onNavigateTo("register") },
+                        shape = RoundedCornerShape(50),
+                        modifier = Modifier.fillMaxWidth(),
+                        border = androidx.compose.foundation.BorderStroke(
+                            2.dp,
+                            Color(0xFFFFB700)
+                        )
+                    ) {
+                        Text(
+                            text = "Đăng ký",
+                            fontSize = 16.sp,
+                            color = Color(0xFFFFB700),
+                            fontWeight = FontWeight.Bold
+                        )
                     }
-                    ProfileItem(icon = Icons.Default.Chat, title = "Chat với người hỗ trợ") {
-                        onNavigateTo("support_chat")
-                    }
-                    ProfileItem(icon = Icons.Default.Settings, title = "Cài đặt") {
-                        onNavigateTo("settings")
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // Thông tin khuyến khích đăng nhập
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color(0xFFF0F8FF)),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                ) {
+                    Column(
+                        modifier = Modifier.padding(16.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Icon(
+                            Icons.Default.Star,
+                            contentDescription = null,
+                            tint = Color(0xFFFFB700),
+                            modifier = Modifier.size(48.dp)
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = "Đăng nhập để trải nghiệm đầy đủ",
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color.Black
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = "Tích điểm, nhận voucher và nhiều ưu đãi hấp dẫn khác",
+                            fontSize = 14.sp,
+                            color = Color.Gray,
+                            textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                        )
                     }
                 }
             }
-
-            Spacer(modifier = Modifier.height(32.dp))
-
-            Button(
-                onClick = { onLogout() },
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF3E2723)),
-                shape = RoundedCornerShape(50),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text(
-                    text = if (isLoggedIn) "Đăng xuất" else "Đăng nhập",
-                    fontSize = 16.sp,
-                    color = Color.White,
-                    fontWeight = FontWeight.Bold
-                )
-            }
         }
+    }
+}
+
+@Composable
+fun ProfileMenuItem(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    title: String,
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit
+) {
+    Column(
+        modifier = modifier
+            .clickable { onClick() }
+            .padding(12.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Box(
+            modifier = Modifier
+                .size(48.dp)
+                .background(
+                    Color(0xFFFFB700).copy(alpha = 0.1f),
+                    shape = RoundedCornerShape(12.dp)
+                ),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = Color(0xFFFFB700),
+                modifier = Modifier.size(24.dp)
+            )
+        }
+        Spacer(modifier = Modifier.height(8.dp))
+        Text(
+            text = title,
+            fontSize = 12.sp,
+            fontWeight = FontWeight.Medium,
+            color = Color.Black,
+            textAlign = androidx.compose.ui.text.style.TextAlign.Center
+        )
     }
 }

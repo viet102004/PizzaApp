@@ -1,8 +1,10 @@
 package com.example.pizza_app.ui.auth
 
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.pizza_app.data.model.User
+import com.example.pizza_app.data.model.UserPreferences
 import com.example.pizza_app.data.source.UserManager
 import com.example.pizza_app.data.source.remote.RetrofitInstance
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -19,7 +21,8 @@ class LoginViewModel : ViewModel() {
     private val _loginSuccess = MutableStateFlow<User?>(null)
     val loginSuccess: StateFlow<User?> = _loginSuccess
 
-    fun login(taiKhoan: String, matKhau: String) {
+    fun login(taiKhoan: String, matKhau: String, context: Context) {
+
         _isLoading.value = true
         _errorMessage.value = ""
 
@@ -36,6 +39,7 @@ class LoginViewModel : ViewModel() {
 
                 _loginSuccess.value = response.user
                 UserManager.currentUser = response.user
+                UserPreferences(context).saveUser(response.user)
                 println("_loginSuccess set to: ${_loginSuccess.value}")
             } catch (e: Exception) {
                 println("Login exception: ${e.javaClass.simpleName}")

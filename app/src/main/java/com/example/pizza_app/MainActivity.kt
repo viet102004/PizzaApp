@@ -12,6 +12,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.navigation.compose.rememberNavController
+import com.example.pizza_app.data.model.UserPreferences
+import com.example.pizza_app.data.source.UserManager
 import com.example.pizza_app.ui.MainScreen
 import com.example.pizza_app.ui.auth.ForgotPasswordScreen
 import com.example.pizza_app.ui.auth.LoginScreen
@@ -22,6 +24,10 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        val userPreferences = UserPreferences(applicationContext)
+        val savedUser = userPreferences.getUser()
+        UserManager.currentUser = savedUser
+
         setContent {
             Pizza_appTheme {
                 val navController = rememberNavController()

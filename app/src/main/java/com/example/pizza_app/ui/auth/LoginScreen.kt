@@ -3,11 +3,13 @@ package com.example.pizza_app.ui.auth
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.LocalPizza
@@ -20,6 +22,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
@@ -45,6 +48,7 @@ fun LoginScreen(navController: NavController) {
     var password by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
     var showError by remember { mutableStateOf(false) }
+    val context = LocalContext.current
 
     val primaryColor = Color(0xFFFF6B35)
     val lightOrange = Color(0xFFFFE4D6)
@@ -70,6 +74,23 @@ fun LoginScreen(navController: NavController) {
                 Brush.verticalGradient(colors = listOf(lightOrange, Color.White))
             )
     ) {
+        // Nút Back Arrow ở góc trên trái
+        Box(
+            modifier = Modifier
+                .padding(top = 45.dp, start = 16.dp)
+                .size(40.dp)
+                .background(primaryColor, CircleShape)
+                .clickable { navController.popBackStack() },
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                Icons.Default.ArrowBack,
+                contentDescription = "Quay lại",
+                tint = Color.White,
+                modifier = Modifier.size(20.dp)
+            )
+        }
+
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -180,7 +201,7 @@ fun LoginScreen(navController: NavController) {
 
                     Button(
                         onClick = {
-                            viewModel.login(email, password)
+                            viewModel.login(email, password, context)
                         },
                         modifier = Modifier
                             .fillMaxWidth()

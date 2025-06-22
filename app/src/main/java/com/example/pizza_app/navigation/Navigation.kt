@@ -5,12 +5,14 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.navigation
 import com.example.pizza_app.data.model.User
+import com.example.pizza_app.data.model.UserPreferences
 import com.example.pizza_app.data.source.ItemXamp
 import com.example.pizza_app.data.source.UserManager
 import com.example.pizza_app.ui.auth.ForgotPasswordScreen
@@ -48,13 +50,15 @@ fun AppNavigation(navController: NavHostController) {
         }
 
         composable("profile") {
+            val context = LocalContext.current
             val user by remember { derivedStateOf { UserManager.currentUser } }
 
             ProfileScreen(
                 isLoggedIn = user != null,
                 onLogout = {
                     UserManager.currentUser = null
-                    navController.navigate("login") {
+                    UserPreferences(context).clear()
+                    navController.navigate("home") {
                         popUpTo(0) { inclusive = true }
                     }
                 },
@@ -63,6 +67,7 @@ fun AppNavigation(navController: NavHostController) {
                 }
             )
         }
+
 
 
         composable("wallet") { WalletScreen(navController) }

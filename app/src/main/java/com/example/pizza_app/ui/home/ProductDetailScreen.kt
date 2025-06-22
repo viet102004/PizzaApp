@@ -12,8 +12,10 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
+import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
@@ -24,6 +26,7 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -32,15 +35,19 @@ import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import com.example.pizza_app.data.model.Product
 import com.example.pizza_app.data.source.getFullImageUrl
+import android.widget.Toast
+import com.example.pizza_app.ui.cart.CartViewModel
 
 @Composable
 fun ProductDetailScreen(
     navController: NavController,
     maSanPham: Int,
-    viewModel: ProductDetailViewModel = viewModel()
+    viewModel: ProductDetailViewModel = viewModel(),
+    cartViewModel: CartViewModel = viewModel()
 ) {
     val product by viewModel.product.collectAsState()
     val imageList by viewModel.images.collectAsState()
+    val context = LocalContext.current
 
     val selectedImage = remember { mutableStateOf<String?>(null) }
     val selectedCrust = remember { mutableStateOf("Mỏng") }
@@ -67,6 +74,7 @@ fun ProductDetailScreen(
 
     Box(modifier = Modifier.fillMaxSize().background(backgroundColor)) {
         Column(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
+            // Image section - giữ nguyên
             Box(modifier = Modifier.fillMaxWidth().height(320.dp)) {
                 AsyncImage(
                     model = getFullImageUrl(selectedImage.value),
@@ -122,6 +130,7 @@ fun ProductDetailScreen(
             }
 
             Column(modifier = Modifier.fillMaxWidth().padding(8.dp)) {
+                // Other images section
                 Card(
                     modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
                     elevation = 4.dp,
@@ -158,6 +167,7 @@ fun ProductDetailScreen(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
+                // Product info section
                 Card(
                     modifier = Modifier.fillMaxWidth(), elevation = 4.dp,
                     shape = RoundedCornerShape(16.dp), backgroundColor = cardColor
@@ -180,12 +190,152 @@ fun ProductDetailScreen(
                     }
                 }
 
-                // phần chọn đế bánh, kích thước, số lượng: giữ nguyên từ code cũ của bạn...
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // Size selection
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    elevation = 4.dp,
+                    shape = RoundedCornerShape(16.dp),
+                    backgroundColor = cardColor
+                ) {
+                    Column(modifier = Modifier.padding(20.dp)) {
+                        Text("Kích thước", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.Black)
+                        Spacer(modifier = Modifier.height(12.dp))
+
+                        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                            sizeOptions.forEachIndexed { index, size ->
+                                Box(
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .height(64.dp)
+                                        .background(
+                                            if (selectedSize.value == size) primaryColor else Color(0xFFF5F5F5),
+                                            RoundedCornerShape(12.dp)
+                                        )
+                                        .clickable { selectedSize.value = size },
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                        Text(
+                                            text = size,
+                                            fontSize = 16.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = if (selectedSize.value == size) Color.White else Color.Black
+                                        )
+                                        Text(
+                                            text = sizeLabels[index],
+                                            fontSize = 12.sp,
+                                            color = if (selectedSize.value == size) Color.White else Color.Gray
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // Crust selection
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    elevation = 4.dp,
+                    shape = RoundedCornerShape(16.dp),
+                    backgroundColor = cardColor
+                ) {
+                    Column(modifier = Modifier.padding(20.dp)) {
+                        Text("Độ dày đế", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.Black)
+                        Spacer(modifier = Modifier.height(12.dp))
+
+                        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                            crustOptions.forEach { crust ->
+                                Box(
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .height(48.dp)
+                                        .background(
+                                            if (selectedCrust.value == crust) primaryColor else Color(0xFFF5F5F5),
+                                            RoundedCornerShape(12.dp)
+                                        )
+                                        .clickable { selectedCrust.value = crust },
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text(
+                                        text = crust,
+                                        fontSize = 14.sp,
+                                        fontWeight = FontWeight.Medium,
+                                        color = if (selectedCrust.value == crust) Color.White else Color.Black
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // Quantity selection
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    elevation = 4.dp,
+                    shape = RoundedCornerShape(16.dp),
+                    backgroundColor = cardColor
+                ) {
+                    Column(modifier = Modifier.padding(20.dp)) {
+                        Text("Số lượng", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.Black)
+                        Spacer(modifier = Modifier.height(12.dp))
+
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.Center,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            IconButton(
+                                onClick = { if (quantity.value > 1) quantity.value-- },
+                                modifier = Modifier
+                                    .size(40.dp)
+                                    .background(Color(0xFFF5F5F5), CircleShape)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Remove,
+                                    contentDescription = "Giảm",
+                                    tint = Color.Black
+                                )
+                            }
+
+                            Spacer(modifier = Modifier.width(24.dp))
+
+                            Text(
+                                text = quantity.value.toString(),
+                                fontSize = 18.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color.Black
+                            )
+
+                            Spacer(modifier = Modifier.width(24.dp))
+
+                            IconButton(
+                                onClick = { quantity.value++ },
+                                modifier = Modifier
+                                    .size(40.dp)
+                                    .background(primaryColor, CircleShape)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Add,
+                                    contentDescription = "Tăng",
+                                    tint = Color.White
+                                )
+                            }
+                        }
+                    }
+                }
 
                 Spacer(modifier = Modifier.height(100.dp))
             }
         }
 
+        // Bottom buttons
         Card(
             modifier = Modifier.fillMaxWidth().align(Alignment.BottomCenter),
             elevation = 12.dp,
@@ -197,7 +347,18 @@ fun ProductDetailScreen(
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 Button(
-                    onClick = { /* Thêm vào giỏ */ },
+                    onClick = {
+                        product?.let { prod ->
+                            cartViewModel.addToCart(
+                                product = prod,
+                                selectedSize = selectedSize.value,
+                                selectedCrust = selectedCrust.value,
+                                quantity = quantity.value,
+                                imageUrl = selectedImage.value ?: ""
+                            )
+                            Toast.makeText(context, "Đã thêm vào giỏ hàng!", Toast.LENGTH_SHORT).show()
+                        }
+                    },
                     modifier = Modifier.weight(1f).height(52.dp),
                     colors = ButtonDefaults.buttonColors(backgroundColor = Color(0xFFF0F0F0)),
                     shape = RoundedCornerShape(16.dp),
@@ -207,7 +368,18 @@ fun ProductDetailScreen(
                 }
 
                 Button(
-                    onClick = { /* Mua ngay */ },
+                    onClick = {
+                        product?.let { prod ->
+                            cartViewModel.addToCart(
+                                product = prod,
+                                selectedSize = selectedSize.value,
+                                selectedCrust = selectedCrust.value,
+                                quantity = quantity.value,
+                                imageUrl = selectedImage.value ?: ""
+                            )
+                            navController.navigate("cart")
+                        }
+                    },
                     modifier = Modifier.weight(1f).height(52.dp),
                     colors = ButtonDefaults.buttonColors(backgroundColor = primaryColor),
                     shape = RoundedCornerShape(16.dp),

@@ -217,32 +217,12 @@ fun OrderEmptyContent(
             )
         }
 
-        Spacer(modifier = Modifier.height(16.dp))
 
-        // Suggested items section
-        Text(
-            "Gợi ý món ăn",
-            fontSize = 16.sp,
-            fontWeight = FontWeight.Bold,
-            modifier = Modifier.fillMaxWidth(),
-            color = Color(0xFF333333)
-        )
 
         Spacer(modifier = Modifier.height(16.dp))
 
         // Sample suggested items
-        LazyColumn(
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            items(getSuggestedItems()) { item ->
-                SuggestShopItem(
-                    name = item.name,
-                    rating = item.rating,
-                    discount = item.discount,
-                    imageRes = item.imageRes
-                )
-            }
-        }
+
     }
 }
 
@@ -342,25 +322,3 @@ data class SuggestedItem(
     val imageRes: Int
 )
 
-private fun getSuggestedItems(): List<SuggestedItem> {
-    return listOf(
-        SuggestedItem(
-            name = "Pizza Hut - Nguyễn Trãi",
-            rating = 4.5,
-            discount = "20%",
-            imageRes = android.R.drawable.ic_menu_gallery
-        ),
-        SuggestedItem(
-            name = "Domino's Pizza - Quận 1",
-            rating = 4.3,
-            discount = "15%",
-            imageRes = android.R.drawable.ic_menu_camera
-        ),
-        SuggestedItem(
-            name = "The Pizza Company",
-            rating = 4.2,
-            discount = "25%",
-            imageRes = android.R.drawable.ic_menu_slideshow
-        )
-    )
-}

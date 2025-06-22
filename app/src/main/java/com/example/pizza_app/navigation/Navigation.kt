@@ -1,3 +1,5 @@
+// Trong AppNavigation.kt - Cách chia sẻ CartViewModel giữa các màn hình
+
 package com.example.pizza_app.navigation
 
 import androidx.compose.runtime.Composable
@@ -17,6 +19,7 @@ import com.example.pizza_app.data.source.ItemXamp
 import com.example.pizza_app.data.source.UserManager
 import com.example.pizza_app.ui.auth.ForgotPasswordScreen
 import com.example.pizza_app.ui.cart.CartScreen
+import com.example.pizza_app.ui.cart.CartViewModel
 import com.example.pizza_app.ui.home.HomeScreen
 import com.example.pizza_app.ui.order.OrderScreen
 import com.example.pizza_app.ui.profile.ProfileScreen
@@ -42,9 +45,17 @@ import com.example.pizza_app.ui.vouchers.VoucherScreen
 
 @Composable
 fun AppNavigation(navController: NavHostController) {
+    // Tạo shared CartViewModel ở level navigation
+    val cartViewModel: CartViewModel = viewModel()
+
     NavHost(navController = navController, startDestination = "home") {
         composable("home") { HomeScreen(navController) }
-        composable("cart") { CartScreen(navController) }
+
+        // Truyền cartViewModel vào CartScreen
+        composable("cart") {
+            CartScreen(navController, cartViewModel)
+        }
+
         composable("order") {
             OrderScreen(navController)
         }
@@ -68,8 +79,6 @@ fun AppNavigation(navController: NavHostController) {
             )
         }
 
-
-
         composable("wallet") { WalletScreen(navController) }
         composable("vouchers") { VoucherScreen(navController) }
         composable("profile_details") { ProfileDetailsScreen(navController) }
@@ -82,10 +91,15 @@ fun AppNavigation(navController: NavHostController) {
         composable ("pay"){ PayScreen(navController) }
         composable ("favorite"){ FavoriteScreen(navController) }
 
+        // Truyền cartViewModel vào ProductDetailScreen
         composable("product_detail/{id}") { backStackEntry ->
             val id = backStackEntry.arguments?.getString("id")?.toIntOrNull()
             if (id != null) {
-                ProductDetailScreen(navController = navController, maSanPham = id)
+                ProductDetailScreen(
+                    navController = navController,
+                    maSanPham = id,
+                    cartViewModel = cartViewModel // Truyền shared cartViewModel
+                )
             }
         }
 
@@ -115,7 +129,5 @@ fun AppNavigation(navController: NavHostController) {
                 }
             )
         }
-
-
     }
 }

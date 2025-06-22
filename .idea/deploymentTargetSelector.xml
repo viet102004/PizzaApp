@@ -2,7 +2,7 @@
 <project version="4">
   <component name="deploymentTargetSelector">
     <selectionStates>
-      <SelectionState runConfigName="app">
+      <SelectionState runConfigName="Pizza_app.app">
         <option name="selectionMode" value="DROPDOWN" />
         <DropdownSelection timestamp="2025-06-12T13:42:26.771318600Z">
           <Target type="DEFAULT_BOOT">

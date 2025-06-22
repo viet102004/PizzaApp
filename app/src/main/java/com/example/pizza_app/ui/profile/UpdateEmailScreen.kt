@@ -38,7 +38,6 @@ fun UpdateEmailScreen(navController: NavController) {
     // Khi cập nhật thành công
     LaunchedEffect(success) {
         if (success) {
-
             Toast.makeText(context, "Cập nhật email thành công", Toast.LENGTH_SHORT).show()
             viewModel.resetState()
             navController.popBackStack()

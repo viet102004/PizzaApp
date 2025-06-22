@@ -39,14 +39,7 @@ import com.example.pizza_app.data.model.UserPreferences
 fun ProfileDetailsScreen(navController: NavController) {
     val context = LocalContext.current
 
-    val userState = produceState(initialValue = UserManager.currentUser) {
-        while (true) {
-            value = UserManager.currentUser
-            kotlinx.coroutines.delay(500)
-        }
-    }
-    val user = userState.value
-
+    val user = UserManager.currentUser
 
     var selectedImageUri by remember { mutableStateOf<Uri?>(null) }
     var isUploading by remember { mutableStateOf(false) }

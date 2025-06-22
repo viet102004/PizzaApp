@@ -6,6 +6,7 @@ import com.example.pizza_app.data.model.Category
 import com.example.pizza_app.data.model.LoginResponse
 import com.example.pizza_app.data.model.Product
 import com.example.pizza_app.data.model.ProductImage
+import com.example.pizza_app.data.model.UserResponse
 import okhttp3.MultipartBody
 import retrofit2.http.Field
 import retrofit2.http.FormUrlEncoded
@@ -74,6 +75,10 @@ interface ApiService {
         @Field("ho_ten") hoTen: String
     ): BaseResponse
 
+    @GET("user/{id}")
+    suspend fun getUserById(
+        @Path("id") id: Int
+    ): UserResponse
 
 
 

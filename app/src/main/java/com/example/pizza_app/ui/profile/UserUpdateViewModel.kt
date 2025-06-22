@@ -41,8 +41,13 @@ class UserUpdateViewModel : ViewModel() {
             try {
                 val response = RetrofitInstance.api.updateEmail(user.ma_nguoi_dung, newEmail)
                 if (response.success) {
-                    val updatedUser = user.copy(email = newEmail)
-                    handleSuccess(updatedUser, context)
+                    val userResponse = RetrofitInstance.api.getUserById(user.ma_nguoi_dung)
+                    if (userResponse.success && userResponse.user != null) {
+                        handleSuccess(userResponse.user, context)
+                    } else {
+                        // fallback
+                        handleSuccess(user.copy(email = newEmail), context)
+                    }
                 } else {
                     _message.value = response.message
                 }

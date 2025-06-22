@@ -23,7 +23,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
-import com.example.pizza_app.ui.cart.CartItem
+import com.example.pizza_app.data.model.CartItem
 import com.example.pizza_app.data.source.getFullImageUrl
 
 @Composable

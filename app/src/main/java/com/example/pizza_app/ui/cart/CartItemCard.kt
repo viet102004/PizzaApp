@@ -28,7 +28,6 @@ import com.example.pizza_app.data.source.getFullImageUrl
 
 @Composable
 fun CartItemCard(
-
     item: CartItem,
     onQuantityChange: (Int) -> Unit,
     onRemove: () -> Unit

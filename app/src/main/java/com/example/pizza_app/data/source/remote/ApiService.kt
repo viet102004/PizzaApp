@@ -6,8 +6,11 @@ import com.example.pizza_app.data.model.Category
 import com.example.pizza_app.data.model.LoginResponse
 import com.example.pizza_app.data.model.Product
 import com.example.pizza_app.data.model.ProductImage
+import com.example.pizza_app.data.model.ProductOptionsResponse
 import com.example.pizza_app.data.model.UserResponse
+import com.google.gson.annotations.SerializedName
 import okhttp3.MultipartBody
+import okhttp3.Response
 import retrofit2.http.Field
 import retrofit2.http.FormUrlEncoded
 import retrofit2.http.GET
@@ -80,6 +83,18 @@ interface ApiService {
         @Path("id") id: Int
     ): UserResponse
 
+    @GET("san-pham/{ma_san_pham}/tuy-chon")
+    suspend fun getProductOptions(
+        @Path("ma_san_pham") maSanPham: Int
+    ): ProductOptionsResponse
 
+    @FormUrlEncoded
+    @POST("dang-ky")
+    suspend fun dangKy(
+        @Field("email") email: String,
+        @Field("so_dien_thoai") soDienThoai: String?,
+        @Field("mat_khau") matKhau: String,
+        @Field("ho_ten") hoTen: String?
+    ): UserResponse
 
 }

@@ -13,6 +13,11 @@ import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import com.example.pizza_app.data.model.Product
 import com.example.pizza_app.data.source.getFullImageUrl
+// Extension function để format tiền - cách đơn giản
+fun Double.formatCurrency(): String {
+    val amount = this.toInt()
+    return "${String.format("%,d", amount).replace(',', '.')}đ"
+}
 
 @Composable
 fun ProductItem(product: Product, navController: NavController) {
@@ -34,9 +39,18 @@ fun ProductItem(product: Product, navController: NavController) {
                     .height(120.dp),
                 contentScale = ContentScale.Crop
             )
+
             Spacer(modifier = Modifier.height(8.dp))
-            Text(text = product.ten_san_pham, style = MaterialTheme.typography.body1)
-            Text(text = "${product.gia_co_ban.toInt()}đ", style = MaterialTheme.typography.body2)
+
+            Text(
+                text = product.ten_san_pham,
+                style = MaterialTheme.typography.body1
+            )
+
+            Text(
+                text = product.gia_co_ban.formatCurrency(),
+                style = MaterialTheme.typography.body2
+            )
         }
     }
 }

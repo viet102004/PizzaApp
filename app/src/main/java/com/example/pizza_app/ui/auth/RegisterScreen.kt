@@ -1,21 +1,18 @@
 package com.example.pizza_app.ui.auth
 
+import android.widget.Toast
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.Email
-import androidx.compose.material.icons.filled.Lock
-import androidx.compose.material.icons.filled.LocalPizza
-import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.Visibility
-import androidx.compose.material.icons.filled.VisibilityOff
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -24,18 +21,12 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.ImeAction
-import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.input.PasswordVisualTransformation
-import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.text.input.*
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 
 @Composable
 fun RegisterScreen(navController: NavController) {
@@ -47,26 +38,29 @@ fun RegisterScreen(navController: NavController) {
 
     var name by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
+    var phone by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var confirmPassword by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
     var confirmPasswordVisible by remember { mutableStateOf(false) }
     var showError by remember { mutableStateOf(false) }
     val context = LocalContext.current
+    val scrollState = rememberScrollState()
 
     val primaryColor = Color(0xFFFF6B35)
     val lightOrange = Color(0xFFFFE4D6)
 
     LaunchedEffect(registerSuccess) {
-        println("LaunchedEffect triggered, registerSuccess: $registerSuccess")
         registerSuccess?.let {
+            // Hiển thị thông báo thành công
+            Toast.makeText(context, "Đăng ký thành công!", Toast.LENGTH_SHORT).show()
+
             navController.navigate("login") {
                 popUpTo("register") { inclusive = true }
             }
         }
     }
 
-    // Gán lỗi nếu có
     LaunchedEffect(errorMessage) {
         showError = errorMessage.isNotBlank()
     }
@@ -74,11 +68,8 @@ fun RegisterScreen(navController: NavController) {
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(
-                Brush.verticalGradient(colors = listOf(lightOrange, Color.White))
-            )
+            .background(Brush.verticalGradient(colors = listOf(lightOrange, Color.White)))
     ) {
-        // Nút Back Arrow ở góc trên trái
         Box(
             modifier = Modifier
                 .padding(top = 45.dp, start = 16.dp)
@@ -98,11 +89,13 @@ fun RegisterScreen(navController: NavController) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
+                .verticalScroll(scrollState)
                 .padding(24.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
-            // Header
+            Spacer(modifier = Modifier.height(60.dp)) // Tạo khoảng trống cho nút back
+
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Text("Đăng ký", fontSize = 28.sp, fontWeight = FontWeight.Bold, color = primaryColor)
                 Text("Tạo tài khoản mới", fontSize = 16.sp, color = Color.Gray, modifier = Modifier.padding(top = 8.dp))
@@ -110,7 +103,6 @@ fun RegisterScreen(navController: NavController) {
 
             Spacer(modifier = Modifier.height(32.dp))
 
-            // Form đăng ký
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -119,14 +111,11 @@ fun RegisterScreen(navController: NavController) {
                 colors = CardDefaults.cardColors(containerColor = Color.White)
             ) {
                 Column(modifier = Modifier.padding(24.dp)) {
-                    // Trường tên
                     OutlinedTextField(
                         value = name,
                         onValueChange = { name = it },
                         label = { Text("Họ và tên") },
-                        leadingIcon = {
-                            Icon(Icons.Default.Person, contentDescription = null, tint = primaryColor)
-                        },
+                        leadingIcon = { Icon(Icons.Default.Person, contentDescription = null, tint = primaryColor) },
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(bottom = 16.dp),
@@ -139,14 +128,11 @@ fun RegisterScreen(navController: NavController) {
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text, imeAction = ImeAction.Next)
                     )
 
-                    // Trường email
                     OutlinedTextField(
                         value = email,
                         onValueChange = { email = it },
                         label = { Text("Email") },
-                        leadingIcon = {
-                            Icon(Icons.Default.Email, contentDescription = null, tint = primaryColor)
-                        },
+                        leadingIcon = { Icon(Icons.Default.Email, contentDescription = null, tint = primaryColor) },
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(bottom = 16.dp),
@@ -159,14 +145,34 @@ fun RegisterScreen(navController: NavController) {
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email, imeAction = ImeAction.Next)
                     )
 
-                    // Trường mật khẩu
+                    OutlinedTextField(
+                        value = phone,
+                        onValueChange = {
+                            // Chỉ cho phép nhập số và giới hạn độ dài
+                            if (it.all { char -> char.isDigit() || char == '+' || char == ' ' || char == '-' } && it.length <= 15) {
+                                phone = it
+                            }
+                        },
+                        label = { Text("Số điện thoại") },
+                        leadingIcon = { Icon(Icons.Default.Phone, contentDescription = null, tint = primaryColor) },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(bottom = 16.dp),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = primaryColor,
+                            focusedLabelColor = primaryColor,
+                            cursorColor = primaryColor
+                        ),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone, imeAction = ImeAction.Next),
+                        placeholder = { Text("Ví dụ: 0123456789", color = Color.Gray) }
+                    )
+
                     OutlinedTextField(
                         value = password,
                         onValueChange = { password = it },
                         label = { Text("Mật khẩu") },
-                        leadingIcon = {
-                            Icon(Icons.Default.Lock, contentDescription = null, tint = primaryColor)
-                        },
+                        leadingIcon = { Icon(Icons.Default.Lock, contentDescription = null, tint = primaryColor) },
                         trailingIcon = {
                             IconButton(onClick = { passwordVisible = !passwordVisible }) {
                                 Icon(
@@ -189,14 +195,11 @@ fun RegisterScreen(navController: NavController) {
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, imeAction = ImeAction.Next)
                     )
 
-                    // Trường xác nhận mật khẩu
                     OutlinedTextField(
                         value = confirmPassword,
                         onValueChange = { confirmPassword = it },
                         label = { Text("Xác nhận mật khẩu") },
-                        leadingIcon = {
-                            Icon(Icons.Default.Lock, contentDescription = null, tint = primaryColor)
-                        },
+                        leadingIcon = { Icon(Icons.Default.Lock, contentDescription = null, tint = primaryColor) },
                         trailingIcon = {
                             IconButton(onClick = { confirmPasswordVisible = !confirmPasswordVisible }) {
                                 Icon(
@@ -232,14 +235,21 @@ fun RegisterScreen(navController: NavController) {
 
                     Button(
                         onClick = {
-                            viewModel.register(name, email, password, confirmPassword, context)
+                            viewModel.register(
+                                name.trim(),
+                                email.trim(),
+                                phone.trim(),
+                                password,
+                                confirmPassword,
+                                context
+                            )
                         },
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(50.dp),
                         shape = RoundedCornerShape(12.dp),
                         colors = ButtonDefaults.buttonColors(containerColor = primaryColor),
-                        enabled = !isLoading && name.isNotBlank() && email.isNotBlank() && password.isNotBlank() && confirmPassword.isNotBlank()
+                        enabled = !isLoading && name.isNotBlank() && email.isNotBlank() && phone.isNotBlank() && password.isNotBlank() && confirmPassword.isNotBlank()
                     ) {
                         if (isLoading) {
                             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -266,6 +276,8 @@ fun RegisterScreen(navController: NavController) {
                     Text("Đăng nhập", fontSize = 14.sp, fontWeight = FontWeight.Medium, color = primaryColor)
                 }
             }
+
+            Spacer(modifier = Modifier.height(16.dp)) // Khoảng trống cuối để dễ cuộn
         }
     }
 }

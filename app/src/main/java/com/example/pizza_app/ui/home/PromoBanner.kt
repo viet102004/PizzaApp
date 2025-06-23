@@ -30,9 +30,14 @@ import kotlin.math.abs
 @Composable
 fun PromoBanner(
     banners: List<Banner>,
+    isLoading: Boolean = false,
     autoScrollDuration: Long = 4000L
 ) {
-    if (banners.isEmpty()) return
+    // Hiển thị skeleton loading khi đang load hoặc danh sách trống
+    if (isLoading || banners.isEmpty()) {
+        SkeletonPromoBanner()
+        return
+    }
 
     var currentIndex by remember { mutableStateOf(0) }
     var lastInteractionTime by remember { mutableStateOf(System.currentTimeMillis()) }
@@ -128,6 +133,113 @@ fun PromoBanner(
                             .size(size)
                             .clip(CircleShape)
                             .background(Color.White.copy(alpha = alpha))
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun SkeletonPromoBanner() {
+    // Tạo hiệu ứng shimmer
+    val shimmerColors = listOf(
+        Color.LightGray.copy(alpha = 0.6f),
+        Color.LightGray.copy(alpha = 0.2f),
+        Color.LightGray.copy(alpha = 0.6f)
+    )
+
+    val transition = rememberInfiniteTransition(label = "shimmer")
+    val translateAnim = transition.animateFloat(
+        initialValue = 0f,
+        targetValue = 1000f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(1200),
+            repeatMode = RepeatMode.Restart
+        ),
+        label = "shimmer"
+    )
+
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(160.dp)
+            .padding(horizontal = 8.dp),
+        shape = RoundedCornerShape(16.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+    ) {
+        Box(modifier = Modifier.fillMaxSize()) {
+            // Background gradient với shimmer effect
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(
+                        androidx.compose.ui.graphics.Brush.linearGradient(
+                            colors = shimmerColors,
+                            start = androidx.compose.ui.geometry.Offset(translateAnim.value - 1000f, 0f),
+                            end = androidx.compose.ui.geometry.Offset(translateAnim.value, 0f)
+                        )
+                    )
+            )
+
+            // Skeleton content
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(16.dp),
+                verticalArrangement = Arrangement.SpaceBetween
+            ) {
+                // Title placeholder
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth(0.6f)
+                        .height(24.dp)
+                        .clip(RoundedCornerShape(4.dp))
+                        .background(Color.White.copy(alpha = 0.3f))
+                )
+
+                // Subtitle placeholder
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth(0.4f)
+                        .height(16.dp)
+                        .clip(RoundedCornerShape(4.dp))
+                        .background(Color.White.copy(alpha = 0.2f))
+                )
+            }
+
+            // Skeleton navigation arrows
+            Box(
+                modifier = Modifier
+                    .align(Alignment.CenterStart)
+                    .padding(16.dp)
+                    .size(40.dp)
+                    .clip(CircleShape)
+                    .background(Color.White.copy(alpha = 0.2f))
+            )
+
+            Box(
+                modifier = Modifier
+                    .align(Alignment.CenterEnd)
+                    .padding(16.dp)
+                    .size(40.dp)
+                    .clip(CircleShape)
+                    .background(Color.White.copy(alpha = 0.2f))
+            )
+
+            // Skeleton indicators
+            Row(
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .padding(16.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                repeat(3) { index ->
+                    Box(
+                        modifier = Modifier
+                            .size(if (index == 0) 12.dp else 8.dp)
+                            .clip(CircleShape)
+                            .background(Color.White.copy(alpha = if (index == 0) 0.6f else 0.3f))
                     )
                 }
             }

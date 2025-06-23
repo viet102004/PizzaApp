@@ -277,7 +277,7 @@ fun RegisterScreen(navController: NavController) {
                 }
             }
 
-            Spacer(modifier = Modifier.height(16.dp)) // Khoảng trống cuối để dễ cuộn
+            Spacer(modifier = Modifier.height(16.dp))
         }
     }
 }

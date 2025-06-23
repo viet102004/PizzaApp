@@ -74,7 +74,7 @@ fun LoginScreen(navController: NavController) {
                 Brush.verticalGradient(colors = listOf(lightOrange, Color.White))
             )
     ) {
-        // Nút Back Arrow ở góc trên trái
+
         Box(
             modifier = Modifier
                 .padding(top = 45.dp, start = 16.dp)

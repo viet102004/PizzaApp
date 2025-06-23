@@ -47,22 +47,39 @@ import com.example.pizza_app.ui.vouchers.VoucherScreen
 fun AppNavigation(navController: NavHostController) {
     // Tạo shared CartViewModel ở level navigation
     val cartViewModel: CartViewModel = viewModel()
+    val context = LocalContext.current
+    val user by remember { derivedStateOf { UserManager.currentUser } }
+    val isLoggedIn = user != null
 
     NavHost(navController = navController, startDestination = "home") {
-        composable("home") { HomeScreen(navController) }
+        composable("home") {
+            HomeScreen(
+                navController = navController,
+                isLoggedIn = isLoggedIn,
+                onNavigateTo = { destination -> navController.navigate(destination) }
+            )
+        }
 
-        // Truyền cartViewModel vào CartScreen
         composable("cart") {
-            CartScreen(navController, cartViewModel)
+            CartScreen(
+                navController = navController,
+                cartViewModel = cartViewModel,
+                isLoggedIn = isLoggedIn,
+                onNavigateTo = { destination -> navController.navigate(destination) }
+            )
         }
 
         composable("order") {
-            OrderScreen(navController)
+            OrderScreen(
+                navController = navController,
+                isLoggedIn = isLoggedIn,
+                onNavigateTo = { destination -> navController.navigate(destination) }
+            )
         }
 
         composable("profile") {
-            val context = LocalContext.current
-            val user by remember { derivedStateOf { UserManager.currentUser } }
+//            val context = LocalContext.current
+//            val user by remember { derivedStateOf { UserManager.currentUser } }
 
             ProfileScreen(
                 isLoggedIn = user != null,
@@ -91,14 +108,17 @@ fun AppNavigation(navController: NavHostController) {
         composable ("pay"){ PayScreen(navController) }
         composable ("favorite"){ FavoriteScreen(navController) }
 
-        // Truyền cartViewModel vào ProductDetailScreen
         composable("product_detail/{id}") { backStackEntry ->
             val id = backStackEntry.arguments?.getString("id")?.toIntOrNull()
             if (id != null) {
                 ProductDetailScreen(
                     navController = navController,
                     maSanPham = id,
-                    cartViewModel = cartViewModel // Truyền shared cartViewModel
+                    isLoggedIn = isLoggedIn, // Bạn cần có biến này từ ViewModel hoặc state management
+                    onNavigateTo = { route ->
+                        navController.navigate(route)
+                    },
+                    cartViewModel = cartViewModel
                 )
             }
         }

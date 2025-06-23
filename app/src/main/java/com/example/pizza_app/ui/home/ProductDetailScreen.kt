@@ -43,11 +43,14 @@ import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import com.example.pizza_app.ui.components.AuthDialog
 
 @Composable
 fun ProductDetailScreen(
     navController: NavController,
     maSanPham: Int,
+    isLoggedIn: Boolean, // Thêm parameter này
+    onNavigateTo: (String) -> Unit, // Thêm parameter này
     viewModel: ProductDetailViewModel = viewModel(),
     cartViewModel: CartViewModel = viewModel()
 ) {
@@ -63,9 +66,13 @@ fun ProductDetailScreen(
     // State cho các lựa chọn động từ API
     val selectedOptions = remember { mutableStateMapOf<Int, Int>() } // ma_loai_tuy_chon -> ma_gia_tri
 
-    // State cho dialog
+    // State cho dialog tùy chọn sản phẩm
     val showDialog = remember { mutableStateOf(false) }
     val dialogAction = remember { mutableStateOf<String?>(null) }
+
+    // State cho auth dialog
+    val showAuthDialog = remember { mutableStateOf(false) }
+    val pendingAction = remember { mutableStateOf<String?>(null) }
 
     val primaryColor = Color(0xFFFF6B35)
     val secondaryColor = Color(0xFFFFB700)
@@ -87,6 +94,19 @@ fun ProductDetailScreen(
                     selectedOptions[option.ma_loai_tuy_chon] = option.gia_tri.first().ma_gia_tri
                 }
             }
+        }
+    }
+
+    // Function để xử lý click button
+    fun handleButtonClick(action: String) {
+        if (isLoggedIn) {
+            // Nếu đã đăng nhập, hiển thị dialog tùy chọn sản phẩm
+            dialogAction.value = action
+            showDialog.value = true
+        } else {
+            // Nếu chưa đăng nhập, hiển thị auth dialog
+            pendingAction.value = action
+            showAuthDialog.value = true
         }
     }
 
@@ -134,7 +154,13 @@ fun ProductDetailScreen(
                     Box(
                         modifier = Modifier.size(44.dp).shadow(8.dp, CircleShape)
                             .background(cardColor, CircleShape)
-                            .clickable { isFavorite.value = !isFavorite.value },
+                            .clickable {
+                                if (isLoggedIn) {
+                                    isFavorite.value = !isFavorite.value
+                                } else {
+                                    showAuthDialog.value = true
+                                }
+                            },
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
@@ -238,10 +264,7 @@ fun ProductDetailScreen(
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 Button(
-                    onClick = {
-                        dialogAction.value = "add_to_cart"
-                        showDialog.value = true
-                    },
+                    onClick = { handleButtonClick("add_to_cart") },
                     modifier = Modifier.weight(1f).height(52.dp),
                     colors = ButtonDefaults.buttonColors(backgroundColor = Color(0xFFF0F0F0)),
                     shape = RoundedCornerShape(16.dp),
@@ -251,10 +274,7 @@ fun ProductDetailScreen(
                 }
 
                 Button(
-                    onClick = {
-                        dialogAction.value = "buy_now"
-                        showDialog.value = true
-                    },
+                    onClick = { handleButtonClick("buy_now") },
                     modifier = Modifier.weight(1f).height(52.dp),
                     colors = ButtonDefaults.buttonColors(backgroundColor = primaryColor),
                     shape = RoundedCornerShape(16.dp),
@@ -266,8 +286,23 @@ fun ProductDetailScreen(
         }
     }
 
-    // Bottom Sheet Dialog với dữ liệu động
-    if (showDialog.value) {
+    // Auth Dialog
+    AuthDialog(
+        showDialog = showAuthDialog.value,
+        onDismiss = {
+            showAuthDialog.value = false
+            pendingAction.value = null
+        },
+        onLoginClick = {
+            onNavigateTo("login")
+        },
+        onRegisterClick = {
+            onNavigateTo("register")
+        }
+    )
+
+    // Bottom Sheet Dialog với dữ liệu động (chỉ hiển thị khi đã đăng nhập)
+    if (showDialog.value && isLoggedIn) {
         Dialog(
             onDismissRequest = { showDialog.value = false },
             properties = DialogProperties(usePlatformDefaultWidth = false)
@@ -286,7 +321,7 @@ fun ProductDetailScreen(
                     Card(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .fillMaxHeight(0.7f) // Tăng chiều cao để chứa nhiều tùy chọn hơn
+                            .fillMaxHeight(0.7f)
                             .align(Alignment.BottomCenter)
                             .clickable { },
                         shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),

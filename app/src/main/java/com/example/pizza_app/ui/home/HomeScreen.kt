@@ -1,4 +1,4 @@
-// HomeScreen.kt
+// HomeScreen.kt (Updated)
 package com.example.pizza_app.ui.home
 
 import android.util.Log
@@ -35,6 +35,10 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -48,8 +52,8 @@ import com.example.pizza_app.R
 import com.example.pizza_app.data.model.Product
 import com.example.pizza_app.data.source.ItemXamp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.collectAsState
+import com.example.pizza_app.ui.components.AuthDialog
 
 
 @Composable
@@ -110,9 +114,12 @@ fun PizzaKimchiLogo() {
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
-
 @Composable
-fun HomeScreen(navController: NavController) {
+fun HomeScreen(
+    navController: NavController,
+    isLoggedIn: Boolean,
+    onNavigateTo: (String) -> Unit
+) {
 
     Log.d("HomeScreen", "HomeScreen được gọi")
 
@@ -123,6 +130,8 @@ fun HomeScreen(navController: NavController) {
     val bannerViewModel: BannerViewModel = viewModel()
     val banners by bannerViewModel.bannerList.collectAsState()
 
+    // State cho dialog
+    var showAuthDialog by remember { mutableStateOf(false) }
 
     Column(
         modifier = Modifier
@@ -157,17 +166,22 @@ fun HomeScreen(navController: NavController) {
                     modifier = Modifier
                         .size(40.dp)
                         .background(Color(0xFFFFB700), shape = CircleShape)
-                        .clickable { /* TODO: Profile */ },
+                        .clickable {
+                            if (isLoggedIn) {
+                                onNavigateTo("favorite")
+                            } else {
+                                showAuthDialog = true
+                            }
+                        },
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
                         Icons.Default.FavoriteBorder,
-                        contentDescription = "Yêu Thích",
+                        contentDescription = "Yêu thích",
                         tint = Color.White,
                         modifier = Modifier.size(20.dp)
                     )
                 }
-
                 Spacer(modifier = Modifier.width(16.dp))
             },
             colors = TopAppBarDefaults.topAppBarColors(
@@ -189,4 +203,12 @@ fun HomeScreen(navController: NavController) {
             ProductSection(products = productList, navController = navController)
         }
     }
+
+    // Auth Dialog
+    AuthDialog(
+        showDialog = showAuthDialog,
+        onDismiss = { showAuthDialog = false },
+        onLoginClick = { onNavigateTo("login") },
+        onRegisterClick = { onNavigateTo("register") }
+    )
 }

@@ -31,11 +31,19 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.pizza_app.R
+import com.example.pizza_app.ui.components.AuthDialog
 
 @Composable
-fun OrderScreen(navController: NavController) {
+fun OrderScreen(
+    navController: NavController,
+    isLoggedIn: Boolean,
+    onNavigateTo: (String) -> Unit
+) {
     val tabs = listOf("Chờ xác nhận", "Đang giao", "Hoàn thành", "Đã hủy")
     var selectedTabIndex by remember { mutableStateOf(0) }
+
+    // State cho dialog
+    var showAuthDialog by remember { mutableStateOf(false) }
 
     Column(
         modifier = Modifier
@@ -76,7 +84,14 @@ fun OrderScreen(navController: NavController) {
                     modifier = Modifier
                         .size(40.dp)
                         .background(Color(0xFFFFB700), shape = CircleShape)
-                        .clickable { /* TODO: Favorites */ },
+                        .clickable {
+                            if (isLoggedIn) {
+                                onNavigateTo("favorite")
+                            } else {
+                                // Hiển thị dialog thay vì navigate trực tiếp
+                                showAuthDialog = true
+                            }
+                        },
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
@@ -129,27 +144,39 @@ fun OrderScreen(navController: NavController) {
 
         // Nội dung theo tab
         when (selectedTabIndex) {
-            0 -> OrderEmptyContent()
+            0 -> OrderEmptyContent(onNavigateTo = onNavigateTo)
             1 -> OrderEmptyContent(
                 title = "Chưa có đơn hàng đang giao",
-                subtitle = "Các đơn hàng đang được giao sẽ hiện thị tại đây"
+                subtitle = "Các đơn hàng đang được giao sẽ hiện thị tại đây",
+                onNavigateTo = onNavigateTo
             )
             2 -> OrderEmptyContent(
                 title = "Chưa có đơn hàng hoàn thành",
-                subtitle = "Lịch sử các đơn hàng đã hoàn thành sẽ xuất hiện ở đây"
+                subtitle = "Lịch sử các đơn hàng đã hoàn thành sẽ xuất hiện ở đây",
+                onNavigateTo = onNavigateTo
             )
             3 -> OrderEmptyContent(
                 title = "Chưa có đơn hàng bị hủy",
-                subtitle = "Các đơn hàng đã hủy sẽ được hiển thị tại đây"
+                subtitle = "Các đơn hàng đã hủy sẽ được hiển thị tại đây",
+                onNavigateTo = onNavigateTo
             )
         }
     }
+
+    // Auth Dialog - Thêm phần này giống như HomeScreen và CartScreen
+    AuthDialog(
+        showDialog = showAuthDialog,
+        onDismiss = { showAuthDialog = false },
+        onLoginClick = { onNavigateTo("login") },
+        onRegisterClick = { onNavigateTo("register") }
+    )
 }
 
 @Composable
 fun OrderEmptyContent(
     title: String = "Quên chưa đặt món rồi nè bạn ơi!!!",
-    subtitle: String = "Bạn sẽ nhìn thấy các món đang được chuẩn bị hoặc giao đi tại đây để kiểm tra đơn hàng nhanh hơn!"
+    subtitle: String = "Bạn sẽ nhìn thấy các món đang được chuẩn bị hoặc giao đi tại đây để kiểm tra đơn hàng nhanh hơn!",
+    onNavigateTo: (String) -> Unit
 ) {
     Column(
         modifier = Modifier
@@ -200,7 +227,7 @@ fun OrderEmptyContent(
 
         // CTA Button
         Button(
-            onClick = { /* TODO: Navigate to menu */ },
+            onClick = { onNavigateTo("home") },
             modifier = Modifier
                 .fillMaxWidth()
                 .height(48.dp),
@@ -217,12 +244,9 @@ fun OrderEmptyContent(
             )
         }
 
-
-
         Spacer(modifier = Modifier.height(16.dp))
 
         // Sample suggested items
-
     }
 }
 
@@ -321,4 +345,3 @@ data class SuggestedItem(
     val discount: String,
     val imageRes: Int
 )
-

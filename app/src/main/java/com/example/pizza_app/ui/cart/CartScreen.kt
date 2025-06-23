@@ -25,14 +25,20 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.pizza_app.ui.cart.CartItemCard
+import com.example.pizza_app.ui.components.AuthDialog
 
 @Composable
 fun CartScreen(
     navController: NavController,
-    cartViewModel: CartViewModel = viewModel()
+    cartViewModel: CartViewModel = viewModel(),
+    isLoggedIn: Boolean,
+    onNavigateTo: (String) -> Unit
 ) {
     val cartItems by cartViewModel.cartItems.collectAsState()
     val cartTotal = cartViewModel.getCartTotal()
+
+    // State cho dialog
+    var showAuthDialog by remember { mutableStateOf(false) }
 
     Column(
         modifier = Modifier
@@ -59,7 +65,6 @@ fun CartScreen(
                         color = Color.Black
                     )
                     if (cartItems.isNotEmpty()) {
-                        // Số đếm sản phẩm đẹp hơn với shadow và gradient
                         Box(
                             modifier = Modifier
                                 .shadow(
@@ -84,12 +89,18 @@ fun CartScreen(
                 }
             },
             actions = {
-                // Icon Favorite với background tròn giống OrderScreen
                 Box(
                     modifier = Modifier
                         .size(40.dp)
                         .background(Color(0xFFFFB700), shape = CircleShape)
-                        .clickable { /* TODO: Favorites */ },
+                        .clickable {
+                            if (isLoggedIn) {
+                                onNavigateTo("favorite")
+                            } else {
+                                // Hiển thị dialog thay vì navigate trực tiếp
+                                showAuthDialog = true
+                            }
+                        },
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
@@ -237,6 +248,14 @@ fun CartScreen(
             }
         }
     }
+
+    // Auth Dialog - Thêm phần này giống như HomeScreen
+    AuthDialog(
+        showDialog = showAuthDialog,
+        onDismiss = { showAuthDialog = false },
+        onLoginClick = { onNavigateTo("login") },
+        onRegisterClick = { onNavigateTo("register") }
+    )
 }
 
 @Composable

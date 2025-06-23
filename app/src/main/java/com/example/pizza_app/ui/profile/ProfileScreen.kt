@@ -11,7 +11,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -27,6 +27,7 @@ import com.example.pizza_app.R
 import com.example.pizza_app.data.source.UserManager
 import com.example.pizza_app.data.source.getFullImageUrl
 import com.example.pizza_app.ui.profile.ProfileItem
+import com.example.pizza_app.ui.components.AuthDialog
 
 @Composable
 fun ProfileScreen(
@@ -38,6 +39,8 @@ fun ProfileScreen(
     val displayName = if (isLoggedIn) user?.ho_ten ?: "Người dùng" else "Khách"
     val avatarUrl = user?.anh_dai_dien ?: ""
 
+    // State cho dialog
+    var showAuthDialog by remember { mutableStateOf(false) }
 
     Column(
         modifier = Modifier
@@ -59,7 +62,14 @@ fun ProfileScreen(
                     modifier = Modifier
                         .size(40.dp)
                         .background(Color(0xFFFFB700), shape = CircleShape)
-                        .clickable { /* TODO: Favorites */ },
+                        .clickable {
+                            if (isLoggedIn) {
+                                onNavigateTo("favorite")
+                            } else {
+                                // Hiển thị dialog thay vì navigate trực tiếp
+                                showAuthDialog = true
+                            }
+                        },
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
@@ -414,6 +424,14 @@ fun ProfileScreen(
             }
         }
     }
+
+    // Auth Dialog - Thêm phần này giống như OrderScreen
+    AuthDialog(
+        showDialog = showAuthDialog,
+        onDismiss = { showAuthDialog = false },
+        onLoginClick = { onNavigateTo("login") },
+        onRegisterClick = { onNavigateTo("register") }
+    )
 }
 
 @Composable

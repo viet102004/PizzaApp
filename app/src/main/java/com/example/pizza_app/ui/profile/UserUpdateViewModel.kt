@@ -1,13 +1,14 @@
 package com.example.pizza_app.ui.profile
 
-
 import android.content.Context
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.pizza_app.data.model.ApiResponse
 import com.example.pizza_app.data.model.User
 import com.example.pizza_app.data.model.UserPreferences
 import com.example.pizza_app.data.source.UserManager
+import com.example.pizza_app.data.source.remote.ApiService
 import com.example.pizza_app.data.source.remote.RetrofitInstance
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -23,40 +24,31 @@ class UserUpdateViewModel : ViewModel() {
     private val _success = MutableStateFlow(false)
     val success: StateFlow<Boolean> = _success
 
-    private fun handleSuccess(updatedUser: User, context: Context) {
-        UserManager.setUser(updatedUser)
-        UserPreferences(context).saveUser(updatedUser)
-        _success.value = true
-    }
-
     fun resetState() {
         _message.value = ""
         _success.value = false
     }
 
     fun updateEmail(newEmail: String, context: Context) {
-        val user = UserManager.getUser() ?: return
-        _isLoading.value = true
-
         viewModelScope.launch {
+            val user = UserManager.currentUser.value ?: return@launch  // Dùng .value của StateFlow
+            _isLoading.value = true
+
             try {
                 val response = RetrofitInstance.api.updateEmail(user.ma_nguoi_dung, newEmail)
+
                 if (response.success) {
-                    val userResponse = RetrofitInstance.api.getUserById(user.ma_nguoi_dung)
-                    if (userResponse.success && userResponse.user != null) {
-                        val updatedUser = userResponse.user
-                        Log.d("UserUpdate", "Email mới từ server: ${updatedUser.email}")
-                        UserManager.setUser(updatedUser)
-                        UserPreferences(context).saveUser(updatedUser)
-                        _success.value = true
-                    } else {
-                        _message.value = "Không thể lấy thông tin mới"
-                    }
+                    val updatedUser = user.copy(email = newEmail)
+                    UserManager.setUser(updatedUser)  // Này sẽ update StateFlow
+                    UserPreferences(context).saveUser(updatedUser)
+                    _success.value = true
+                    println("SUCCESS SET TO TRUE")
                 } else {
                     _message.value = response.message
                 }
             } catch (e: Exception) {
                 _message.value = "Lỗi kết nối máy chủ"
+                println("ERROR: ${e.message}") // Debug log
             } finally {
                 _isLoading.value = false
             }
@@ -64,7 +56,7 @@ class UserUpdateViewModel : ViewModel() {
     }
 
     fun updateName(newName: String, context: Context) {
-        val user = UserManager.currentUser.value ?: return
+        val user = UserManager.getUser() ?: return
         _isLoading.value = true
 
         viewModelScope.launch {
@@ -72,7 +64,9 @@ class UserUpdateViewModel : ViewModel() {
                 val response = RetrofitInstance.api.updateName(user.ma_nguoi_dung, newName)
                 if (response.success) {
                     val updatedUser = user.copy(ho_ten = newName)
-                    handleSuccess(updatedUser, context)
+                    UserManager.setUser(updatedUser)
+                    UserPreferences(context).saveUser(updatedUser)
+                    _success.value = true
                 } else {
                     _message.value = response.message
                 }
@@ -85,7 +79,7 @@ class UserUpdateViewModel : ViewModel() {
     }
 
     fun updatePhone(newPhone: String, context: Context) {
-        val user = UserManager.currentUser.value ?: return
+        val user = UserManager.getUser() ?: return
         _isLoading.value = true
 
         viewModelScope.launch {
@@ -93,7 +87,9 @@ class UserUpdateViewModel : ViewModel() {
                 val response = RetrofitInstance.api.updatePhone(user.ma_nguoi_dung, newPhone)
                 if (response.success) {
                     val updatedUser = user.copy(so_dien_thoai = newPhone)
-                    handleSuccess(updatedUser, context)
+                    UserManager.setUser(updatedUser)
+                    UserPreferences(context).saveUser(updatedUser)
+                    _success.value = true
                 } else {
                     _message.value = response.message
                 }
@@ -113,7 +109,9 @@ class UserUpdateViewModel : ViewModel() {
             try {
                 val response = RetrofitInstance.api.updatePassword(user.ma_nguoi_dung, newPassword)
                 if (response.success) {
-                    handleSuccess(user, context) // Không cần đổi gì trong user
+                    UserManager.setUser(user.copy())
+                    UserPreferences(context).saveUser(user)
+                    _success.value = true
                 } else {
                     _message.value = response.message
                 }
@@ -124,4 +122,22 @@ class UserUpdateViewModel : ViewModel() {
             }
         }
     }
+
+    fun refreshUserFromServer(context: Context) {
+        val user = UserManager.getUser() ?: return
+
+        viewModelScope.launch {
+            try {
+                val response = RetrofitInstance.api.getUserById(user.ma_nguoi_dung)
+                if (response.success && response.user != null) {
+                    val updatedUser = response.user
+                    UserManager.setUser(updatedUser)
+                    UserPreferences(context).saveUser(updatedUser)
+                }
+            } catch (e: Exception) {
+                Log.e("UserUpdateViewModel", "Lỗi refreshUser: ${e.message}")
+            }
+        }
+    }
+
 }

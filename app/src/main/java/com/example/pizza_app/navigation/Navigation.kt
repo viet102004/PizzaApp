@@ -45,7 +45,6 @@ import com.example.pizza_app.ui.vouchers.VoucherScreen
 
 @Composable
 fun AppNavigation(navController: NavHostController) {
-    // Tạo shared CartViewModel ở level navigation
     val cartViewModel: CartViewModel = viewModel()
     val context = LocalContext.current
     val user by UserManager.currentUser.collectAsState()
@@ -114,7 +113,7 @@ fun AppNavigation(navController: NavHostController) {
                 ProductDetailScreen(
                     navController = navController,
                     maSanPham = id,
-                    isLoggedIn = isLoggedIn, // Bạn cần có biến này từ ViewModel hoặc state management
+                    isLoggedIn = isLoggedIn,
                     onNavigateTo = { route ->
                         navController.navigate(route)
                     },

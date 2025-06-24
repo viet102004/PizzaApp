@@ -320,7 +320,6 @@ fun FavoriteProductItem(
     }
 }
 
-// Extension function để format currency
 fun Double.formatCurrency(): String {
     return String.format("%,.0f₫", this)
 }

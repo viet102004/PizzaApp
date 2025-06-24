@@ -22,6 +22,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import coil.compose.AsyncImagePainter
 import com.example.pizza_app.data.source.UserManager
 import com.example.pizza_app.data.model.UserPreferences
 
@@ -31,29 +32,21 @@ fun UpdateEmailScreen(navController: NavController) {
     val viewModel: UserUpdateViewModel = viewModel()
 
     val user by UserManager.currentUser.collectAsState()
-    var email by remember { mutableStateOf("") }
-
-
+    val currentEmail = user?.email ?: ""
+    var email by remember(currentEmail) { mutableStateOf(currentEmail) }
 
     val isLoading by viewModel.isLoading.collectAsState()
     val errorMessage by viewModel.message.collectAsState()
     val success by viewModel.success.collectAsState()
 
-    LaunchedEffect(user) {
-        user?.email?.let {
-            email = it
-        }
-    }
-    // Khi cập nhật thành công
     LaunchedEffect(success) {
         if (success) {
             Toast.makeText(context, "Cập nhật email thành công", Toast.LENGTH_SHORT).show()
-            navController.popBackStack() // Quay về màn hình trước đó (ProfileDetailsScreen)
+            navController.navigateUp() // Thay vì popBackStack()
             viewModel.resetState()
         }
     }
 
-    // Nếu có lỗi thì hiển thị Toast
     LaunchedEffect(errorMessage) {
         if (errorMessage.isNotBlank()) {
             Toast.makeText(context, errorMessage, Toast.LENGTH_SHORT).show()

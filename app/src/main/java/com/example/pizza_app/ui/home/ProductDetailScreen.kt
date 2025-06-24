@@ -106,11 +106,19 @@ fun ProductDetailScreen(
     // Function để xử lý click button
     fun handleButtonClick(action: String) {
         if (isLoggedIn) {
-            // Nếu đã đăng nhập, hiển thị dialog tùy chọn sản phẩm
-            dialogAction.value = action
-            showDialog.value = true
+            when (action) {
+                "favorite" -> {
+                    // Xử lý yêu thích trực tiếp khi đã đăng nhập
+                    viewModel.toggleFavorite(maSanPham, isFavorite)
+                }
+                else -> {
+                    // Hiển thị dialog tùy chọn sản phẩm cho add_to_cart và buy_now
+                    dialogAction.value = action
+                    showDialog.value = true
+                }
+            }
         } else {
-            // Nếu chưa đăng nhập, hiển thị auth dialog
+            // Nếu chưa đăng nhập, hiển thị auth dialog cho tất cả các action
             pendingAction.value = action
             showAuthDialog.value = true
         }
@@ -160,7 +168,7 @@ fun ProductDetailScreen(
                     Box(
                         modifier = Modifier.size(44.dp).shadow(8.dp, CircleShape)
                             .background(cardColor, CircleShape)
-                            .clickable { viewModel.toggleFavorite(maSanPham, isFavorite) },
+                            .clickable { handleButtonClick("favorite") }, // Thay đổi logic ở đây
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(

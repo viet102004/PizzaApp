@@ -82,9 +82,9 @@ interface ApiService {
         @Field("ho_ten") hoTen: String
     ): BaseResponse
 
-    @GET("user/{id}")
+    @GET("user/{ma_nguoi_dung}")
     suspend fun getUserById(
-        @Path("id") id: Int
+        @Path("ma_nguoi_dung") maNguoiDung: Int
     ): UserResponse
 
     @GET("san-pham/{ma_san_pham}/tuy-chon")

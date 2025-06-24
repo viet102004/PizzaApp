@@ -28,6 +28,9 @@
     import androidx.compose.ui.text.font.FontWeight
     import androidx.compose.ui.unit.dp
     import androidx.compose.ui.unit.sp
+    import androidx.lifecycle.Lifecycle
+    import androidx.lifecycle.LifecycleEventObserver
+    import androidx.lifecycle.compose.LocalLifecycleOwner
     import androidx.lifecycle.viewmodel.compose.viewModel
     import androidx.navigation.NavController
     import coil.compose.rememberAsyncImagePainter
@@ -35,6 +38,7 @@
     import com.example.pizza_app.data.source.UserManager
     import com.example.pizza_app.data.source.getFullImageUrl
     import com.example.pizza_app.data.model.UserPreferences
+    import com.example.pizza_app.data.source.remote.RetrofitInstance
 
     @Composable
     fun ProfileDetailsScreen(navController: NavController) {
@@ -91,6 +95,23 @@
 
         var showImageSourceDialog by remember { mutableStateOf(false) }
         val avatarUrl = user?.anh_dai_dien ?: ""
+
+        val lifecycleOwner = LocalLifecycleOwner.current
+        val viewModel: UserUpdateViewModel = viewModel()
+
+        DisposableEffect(lifecycleOwner) {
+            val observer = LifecycleEventObserver { _, event ->
+                if (event == Lifecycle.Event.ON_RESUME) {
+                    viewModel.refreshUserFromServer(context) // ✅ Gọi qua ViewModel là hợp lệ
+                }
+            }
+
+            lifecycleOwner.lifecycle.addObserver(observer)
+            onDispose {
+                lifecycleOwner.lifecycle.removeObserver(observer)
+            }
+        }
+
 
         Column(
             modifier = Modifier

@@ -26,7 +26,7 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         val userPreferences = UserPreferences(applicationContext)
         val savedUser = userPreferences.getUser()
-        UserManager.currentUser = savedUser
+        UserManager.setUser(savedUser)
 
         setContent {
             Pizza_appTheme {

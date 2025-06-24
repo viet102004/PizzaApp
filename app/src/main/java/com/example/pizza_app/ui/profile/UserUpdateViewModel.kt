@@ -2,6 +2,7 @@ package com.example.pizza_app.ui.profile
 
 
 import android.content.Context
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.pizza_app.data.model.User
@@ -23,7 +24,7 @@ class UserUpdateViewModel : ViewModel() {
     val success: StateFlow<Boolean> = _success
 
     private fun handleSuccess(updatedUser: User, context: Context) {
-        UserManager.currentUser = updatedUser
+        UserManager.setUser(updatedUser)
         UserPreferences(context).saveUser(updatedUser)
         _success.value = true
     }
@@ -34,7 +35,7 @@ class UserUpdateViewModel : ViewModel() {
     }
 
     fun updateEmail(newEmail: String, context: Context) {
-        val user = UserManager.currentUser ?: return
+        val user = UserManager.getUser() ?: return
         _isLoading.value = true
 
         viewModelScope.launch {
@@ -43,10 +44,13 @@ class UserUpdateViewModel : ViewModel() {
                 if (response.success) {
                     val userResponse = RetrofitInstance.api.getUserById(user.ma_nguoi_dung)
                     if (userResponse.success && userResponse.user != null) {
-                        handleSuccess(userResponse.user, context)
+                        val updatedUser = userResponse.user
+                        Log.d("UserUpdate", "Email mới từ server: ${updatedUser.email}")
+                        UserManager.setUser(updatedUser)
+                        UserPreferences(context).saveUser(updatedUser)
+                        _success.value = true
                     } else {
-                        // fallback
-                        handleSuccess(user.copy(email = newEmail), context)
+                        _message.value = "Không thể lấy thông tin mới"
                     }
                 } else {
                     _message.value = response.message
@@ -60,7 +64,7 @@ class UserUpdateViewModel : ViewModel() {
     }
 
     fun updateName(newName: String, context: Context) {
-        val user = UserManager.currentUser ?: return
+        val user = UserManager.currentUser.value ?: return
         _isLoading.value = true
 
         viewModelScope.launch {
@@ -81,7 +85,7 @@ class UserUpdateViewModel : ViewModel() {
     }
 
     fun updatePhone(newPhone: String, context: Context) {
-        val user = UserManager.currentUser ?: return
+        val user = UserManager.currentUser.value ?: return
         _isLoading.value = true
 
         viewModelScope.launch {
@@ -102,7 +106,7 @@ class UserUpdateViewModel : ViewModel() {
     }
 
     fun updatePassword(newPassword: String, context: Context) {
-        val user = UserManager.currentUser ?: return
+        val user = UserManager.getUser() ?: return
         _isLoading.value = true
 
         viewModelScope.launch {

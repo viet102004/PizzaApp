@@ -30,17 +30,26 @@ fun UpdateEmailScreen(navController: NavController) {
     val context = LocalContext.current
     val viewModel: UserUpdateViewModel = viewModel()
 
+    val user by UserManager.currentUser.collectAsState()
     var email by remember { mutableStateOf("") }
+
+
+
     val isLoading by viewModel.isLoading.collectAsState()
     val errorMessage by viewModel.message.collectAsState()
     val success by viewModel.success.collectAsState()
 
+    LaunchedEffect(user) {
+        user?.email?.let {
+            email = it
+        }
+    }
     // Khi cập nhật thành công
     LaunchedEffect(success) {
         if (success) {
             Toast.makeText(context, "Cập nhật email thành công", Toast.LENGTH_SHORT).show()
+            navController.popBackStack() // Quay về màn hình trước đó (ProfileDetailsScreen)
             viewModel.resetState()
-            navController.popBackStack()
         }
     }
 

@@ -35,7 +35,7 @@ fun ProfileScreen(
     onLogout: () -> Unit,
     onNavigateTo: (String) -> Unit
 ) {
-    val user = UserManager.currentUser
+    val user by UserManager.currentUser.collectAsState()
     val displayName = if (isLoggedIn) user?.ho_ten ?: "Người dùng" else "Khách"
     val avatarUrl = user?.anh_dai_dien ?: ""
 

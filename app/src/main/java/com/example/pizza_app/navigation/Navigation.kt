@@ -48,8 +48,9 @@ fun AppNavigation(navController: NavHostController) {
     // Tạo shared CartViewModel ở level navigation
     val cartViewModel: CartViewModel = viewModel()
     val context = LocalContext.current
-    val user by remember { derivedStateOf { UserManager.currentUser } }
+    val user by UserManager.currentUser.collectAsState()
     val isLoggedIn = user != null
+
 
     NavHost(navController = navController, startDestination = "home") {
         composable("home") {
@@ -78,13 +79,11 @@ fun AppNavigation(navController: NavHostController) {
         }
 
         composable("profile") {
-//            val context = LocalContext.current
-//            val user by remember { derivedStateOf { UserManager.currentUser } }
 
             ProfileScreen(
                 isLoggedIn = user != null,
                 onLogout = {
-                    UserManager.currentUser = null
+                    UserManager.setUser(null)
                     UserPreferences(context).clear()
                     navController.navigate("home") {
                         popUpTo(0) { inclusive = true }
@@ -94,6 +93,7 @@ fun AppNavigation(navController: NavHostController) {
                     navController.navigate(destination)
                 }
             )
+
         }
 
         composable("wallet") { WalletScreen(navController) }

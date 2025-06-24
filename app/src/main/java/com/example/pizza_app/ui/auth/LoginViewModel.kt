@@ -38,7 +38,7 @@ class LoginViewModel : ViewModel() {
                 println("User details: ma_nguoi_dung=${response.user.ma_nguoi_dung}, email=${response.user.email}")
 
                 _loginSuccess.value = response.user
-                UserManager.currentUser = response.user
+                UserManager.setUser(response.user)
                 UserPreferences(context).saveUser(response.user)
                 println("_loginSuccess set to: ${_loginSuccess.value}")
             } catch (e: Exception) {

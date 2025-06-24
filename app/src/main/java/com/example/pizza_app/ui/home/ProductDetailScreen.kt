@@ -213,7 +213,6 @@ fun ProductDetailScreen(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // Product info section
                 Card(
                     modifier = Modifier.fillMaxWidth(), elevation = 4.dp,
                     shape = RoundedCornerShape(16.dp), backgroundColor = cardColor

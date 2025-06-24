@@ -14,10 +14,6 @@ import coil.compose.AsyncImage
 import com.example.pizza_app.data.model.Product
 import com.example.pizza_app.data.source.getFullImageUrl
 // Extension function để format tiền - cách đơn giản
-fun Double.formatCurrency(): String {
-    val amount = this.toInt()
-    return "${String.format("%,d", amount).replace(',', '.')}đ"
-}
 
 @Composable
 fun ProductItem(product: Product, navController: NavController) {

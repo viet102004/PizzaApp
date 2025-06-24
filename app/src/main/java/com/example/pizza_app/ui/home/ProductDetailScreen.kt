@@ -54,6 +54,13 @@ fun ProductDetailScreen(
     viewModel: ProductDetailViewModel = viewModel(),
     cartViewModel: CartViewModel = viewModel()
 ) {
+    val isFavorite by viewModel.isFavorite.collectAsState()
+
+    LaunchedEffect(maSanPham) {
+        viewModel.fetchProductDetail(maSanPham)
+        viewModel.checkIsFavorite(maSanPham)
+    }
+
     val options by viewModel.options.collectAsState()
     val product by viewModel.product.collectAsState()
     val imageList by viewModel.images.collectAsState()
@@ -61,7 +68,6 @@ fun ProductDetailScreen(
 
     val selectedImage = remember { mutableStateOf<String?>(null) }
     val quantity = remember { mutableStateOf(1) }
-    val isFavorite = remember { mutableStateOf(false) }
 
     // State cho các lựa chọn động từ API
     val selectedOptions = remember { mutableStateMapOf<Int, Int>() } // ma_loai_tuy_chon -> ma_gia_tri
@@ -154,19 +160,13 @@ fun ProductDetailScreen(
                     Box(
                         modifier = Modifier.size(44.dp).shadow(8.dp, CircleShape)
                             .background(cardColor, CircleShape)
-                            .clickable {
-                                if (isLoggedIn) {
-                                    isFavorite.value = !isFavorite.value
-                                } else {
-                                    showAuthDialog.value = true
-                                }
-                            },
+                            .clickable { viewModel.toggleFavorite(maSanPham, isFavorite) },
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
-                            imageVector = if (isFavorite.value) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
+                            imageVector = if (isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
                             contentDescription = "Favorite",
-                            tint = if (isFavorite.value) primaryColor else Color.Black,
+                            tint = if (isFavorite) primaryColor else Color.Black,
                             modifier = Modifier.size(20.dp)
                         )
                     }

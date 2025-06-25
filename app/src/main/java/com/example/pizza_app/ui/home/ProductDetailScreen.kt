@@ -49,8 +49,8 @@ import com.example.pizza_app.ui.components.AuthDialog
 fun ProductDetailScreen(
     navController: NavController,
     maSanPham: Int,
-    isLoggedIn: Boolean, // Thêm parameter này
-    onNavigateTo: (String) -> Unit, // Thêm parameter này
+    isLoggedIn: Boolean,
+    onNavigateTo: (String) -> Unit,
     viewModel: ProductDetailViewModel = viewModel(),
     cartViewModel: CartViewModel = viewModel()
 ) {
@@ -71,6 +71,9 @@ fun ProductDetailScreen(
 
     // State cho các lựa chọn động từ API
     val selectedOptions = remember { mutableStateMapOf<Int, Int>() } // ma_loai_tuy_chon -> ma_gia_tri
+
+    // State cho multiple choice options
+    val multipleSelectedOptions = remember { mutableStateMapOf<Int, MutableSet<Int>>() } // ma_loai_tuy_chon -> Set<ma_gia_tri>
 
     // State cho dialog tùy chọn sản phẩm
     val showDialog = remember { mutableStateOf(false) }
@@ -96,11 +99,43 @@ fun ProductDetailScreen(
     LaunchedEffect(options) {
         if (options.isNotEmpty()) {
             options.forEach { option ->
-                if (selectedOptions[option.ma_loai_tuy_chon] == null && option.gia_tri.isNotEmpty()) {
-                    selectedOptions[option.ma_loai_tuy_chon] = option.gia_tri.first().ma_gia_tri
+                when (option.loai_lua_chon) {
+                    "checkbox", "multiple" -> {
+                        // Khởi tạo multiple choice options
+                        if (multipleSelectedOptions[option.ma_loai_tuy_chon] == null) {
+                            multipleSelectedOptions[option.ma_loai_tuy_chon] = mutableSetOf()
+                        }
+                    }
+                    else -> {
+                        // Single choice options
+                        if (selectedOptions[option.ma_loai_tuy_chon] == null && option.gia_tri.isNotEmpty()) {
+                            selectedOptions[option.ma_loai_tuy_chon] = option.gia_tri.first().ma_gia_tri
+                        }
+                    }
                 }
             }
         }
+    }
+
+    // Extension function để format tiền tệ
+    fun Double.formatCurrency(): String {
+        return "${String.format("%,.0f", this)}đ"
+    }
+
+    // Function để tính tổng giá với tùy chọn
+    fun calculateTotalPrice(): Double {
+        val basePrice = product?.gia_co_ban ?: 0.0
+        val singleOptionsPrice = selectedOptions.entries.sumOf { (maLoaiTuyChon, maGiaTri) ->
+            options.find { it.ma_loai_tuy_chon == maLoaiTuyChon }?.gia_tri
+                ?.find { it.ma_gia_tri == maGiaTri }?.gia_them ?: 0.0
+        }
+        val multipleOptionsPrice = multipleSelectedOptions.entries.sumOf { (maLoaiTuyChon, selectedValues) ->
+            val option = options.find { it.ma_loai_tuy_chon == maLoaiTuyChon }
+            selectedValues.sumOf { maGiaTri ->
+                option?.gia_tri?.find { it.ma_gia_tri == maGiaTri }?.gia_them ?: 0.0
+            }
+        }
+        return basePrice + singleOptionsPrice + multipleOptionsPrice
     }
 
     // Function để xử lý click button
@@ -108,20 +143,62 @@ fun ProductDetailScreen(
         if (isLoggedIn) {
             when (action) {
                 "favorite" -> {
-                    // Xử lý yêu thích trực tiếp khi đã đăng nhập
                     viewModel.toggleFavorite(maSanPham, isFavorite)
                 }
                 else -> {
-                    // Hiển thị dialog tùy chọn sản phẩm cho add_to_cart và buy_now
                     dialogAction.value = action
                     showDialog.value = true
                 }
             }
         } else {
-            // Nếu chưa đăng nhập, hiển thị auth dialog cho tất cả các action
             pendingAction.value = action
             showAuthDialog.value = true
         }
+    }
+
+    // Function để validate required options
+    fun validateRequiredOptions(): String? {
+        val missingOptions = mutableListOf<String>()
+
+        options.forEach { option ->
+            if (option.bat_buoc) {
+                when (option.loai_lua_chon) {
+                    "checkbox", "multiple" -> {
+                        val selectedValues = multipleSelectedOptions[option.ma_loai_tuy_chon]
+                        if (selectedValues.isNullOrEmpty()) {
+                            missingOptions.add(option.ten_loai)
+                        }
+                    }
+                    else -> {
+                        if (selectedOptions[option.ma_loai_tuy_chon] == null) {
+                            missingOptions.add(option.ten_loai)
+                        }
+                    }
+                }
+            }
+        }
+
+        return if (missingOptions.isNotEmpty()) {
+            "Vui lòng chọn: ${missingOptions.joinToString(", ")}"
+        } else null
+    }
+
+    // Function để tạo final selected options map
+    fun createFinalSelectedOptionsMap(): Map<Int, Int> {
+        val finalMap = mutableMapOf<Int, Int>()
+
+        // Thêm single choice options
+        finalMap.putAll(selectedOptions)
+
+        // Thêm multiple choice options (chỉ lấy option đầu tiên cho đơn giản)
+        // Trong thực tế, bạn có thể cần logic phức tạp hơn để handle multiple options
+        multipleSelectedOptions.forEach { (maLoaiTuyChon, selectedValues) ->
+            if (selectedValues.isNotEmpty()) {
+                finalMap[maLoaiTuyChon] = selectedValues.first()
+            }
+        }
+
+        return finalMap
     }
 
     Box(modifier = Modifier.fillMaxSize().background(backgroundColor)) {
@@ -168,7 +245,7 @@ fun ProductDetailScreen(
                     Box(
                         modifier = Modifier.size(44.dp).shadow(8.dp, CircleShape)
                             .background(cardColor, CircleShape)
-                            .clickable { handleButtonClick("favorite") }, // Thay đổi logic ở đây
+                            .clickable { handleButtonClick("favorite") },
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
@@ -229,13 +306,9 @@ fun ProductDetailScreen(
                         Text(product?.ten_san_pham ?: "", fontSize = 24.sp, fontWeight = FontWeight.Bold, color = Color.Black)
                         Spacer(modifier = Modifier.height(8.dp))
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            // Tính giá với các tùy chọn đã chọn
+                            val totalPrice = calculateTotalPrice()
                             val basePrice = product?.gia_co_ban ?: 0.0
-                            val additionalPrice = selectedOptions.entries.sumOf { (maLoaiTuyChon, maGiaTri) ->
-                                options.find { it.ma_loai_tuy_chon == maLoaiTuyChon }?.gia_tri
-                                    ?.find { it.ma_gia_tri == maGiaTri }?.gia_them ?: 0.0
-                            }
-                            val totalPrice = basePrice + additionalPrice
+                            val additionalPrice = totalPrice - basePrice
 
                             Text(totalPrice.formatCurrency(), fontSize = 20.sp, fontWeight = FontWeight.Bold, color = primaryColor)
                             if (additionalPrice > 0) {
@@ -381,9 +454,8 @@ fun ProductDetailScreen(
                                 // Hiển thị các giá trị của tùy chọn dựa trên loai_lua_chon
                                 when (option.loai_lua_chon) {
                                     "radio", "single" -> {
-                                        // Hiển thị dạng single choice
+                                        // Single choice
                                         if (option.gia_tri.size <= 3) {
-                                            // Hiển thị dạng Row nếu ít hơn hoặc bằng 3 tùy chọn
                                             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                                                 option.gia_tri.forEach { value ->
                                                     val isSelected = selectedOptions[option.ma_loai_tuy_chon] == value.ma_gia_tri
@@ -419,7 +491,6 @@ fun ProductDetailScreen(
                                                 }
                                             }
                                         } else {
-                                            // Hiển thị dạng Column nếu nhiều hơn 3 tùy chọn
                                             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                                                 option.gia_tri.forEach { value ->
                                                     val isSelected = selectedOptions[option.ma_loai_tuy_chon] == value.ma_gia_tri
@@ -457,10 +528,12 @@ fun ProductDetailScreen(
                                         }
                                     }
                                     "checkbox", "multiple" -> {
-                                        // Hiển thị dạng multiple choice (checkbox)
+                                        // Multiple choice
                                         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                                             option.gia_tri.forEach { value ->
-                                                val isSelected = selectedOptions.values.contains(value.ma_gia_tri)
+                                                val selectedValues = multipleSelectedOptions[option.ma_loai_tuy_chon] ?: mutableSetOf()
+                                                val isSelected = selectedValues.contains(value.ma_gia_tri)
+
                                                 Row(
                                                     modifier = Modifier
                                                         .fillMaxWidth()
@@ -470,8 +543,13 @@ fun ProductDetailScreen(
                                                             RoundedCornerShape(12.dp)
                                                         )
                                                         .clickable {
-                                                            // TODO: Implement multiple selection logic
-                                                            // Cần logic phức tạp hơn cho multiple choice
+                                                            val currentSet = multipleSelectedOptions[option.ma_loai_tuy_chon] ?: mutableSetOf()
+                                                            if (isSelected) {
+                                                                currentSet.remove(value.ma_gia_tri)
+                                                            } else {
+                                                                currentSet.add(value.ma_gia_tri)
+                                                            }
+                                                            multipleSelectedOptions[option.ma_loai_tuy_chon] = currentSet
                                                         }
                                                         .padding(horizontal = 16.dp),
                                                     verticalAlignment = Alignment.CenterVertically,
@@ -480,8 +558,14 @@ fun ProductDetailScreen(
                                                     Row(verticalAlignment = Alignment.CenterVertically) {
                                                         androidx.compose.material3.Checkbox(
                                                             checked = isSelected,
-                                                            onCheckedChange = {
-                                                                // TODO: Handle checkbox logic
+                                                            onCheckedChange = { checked ->
+                                                                val currentSet = multipleSelectedOptions[option.ma_loai_tuy_chon] ?: mutableSetOf()
+                                                                if (checked) {
+                                                                    currentSet.add(value.ma_gia_tri)
+                                                                } else {
+                                                                    currentSet.remove(value.ma_gia_tri)
+                                                                }
+                                                                multipleSelectedOptions[option.ma_loai_tuy_chon] = currentSet
                                                             }
                                                         )
                                                         Spacer(modifier = Modifier.width(8.dp))
@@ -504,7 +588,7 @@ fun ProductDetailScreen(
                                         }
                                     }
                                     else -> {
-                                        // Default fallback cho single choice
+                                        // Default fallback
                                         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                                             option.gia_tri.forEach { value ->
                                                 val isSelected = selectedOptions[option.ma_loai_tuy_chon] == value.ma_gia_tri
@@ -583,56 +667,93 @@ fun ProductDetailScreen(
                                 }
                             }
 
-                            Spacer(modifier = Modifier.height(32.dp))
+                            Spacer(modifier = Modifier.height(24.dp))
+
+                            // Hiển thị tổng giá
+                            Card(
+                                modifier = Modifier.fillMaxWidth(),
+                                backgroundColor = Color(0xFFF8F9FA),
+                                shape = RoundedCornerShape(12.dp),
+                                elevation = 0.dp
+                            ) {
+                                Column(modifier = Modifier.padding(16.dp)) {
+                                    Text("Tổng cộng", fontSize = 14.sp, color = Color.Gray)
+                                    Spacer(modifier = Modifier.height(4.dp))
+                                    Text(
+                                        text = (calculateTotalPrice() * quantity.value).formatCurrency(),
+                                        fontSize = 20.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = primaryColor
+                                    )
+                                }
+                            }
+
+                            Spacer(modifier = Modifier.height(24.dp))
 
                             // Action button
                             Button(
                                 onClick = {
                                     product?.let { prod ->
-                                        // Kiểm tra các tùy chọn bắt buộc
-                                        val missingRequiredOptions = options.filter { option ->
-                                            option.bat_buoc && selectedOptions[option.ma_loai_tuy_chon] == null
+                                        // Validate required options
+                                        val validationError = validateRequiredOptions()
+                                        if (validationError != null) {
+                                            Toast.makeText(context, validationError, Toast.LENGTH_SHORT).show()
+                                            return@Button
                                         }
 
-                                        if (missingRequiredOptions.isNotEmpty()) {
-                                            Toast.makeText(
-                                                context,
-                                                "Vui lòng chọn: ${missingRequiredOptions.joinToString(", ") { it.ten_loai }}",
-                                                Toast.LENGTH_SHORT
-                                            ).show()
-                                            return@let
+                                        val finalSelectedOptions = createFinalSelectedOptionsMap()
+
+                                        when (dialogAction.value) {
+                                            "add_to_cart" -> {
+                                                cartViewModel.addToCart(
+                                                    product = prod,
+                                                    selectedOptions = finalSelectedOptions,
+                                                    quantity = quantity.value,
+                                                    imageUrl = selectedImage.value ?: "",
+                                                    options = options
+                                                )
+                                                Toast.makeText(context, "Đã thêm vào giỏ hàng", Toast.LENGTH_SHORT).show()
+                                                showDialog.value = false
+                                            }
+                                            "buy_now" -> {
+                                                // Thêm vào giỏ hàng trước khi mua ngay
+                                                cartViewModel.addToCart(
+                                                    product = prod,
+                                                    selectedOptions = finalSelectedOptions,
+                                                    quantity = quantity.value,
+                                                    imageUrl = selectedImage.value ?: "",
+                                                    options = options
+                                                )
+
+                                                // Navigate to checkout
+                                                onNavigateTo("checkout")
+                                                showDialog.value = false
+                                            }
                                         }
-
-//                                        cartViewModel.addToCart(
-//                                            product = prod,
-//                                            selectedOptions = selectedOptions.toMap(),
-//                                            quantity = quantity.value,
-//                                            imageUrl = selectedImage.value ?: ""
-//                                        )
-
-                                        if (dialogAction.value == "add_to_cart") {
-                                            Toast.makeText(context, "Đã thêm vào giỏ hàng!", Toast.LENGTH_SHORT).show()
-                                        } else {
-                                            navController.navigate("cart")
-                                        }
-
-                                        showDialog.value = false
                                     }
                                 },
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .height(52.dp),
-                                colors = ButtonDefaults.buttonColors(backgroundColor = primaryColor),
+                                colors = ButtonDefaults.buttonColors(
+                                    backgroundColor = primaryColor
+                                ),
                                 shape = RoundedCornerShape(16.dp),
                                 elevation = ButtonDefaults.elevation(4.dp)
                             ) {
                                 Text(
-                                    text = if (dialogAction.value == "add_to_cart") "Thêm vào giỏ hàng" else "Mua ngay",
+                                    text = when (dialogAction.value) {
+                                        "add_to_cart" -> "Thêm vào giỏ - ${(calculateTotalPrice() * quantity.value).formatCurrency()}"
+                                        "buy_now" -> "Mua ngay - ${(calculateTotalPrice() * quantity.value).formatCurrency()}"
+                                        else -> "Xác nhận"
+                                    },
                                     color = Color.White,
                                     fontWeight = FontWeight.Medium,
                                     fontSize = 16.sp
                                 )
                             }
+
+                            Spacer(modifier = Modifier.height(16.dp))
                         }
                     }
                 }

@@ -1,5 +1,6 @@
 package com.example.pizza_app.data.source.remote
 
+import com.example.pizza_app.data.model.AddToCartResponse
 import retrofit2.http.Query
 import com.example.pizza_app.data.model.ApiResponse
 import com.example.pizza_app.data.model.Banner
@@ -131,5 +132,21 @@ interface ApiService {
         @Query("ma_nguoi_dung") maNguoiDung: Int,
         @Query("ma_san_pham") maSanPham: Int
     ): IsFavoriteResponse
+
+    @FormUrlEncoded
+    @POST("gio-hang/them-san-pham")
+    suspend fun addToCart(
+        @Field("ma_nguoi_dung") maNguoiDung: Int,
+        @Field("ma_san_pham") maSanPham: Int,
+        @Field("so_luong") soLuong: Int,
+        @Field("ma_gia_tri_tuy_chon") maGiaTriTuyChon: List<Int>?, // Optional
+        @Field("ghi_chu") ghiChu: String? = null
+    ): AddToCartResponse
+
+
+
+
+
+
 
 }

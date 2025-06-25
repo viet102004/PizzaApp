@@ -32,6 +32,10 @@ fun CartItemCard(
     onQuantityChange: (Int) -> Unit,
     onRemove: () -> Unit
 ) {
+    val selectedOptionsDisplay = item.selectedOptions.values.map {
+        "${it.tenLoai}: ${it.tenGiaTri}" + if (it.giaThem > 0) " (+${formatCurrency(it.giaThem)})" else ""
+    }
+
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
@@ -58,15 +62,20 @@ fun CartItemCard(
 
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = item.name,
+                    text = item.product.ten_san_pham,
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Bold,
                     color = Color.Black
                 )
                 Spacer(modifier = Modifier.height(4.dp))
 
-                Text("Kích thước: ${item.size}", fontSize = 14.sp, color = Color.Gray)
-                Text("Độ dày: ${item.thickness}", fontSize = 14.sp, color = Color.Gray)
+                selectedOptionsDisplay.forEach { optionDisplay ->
+                    Text(
+                        text = optionDisplay,
+                        fontSize = 14.sp,
+                        color = Color.Gray
+                    )
+                }
 
                 Spacer(modifier = Modifier.height(12.dp))
 
@@ -120,7 +129,7 @@ fun CartItemCard(
 
             Column(horizontalAlignment = Alignment.End) {
                 Text(
-                    text = formatCurrency(item.price),
+                    text = formatCurrency(item.totalPrice),
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Bold,
                     color = Color(0xFFFF6B35)
@@ -148,13 +157,13 @@ fun CartItemCard(
 
 @Composable
 fun DisplayImage(item: CartItem) {
-    val imgStr = item.img.toString()  // đảm bảo là String
+    val imgStr = item.imageUrl
     val isUrl = imgStr.startsWith("http") || imgStr.contains("/")
 
     if (isUrl) {
         AsyncImage(
             model = getFullImageUrl(imgStr),
-            contentDescription = item.name,
+            contentDescription = item.product.ten_san_pham,
             modifier = Modifier
                 .size(70.dp)
                 .clip(RoundedCornerShape(8.dp)),
@@ -166,14 +175,14 @@ fun DisplayImage(item: CartItem) {
         if (resourceId != null && resourceId != 0) {
             Image(
                 painter = painterResource(id = resourceId),
-                contentDescription = item.name,
+                contentDescription = item.product.ten_san_pham,
                 modifier = Modifier
                     .size(70.dp)
                     .clip(RoundedCornerShape(8.dp)),
                 contentScale = ContentScale.Crop
             )
         } else {
-            DefaultPizzaIcon(item.name)
+            DefaultPizzaIcon(item.product.ten_san_pham)
         }
     }
 }
@@ -187,5 +196,3 @@ fun DefaultPizzaIcon(name: String) {
         modifier = Modifier.size(40.dp)
     )
 }
-
-

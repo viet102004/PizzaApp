@@ -35,9 +35,9 @@ fun CartScreen(
     onNavigateTo: (String) -> Unit
 ) {
     val cartItems by cartViewModel.cartItems.collectAsState()
-    val cartTotal = cartViewModel.getCartTotal()
+    val cartTotal by cartViewModel.totalAmount.collectAsState()
+    val itemCount by cartViewModel.itemCount.collectAsState()
 
-    // State cho dialog
     var showAuthDialog by remember { mutableStateOf(false) }
 
     Column(
@@ -45,7 +45,6 @@ fun CartScreen(
             .fillMaxSize()
             .background(Color(0xFFF8F9FA))
     ) {
-        // Header với số đếm sản phẩm được cải thiện
         TopAppBar(
             title = {
                 Row(
@@ -97,7 +96,6 @@ fun CartScreen(
                             if (isLoggedIn) {
                                 onNavigateTo("favorite")
                             } else {
-                                // Hiển thị dialog thay vì navigate trực tiếp
                                 showAuthDialog = true
                             }
                         },
@@ -110,7 +108,6 @@ fun CartScreen(
                         modifier = Modifier.size(20.dp)
                     )
                 }
-
                 Spacer(modifier = Modifier.width(16.dp))
             },
             colors = TopAppBarDefaults.topAppBarColors(
@@ -119,13 +116,11 @@ fun CartScreen(
         )
 
         if (cartItems.isEmpty()) {
-            // Empty cart content với icon pizza
             CartEmptyContent(navController)
         } else {
             Column(
                 modifier = Modifier.fillMaxSize()
             ) {
-                // Cart items list với padding bottom để không bị che bởi checkout section
                 LazyColumn(
                     modifier = Modifier
                         .weight(1f)
@@ -143,13 +138,12 @@ fun CartScreen(
                                 cartViewModel.updateQuantity(item.id, newQuantity)
                             },
                             onRemove = {
-                                cartViewModel.removeItem(item.id)
+                                cartViewModel.removeFromCart(item.id)
                             }
                         )
                     }
                 }
 
-                // Bottom checkout section - cao hơn để tránh bị che bởi bottom nav
                 Surface(
                     modifier = Modifier.fillMaxWidth(),
                     color = Color.White,
@@ -163,10 +157,9 @@ fun CartScreen(
                                 start = 12.dp,
                                 end = 12.dp,
                                 top = 20.dp,
-                                bottom = 80.dp // Thêm padding bottom để tránh bottom nav
+                                bottom = 80.dp
                             )
                     ) {
-                        // Thêm một đường divider trang trí
                         Box(
                             modifier = Modifier
                                 .width(40.dp)
@@ -191,7 +184,7 @@ fun CartScreen(
                                 color = Color(0xFF666666)
                             )
                             Text(
-                                text = "${cartItems.sumOf { it.quantity }} món",
+                                text = "$itemCount món",
                                 fontSize = 16.sp,
                                 fontWeight = FontWeight.Medium,
                                 color = Color(0xFF333333)
@@ -249,7 +242,6 @@ fun CartScreen(
         }
     }
 
-    // Auth Dialog - Thêm phần này giống như HomeScreen
     AuthDialog(
         showDialog = showAuthDialog,
         onDismiss = { showAuthDialog = false },
@@ -267,7 +259,6 @@ fun CartEmptyContent(navController: NavController) {
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        // Icon pizza thay vì shopping cart
         Box(
             modifier = Modifier
                 .size(140.dp)
@@ -277,7 +268,6 @@ fun CartEmptyContent(navController: NavController) {
                 ),
             contentAlignment = Alignment.Center
         ) {
-            // Emoji pizza hoặc có thể thay bằng custom icon
             Text(
                 text = "🍕",
                 fontSize = 80.sp
@@ -306,7 +296,6 @@ fun CartEmptyContent(navController: NavController) {
 
         Spacer(modifier = Modifier.height(32.dp))
 
-        // CTA Button
         Button(
             onClick = { navController.navigate("home") },
             modifier = Modifier
@@ -330,7 +319,6 @@ fun CartEmptyContent(navController: NavController) {
     }
 }
 
-// Enhanced utility function for formatting currency
 fun formatCurrency(amount: Double): String {
     return "${String.format("%,.0f", amount)}đ"
 }

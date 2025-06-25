@@ -27,6 +27,18 @@ class ProductDetailViewModel : ViewModel() {
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading
 
+    // Thêm StateFlow cho cart
+    private val _addToCartState = MutableStateFlow<AddToCartState>(AddToCartState.Idle)
+    val addToCartState: StateFlow<AddToCartState> = _addToCartState
+
+    // Sealed class để quản lý trạng thái thêm vào giỏ hàng
+    sealed class AddToCartState {
+        object Idle : AddToCartState()
+        object Loading : AddToCartState()
+        object Success : AddToCartState()
+        data class Error(val message: String) : AddToCartState()
+    }
+
     fun fetchProductDetail(maSanPham: Int) {
         viewModelScope.launch {
             _isLoading.value = true

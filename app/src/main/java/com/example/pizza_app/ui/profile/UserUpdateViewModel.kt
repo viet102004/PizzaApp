@@ -101,16 +101,20 @@ class UserUpdateViewModel : ViewModel() {
         }
     }
 
-    fun updatePassword(newPassword: String, context: Context) {
+    fun updatePassword(currentPassword: String, newPassword: String, context: Context) {
         val user = UserManager.getUser() ?: return
         _isLoading.value = true
 
         viewModelScope.launch {
             try {
-                val response = RetrofitInstance.api.updatePassword(user.ma_nguoi_dung, newPassword)
+                val response = RetrofitInstance.api.updatePassword(
+                    maNguoiDung = user.ma_nguoi_dung,
+                    matKhauCu = currentPassword,
+                    matKhauMoi = newPassword
+                )
+
                 if (response.success) {
-                    UserManager.setUser(user.copy())
-                    UserPreferences(context).saveUser(user)
+                    // Có thể không cần cập nhật user nếu mật khẩu không lưu trong local
                     _success.value = true
                 } else {
                     _message.value = response.message
@@ -122,6 +126,7 @@ class UserUpdateViewModel : ViewModel() {
             }
         }
     }
+
 
     fun refreshUserFromServer(context: Context) {
         val user = UserManager.getUser() ?: return

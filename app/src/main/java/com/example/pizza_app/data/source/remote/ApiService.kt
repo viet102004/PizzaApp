@@ -64,23 +64,26 @@ interface ApiService {
     @FormUrlEncoded
     @PUT("nguoi-dung/{ma_nguoi_dung}/doi-mat-khau")
     suspend fun updatePassword(
-        @Path("ma_nguoi_dung") id: Int,
-        @Field("mat_khau") password: String
-    ): BaseResponse
+        @Path("ma_nguoi_dung") maNguoiDung: Int,
+        @Field("mat_khau_cu") matKhauCu: String,
+        @Field("mat_khau_moi") matKhauMoi: String
+    ): ApiResponse
+
 
     @Multipart
     @PUT("nguoi-dung/{ma_nguoi_dung}/doi-anh-dai-dien")
     suspend fun updateAvatar(
-        @Path("ma_nguoi_dung") id: Int,
+        @Path("ma_nguoi_dung") maNguoiDung: Int,
         @Part anh_dai_dien: MultipartBody.Part
-    ): BaseResponse
+    ): ApiResponse
+
 
     @FormUrlEncoded
     @PUT("nguoi-dung/{ma_nguoi_dung}/doi-ten")
     suspend fun updateName(
-        @Path("ma_nguoi_dung") id: Int,
+        @Path("ma_nguoi_dung") maNguoiDung: Int,
         @Field("ho_ten") hoTen: String
-    ): BaseResponse
+    ): ApiResponse
 
     @GET("user/{ma_nguoi_dung}")
     suspend fun getUserById(

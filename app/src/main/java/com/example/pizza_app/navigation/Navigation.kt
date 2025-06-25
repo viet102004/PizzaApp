@@ -35,6 +35,7 @@ import com.example.pizza_app.ui.home.CategoryViewModel
 import com.example.pizza_app.ui.home.FavoriteScreen
 import com.example.pizza_app.ui.home.ProductDetailScreen
 import com.example.pizza_app.ui.home.ProductSection
+import com.example.pizza_app.ui.home.SearchScreen
 import com.example.pizza_app.ui.settings.SettingsScreen
 import com.example.pizza_app.ui.profile.UpdateDOBScreen
 import com.example.pizza_app.ui.profile.UpdateEmailScreen
@@ -94,7 +95,7 @@ fun AppNavigation(navController: NavHostController) {
             )
 
         }
-
+        composable("search") { SearchScreen(navController) }
         composable("wallet") { WalletScreen(navController) }
         composable("vouchers") { VoucherScreen(navController) }
         composable("profile_details") { ProfileDetailsScreen(navController) }

@@ -6,5 +6,5 @@ data class Product(
     val hinh_anh: String?,
     val gia_co_ban: Double,
     val mo_ta: String?,
-    val moi: Int
+    val moi: Int,
 )

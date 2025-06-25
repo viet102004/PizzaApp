@@ -148,7 +148,10 @@ fun HomeScreen(
                     modifier = Modifier
                         .size(40.dp)
                         .background(Color(0xFFFFB700), shape = CircleShape)
-                        .clickable { /* TODO: Search */ },
+                        .clickable {
+                            onNavigateTo("search") // 🧭 Chuyển đến SearchScreen
+                        }
+                    ,
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(

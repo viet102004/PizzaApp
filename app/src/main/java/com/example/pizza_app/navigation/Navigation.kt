@@ -10,9 +10,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.navigation
+import androidx.navigation.navArgument
 import com.example.pizza_app.data.model.User
 import com.example.pizza_app.data.model.UserPreferences
 import com.example.pizza_app.data.source.ItemXamp
@@ -96,6 +98,7 @@ fun AppNavigation(navController: NavHostController) {
             )
 
         }
+
         composable("search") { SearchScreen(navController) }
         composable("wallet") { WalletScreen(navController) }
         composable("vouchers") { VoucherScreen(navController) }

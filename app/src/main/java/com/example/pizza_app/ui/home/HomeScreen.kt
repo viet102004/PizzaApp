@@ -129,8 +129,8 @@ fun HomeScreen(
     val categories by categoryViewModel.categories.collectAsState()
     val bannerViewModel: BannerViewModel = viewModel()
     val banners by bannerViewModel.bannerList.collectAsState()
+    val isLoading by bannerViewModel.isLoading.collectAsState()
 
-    // State cho dialog
     var showAuthDialog by remember { mutableStateOf(false) }
 
     Column(
@@ -199,7 +199,22 @@ fun HomeScreen(
                 .verticalScroll(rememberScrollState())
         ) {
             Spacer(modifier = Modifier.height(16.dp))
-            PromoBanner(banners = banners)
+            PromoBanner(
+                banners = banners,
+                isLoading = isLoading,
+                onBannerClick = { banner ->
+                    // Kiểm tra xem banner có mã sản phẩm không
+                    banner.ma_san_pham?.let { productId ->
+                        // Navigate đến product detail
+                        navController.navigate("product_detail/$productId")
+                    } ?: run {
+                        // Nếu không có mã sản phẩm, có thể navigate đến link khác
+                        banner.link_chuyen_huong?.let { link ->
+                            // Xử lý link_chuyen_huong nếu cần
+                        }
+                    }
+                }
+            )
             Spacer(modifier = Modifier.height(16.dp))
             CategorySection(categories = categories, navController = navController)
             Spacer(modifier = Modifier.height(16.dp))

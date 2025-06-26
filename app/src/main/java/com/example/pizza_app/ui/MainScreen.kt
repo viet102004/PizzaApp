@@ -1,16 +1,8 @@
 package com.example.pizza_app.ui
 
-import android.annotation.SuppressLint
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material.Icon
-import androidx.compose.material.IconButton
-import androidx.compose.material.Scaffold
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.derivedStateOf
+import androidx.compose.foundation.layout.*
+import androidx.compose.material.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -21,29 +13,18 @@ import com.example.pizza_app.ui.components.BottomNavItem
 import com.example.pizza_app.ui.components.BottomNavBar
 import com.example.pizza_app.navigation.AppNavigation
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.FavoriteBorder
-import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.List
-import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.ShoppingCart
-import androidx.compose.ui.platform.LocalConfiguration
-import androidx.compose.ui.platform.LocalDensity
-import androidx.core.view.WindowCompat
-import androidx.activity.ComponentActivity
-import androidx.activity.compose.setContent
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.offset
-import androidx.compose.foundation.layout.systemBarsPadding
-import androidx.compose.ui.platform.LocalView
-import androidx.core.view.WindowInsetsControllerCompat
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.outlined.*
 
+// Updated bottom nav items with better icons
 private val bottomNavItems = listOf(
-    BottomNavItem("home", Icons.Default.Home, "Home"),
-    BottomNavItem("cart", Icons.Default.ShoppingCart, "Cart"),
-    BottomNavItem("order", Icons.Default.List, "Orders"),
-    BottomNavItem("profile", Icons.Default.Person, "Profile")
+    BottomNavItem("home", Icons.Outlined.Home, "Home"),
+    BottomNavItem("cart", Icons.Outlined.ShoppingCart, "Cart"),
+    BottomNavItem("order", Icons.Outlined.Receipt, "Orders"),
+    BottomNavItem("profile", Icons.Outlined.Person, "Profile")
 )
 
+// More comprehensive list of routes without bottom nav
 private val routesWithoutBottomNav = setOf(
     "login", "product_detail/{id}", "profile_details",
     "update_name", "update_password", "update_email",
@@ -56,38 +37,65 @@ fun MainScreen(navController: NavHostController) {
     val navBackStackEntry by navController.currentBackStackEntryAsState()
 
     val currentRoute by remember {
-        derivedStateOf { navBackStackEntry?.destination?.route }
+        derivedStateOf {
+            navBackStackEntry?.destination?.route
+        }
     }
 
     val shouldShowBottomNav by remember {
         derivedStateOf {
-            currentRoute !in routesWithoutBottomNav
+            currentRoute?.let { route ->
+                // Check exact match first
+                if (route in routesWithoutBottomNav) return@derivedStateOf false
+
+                // Check for routes with parameters
+                routesWithoutBottomNav.none { excludedRoute ->
+                    if (excludedRoute.contains("{")) {
+                        // Extract the base route (before parameters)
+                        val baseRoute = excludedRoute.substringBefore("{")
+                        route.startsWith(baseRoute)
+                    } else {
+                        route == excludedRoute
+                    }
+                }
+            } ?: true
         }
     }
 
     val onNavigate = remember {
         { item: BottomNavItem ->
-            navController.navigate(item.route) {
-                popUpTo(navController.graph.startDestinationId) { saveState = true }
-                launchSingleTop = true
-                restoreState = true
+            if (currentRoute != item.route) {
+                navController.navigate(item.route) {
+                    // Pop up to the start destination to avoid building up a large stack
+                    popUpTo(navController.graph.startDestinationId) {
+                        saveState = true
+                    }
+                    launchSingleTop = true
+                    restoreState = true
+                }
             }
         }
     }
 
-    Box(modifier = Modifier.fillMaxSize()) {
-        // Nội dung chính
-        AppNavigation(navController)
-
-        if (shouldShowBottomNav) {
-            BottomNavBar(
-                items = bottomNavItems,
-                navController = navController,
-                modifier = Modifier
-                    .align(Alignment.BottomCenter)
-                    .fillMaxWidth(), // Thêm dòng này để rộng ra full trái và phải
-                onItemClick = onNavigate
-            )
+    Scaffold(
+        backgroundColor = Color(0xFFF5F5F5),
+        bottomBar = {
+            if (shouldShowBottomNav) {
+                BottomNavBar(
+                    items = bottomNavItems,
+                    navController = navController,
+                    modifier = Modifier.fillMaxWidth(),
+                    onItemClick = onNavigate
+                )
+            }
+        }
+    ) { paddingValues ->
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues)
+        ) {
+            AppNavigation(navController)
         }
     }
 }

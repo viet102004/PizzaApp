@@ -13,6 +13,9 @@ class BannerViewModel : ViewModel() {
     private val _bannerList = MutableStateFlow<List<Banner>>(emptyList())
     val bannerList: StateFlow<List<Banner>> = _bannerList
 
+    private val _isLoading = MutableStateFlow(false)
+    val isLoading: StateFlow<Boolean> = _isLoading
+
     init {
         fetchBanners()
     }
@@ -26,4 +29,13 @@ class BannerViewModel : ViewModel() {
             }
         }
     }
+
+//    fun loadProductFromBanner(bannerId: Long) {
+//        viewModelScope.launch {
+//            val banner = repository.getBannerById(bannerId)
+//            banner?.ma_san_pham?.let { productId ->
+//                loadProductDetail(productId)
+//            }
+//        }
+//    }
 }

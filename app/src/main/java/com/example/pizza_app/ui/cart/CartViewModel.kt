@@ -35,12 +35,28 @@ class CartViewModel : ViewModel() {
         _success.value = false
     }
 
+    // Thêm function để clear cart khi logout
+    fun clearCart() {
+        _cartItems.value = emptyList()
+        _totalAmount.value = 0.0
+        _itemCount.value = 0
+        _message.value = ""
+        _success.value = false
+    }
+
     init {
         fetchCartItems()
     }
 
     fun fetchCartItems() {
-        val user = UserManager.getUser() ?: return
+        val user = UserManager.getUser()
+
+        // Nếu user null (đã logout), clear cart
+        if (user == null) {
+            clearCart()
+            return
+        }
+
         viewModelScope.launch {
             try {
                 val response = RetrofitInstance.api.getGioHang(user.ma_nguoi_dung)
@@ -51,6 +67,8 @@ class CartViewModel : ViewModel() {
             } catch (e: Exception) {
                 Log.e("CartViewModel", "Lỗi tải giỏ hàng", e)
                 _message.value = "Lỗi tải giỏ hàng"
+                // Clear cart nếu có lỗi (có thể do session hết hạn)
+                clearCart()
             }
         }
     }
@@ -65,6 +83,7 @@ class CartViewModel : ViewModel() {
         val user = UserManager.getUser()
         if (user == null) {
             _message.value = "Người dùng chưa đăng nhập"
+            clearCart() // Clear cart nếu user không tồn tại
             return
         }
 
@@ -107,6 +126,12 @@ class CartViewModel : ViewModel() {
     }
 
     fun updateQuantity(itemId: String, newQuantity: Int) {
+        val user = UserManager.getUser()
+        if (user == null) {
+            clearCart()
+            return
+        }
+
         val updatedItems = _cartItems.value.map { item ->
             if (item.id == itemId) item.copy(quantity = newQuantity, totalPrice = item.basePrice * newQuantity)
             else item
@@ -116,6 +141,12 @@ class CartViewModel : ViewModel() {
     }
 
     fun removeFromCart(itemId: String) {
+        val user = UserManager.getUser()
+        if (user == null) {
+            clearCart()
+            return
+        }
+
         viewModelScope.launch {
             try {
                 val maMatHang = itemId.split("_").last().toIntOrNull() ?: return@launch
@@ -127,12 +158,63 @@ class CartViewModel : ViewModel() {
         }
     }
 
+    fun clearAllItems() {
+        val user = UserManager.getUser()
+        if (user == null) {
+            clearCart()
+            return
+        }
+
+        viewModelScope.launch {
+            try {
+                val apiResponse = RetrofitInstance.api.xoaToanBoGioHang(user.ma_nguoi_dung)
+
+                if (apiResponse.success) {
+                    clearCart()
+                    _message.value = "Đã xóa tất cả sản phẩm khỏi giỏ hàng"
+                    // Hoặc sử dụng message từ API: _message.value = apiResponse.message
+                } else {
+                    clearAllItemsOneByOne()
+                }
+            } catch (e: Exception) {
+                Log.e("CartViewModel", "Lỗi xóa tất cả sản phẩm", e)
+                // Fallback: xóa từng item một
+                clearAllItemsOneByOne()
+            }
+        }
+    }
+
+    private fun clearAllItemsOneByOne() {
+        viewModelScope.launch {
+            try {
+                val currentItems = _cartItems.value
+
+                // Xóa từng item một cách tuần tự
+                currentItems.forEach { item ->
+                    try {
+                        val maMatHang = item.id.split("_").last().toIntOrNull()
+                        if (maMatHang != null) {
+                            RetrofitInstance.api.xoaMatHangGioHang(maMatHang)
+                        }
+                    } catch (e: Exception) {
+                        Log.e("CartViewModel", "Lỗi xóa item ${item.id}", e)
+                    }
+                }
+
+                // Refresh cart sau khi xóa tất cả
+                fetchCartItems()
+                _message.value = "Đã xóa tất cả sản phẩm khỏi giỏ hàng"
+
+            } catch (e: Exception) {
+                Log.e("CartViewModel", "Lỗi xóa tất cả items", e)
+                _message.value = "Có lỗi xảy ra khi xóa sản phẩm"
+            }
+        }
+    }
+
     private fun updateSummary() {
         val items = _cartItems.value
         _itemCount.value = items.sumOf { it.quantity }
         _totalAmount.value = items.sumOf { it.totalPrice }
     }
-
 }
-
-

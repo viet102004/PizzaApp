@@ -158,4 +158,10 @@ interface ApiService {
     suspend fun xoaMatHangGioHang(
         @Path("ma_mat_hang_gio_hang") maMatHangGioHang: Int
     ): ApiResponse
+
+    @DELETE("xoaToanBoGioHang/{ma_nguoi_dung}")
+    suspend fun xoaToanBoGioHang(
+        @Path("ma_nguoi_dung") maNguoiDung: Int
+    ): ApiResponse
+
 }

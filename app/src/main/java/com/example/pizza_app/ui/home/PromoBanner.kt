@@ -31,7 +31,8 @@ import kotlin.math.abs
 fun PromoBanner(
     banners: List<Banner>,
     isLoading: Boolean = false,
-    autoScrollDuration: Long = 4000L
+    autoScrollDuration: Long = 4000L,
+    onBannerClick: (Banner) -> Unit = {} // Thêm callback này
 ) {
     // Hiển thị skeleton loading khi đang load hoặc danh sách trống
     if (isLoading || banners.isEmpty()) {
@@ -91,6 +92,12 @@ fun PromoBanner(
                                 alpha = (1f - distance * 0.3f).coerceIn(0.3f, 1f)
                                 scaleX = (1f - distance * 0.1f).coerceIn(0.8f, 1f)
                                 scaleY = (1f - distance * 0.1f).coerceIn(0.8f, 1f)
+                            }
+                            .clickable {
+                                // Chỉ cho phép click vào banner hiện tại
+                                if (index == currentIndex) {
+                                    onBannerClick(banner)
+                                }
                             }
                     ) {
                         AsyncImage(

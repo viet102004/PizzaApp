@@ -1,14 +1,24 @@
-// CartViewModel.kt
+@file:OptIn(ExperimentalMaterial3Api::class)
+
 package com.example.pizza_app.ui.cart
 
+import android.util.Log
+import androidx.compose.material3.*
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavController
+import com.example.pizza_app.data.model.*
+import com.example.pizza_app.data.source.UserManager
+import com.example.pizza_app.data.source.remote.RetrofitInstance
+import com.example.pizza_app.ui.components.AuthDialog
+import com.example.pizza_app.ui.cart.CartItemCard
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import com.example.pizza_app.data.model.*
+import kotlinx.coroutines.launch
 
 class CartViewModel : ViewModel() {
-
     private val _cartItems = MutableStateFlow<List<CartItem>>(emptyList())
     val cartItems: StateFlow<List<CartItem>> = _cartItems.asStateFlow()
 
@@ -18,116 +28,115 @@ class CartViewModel : ViewModel() {
     private val _itemCount = MutableStateFlow(0)
     val itemCount: StateFlow<Int> = _itemCount.asStateFlow()
 
+    private val _message = MutableStateFlow("")
+    val message: StateFlow<String> = _message.asStateFlow()
+
+    private val _success = MutableStateFlow(false)
+    val success: StateFlow<Boolean> = _success.asStateFlow()
+
+    fun resetState() {
+        _message.value = ""
+        _success.value = false
+    }
+
+    init {
+        fetchCartItems()
+    }
+
+    fun fetchCartItems() {
+        val user = UserManager.getUser() ?: return
+        viewModelScope.launch {
+            try {
+                val response = RetrofitInstance.api.getGioHang(user.ma_nguoi_dung)
+                val items = response.mat_hang?.map { it.toCartItem() } ?: emptyList()
+                _cartItems.value = items
+                updateSummary()
+                _message.value = response.message ?: ""
+            } catch (e: Exception) {
+                Log.e("CartViewModel", "Lỗi tải giỏ hàng", e)
+                _message.value = "Lỗi tải giỏ hàng"
+            }
+        }
+    }
+
     fun addToCart(
         product: Product,
-        selectedOptions: Map<Int, Int>, // ma_loai_tuy_chon -> ma_gia_tri
+        selectedOptions: Map<Int, Int>,
         quantity: Int,
         imageUrl: String,
-        options: List<ProductOption> // Để lấy thông tin chi tiết về tùy chọn
+        options: List<ProductOption>
     ) {
-        // Tạo CartOption từ selectedOptions và options
-        val cartOptions = selectedOptions.mapNotNull { (maLoaiTuyChon, maGiaTri) ->
-            val option = options.find { it.ma_loai_tuy_chon == maLoaiTuyChon }
-            val giaTriOption = option?.gia_tri?.find { it.ma_gia_tri == maGiaTri }
-
-            if (option != null && giaTriOption != null) {
-                maLoaiTuyChon to CartOption(
-                    maLoaiTuyChon = maLoaiTuyChon,
-                    tenLoai = option.ten_loai,
-                    maGiaTri = maGiaTri,
-                    tenGiaTri = giaTriOption.ten_gia_tri,
-                    giaThem = giaTriOption.gia_them
-                )
-            } else null
-        }.toMap()
-
-        // Tạo unique ID cho cart item
-        val itemId = generateCartItemId(product.ma_san_pham.toInt(), selectedOptions)
-
-        // Tính tổng giá
-        val basePrice = product.gia_co_ban
-        val optionsPrice = cartOptions.values.sumOf { it.giaThem }
-        val totalPrice = (basePrice + optionsPrice) * quantity
-
-        val newItem = CartItem(
-            id = itemId,
-            product = product,
-            selectedOptions = cartOptions,
-            quantity = quantity,
-            imageUrl = imageUrl,
-            totalPrice = totalPrice
-        )
-
-        val currentItems = _cartItems.value.toMutableList()
-
-        // Kiểm tra xem item đã tồn tại chưa (cùng sản phẩm và cùng tùy chọn)
-        val existingItemIndex = currentItems.indexOfFirst { it.id == itemId }
-
-        if (existingItemIndex != -1) {
-            // Nếu đã tồn tại, cập nhật số lượng
-            val existingItem = currentItems[existingItemIndex]
-            val updatedItem = existingItem.copy(
-                quantity = existingItem.quantity + quantity,
-                totalPrice = existingItem.calculateTotalPrice() + totalPrice
-            )
-            currentItems[existingItemIndex] = updatedItem
-        } else {
-            // Nếu chưa tồn tại, thêm mới
-            currentItems.add(newItem)
-        }
-
-        _cartItems.value = currentItems
-        updateCartSummary()
-    }
-
-    fun removeFromCart(itemId: String) {
-        val currentItems = _cartItems.value.toMutableList()
-        currentItems.removeAll { it.id == itemId }
-        _cartItems.value = currentItems
-        updateCartSummary()
-    }
-
-    fun updateQuantity(itemId: String, newQuantity: Int) {
-        if (newQuantity <= 0) {
-            removeFromCart(itemId)
+        val user = UserManager.getUser()
+        if (user == null) {
+            _message.value = "Người dùng chưa đăng nhập"
             return
         }
 
-        val currentItems = _cartItems.value.toMutableList()
-        val itemIndex = currentItems.indexOfFirst { it.id == itemId }
+        viewModelScope.launch {
+            try {
+                val tuyChonList = selectedOptions.mapNotNull { (maLoaiTuyChon, maGiaTri) ->
+                    val giaThem = options.find { it.ma_loai_tuy_chon == maLoaiTuyChon }
+                        ?.gia_tri?.find { it.ma_gia_tri == maGiaTri }?.gia_them
+                    giaThem?.let {
+                        TuyChonRequest(ma_gia_tri = maGiaTri, gia_them = it)
+                    }
+                }
 
-        if (itemIndex != -1) {
-            val item = currentItems[itemIndex]
-            val updatedItem = item.copy(
-                quantity = newQuantity,
-                totalPrice = item.calculateTotalPrice()
-            )
-            currentItems[itemIndex] = updatedItem
-            _cartItems.value = currentItems
-            updateCartSummary()
+                val request = ThemVaoGioHangRequest(
+                    ma_nguoi_dung = user.ma_nguoi_dung,
+                    ma_san_pham = product.ma_san_pham.toInt(),
+                    ma_combo = null,
+                    loai_mat_hang = "san_pham",
+                    so_luong = quantity,
+                    ghi_chu = null,
+                    tuy_chon = tuyChonList,
+                    chi_tiet_combo = emptyList()
+                )
+
+                val response = RetrofitInstance.api.themVaoGioHang(request)
+                if (response.data != null) {
+                    _success.value = true
+                    _message.value = response.message ?: "Đã thêm vào giỏ hàng"
+                    fetchCartItems()
+                } else {
+                    _success.value = false
+                    _message.value = response.message ?: "Không thể thêm vào giỏ hàng"
+                }
+            } catch (e: Exception) {
+                _message.value = "Lỗi kết nối máy chủ"
+                _success.value = false
+                Log.e("CartViewModel", "Lỗi thêm giỏ hàng", e)
+            }
         }
     }
 
-    fun clearCart() {
-        _cartItems.value = emptyList()
-        updateCartSummary()
+    fun updateQuantity(itemId: String, newQuantity: Int) {
+        val updatedItems = _cartItems.value.map { item ->
+            if (item.id == itemId) item.copy(quantity = newQuantity, totalPrice = item.basePrice * newQuantity)
+            else item
+        }
+        _cartItems.value = updatedItems
+        updateSummary()
     }
 
-    private fun updateCartSummary() {
+    fun removeFromCart(itemId: String) {
+        viewModelScope.launch {
+            try {
+                val maMatHang = itemId.split("_").last().toIntOrNull() ?: return@launch
+                RetrofitInstance.api.xoaMatHangGioHang(maMatHang)
+                fetchCartItems()
+            } catch (e: Exception) {
+                Log.e("CartViewModel", "Lỗi xóa mặt hàng", e)
+            }
+        }
+    }
+
+    private fun updateSummary() {
         val items = _cartItems.value
-        _totalAmount.value = items.sumOf { it.totalPrice }
         _itemCount.value = items.sumOf { it.quantity }
+        _totalAmount.value = items.sumOf { it.totalPrice }
     }
 
-    // Kiểm tra xem sản phẩm có trong giỏ hàng không
-    fun isProductInCart(productId: Int, selectedOptions: Map<Int, Int>): Boolean {
-        val itemId = generateCartItemId(productId, selectedOptions)
-        return _cartItems.value.any { it.id == itemId }
-    }
-
-    // Lấy số lượng của sản phẩm trong giỏ hàng
-    fun getProductQuantityInCart(productId: Int, selectedOptions: Map<Int, Int>): Int {
-        val itemId = generateCartItemId(productId, selectedOptions)
-        return _cartItems.value.find { it.id == itemId }?.quantity ?: 0
-    }
 }
+
+

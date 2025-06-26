@@ -1,5 +1,6 @@
 package com.example.pizza_app.data.source.remote
 
+import com.example.pizza_app.data.model.AapiResponse
 import com.example.pizza_app.data.model.AddToCartResponse
 import retrofit2.http.Query
 import com.example.pizza_app.data.model.ApiResponse
@@ -7,12 +8,15 @@ import com.example.pizza_app.data.model.Banner
 import com.example.pizza_app.data.model.BaseResponse
 import com.example.pizza_app.data.model.Category
 import com.example.pizza_app.data.model.FavoriteResponse
+import com.example.pizza_app.data.model.GioHangResponse
 import com.example.pizza_app.data.model.IsFavoriteResponse
 import com.example.pizza_app.data.model.LoginResponse
 import com.example.pizza_app.data.model.Product
 import com.example.pizza_app.data.model.ProductImage
 import com.example.pizza_app.data.model.ProductListResponse
 import com.example.pizza_app.data.model.ProductOptionsResponse
+import com.example.pizza_app.data.model.ThemGioHangResponse
+import com.example.pizza_app.data.model.ThemVaoGioHangRequest
 import com.example.pizza_app.data.model.UserResponse
 import okhttp3.MultipartBody
 import retrofit2.Response
@@ -26,6 +30,8 @@ import retrofit2.http.PUT
 import retrofit2.http.Part
 import retrofit2.http.Path
 import retrofit2.http.Header
+import retrofit2.http.Body
+
 
 interface ApiService {
     @GET("getSanPhamHienThi")
@@ -133,20 +139,23 @@ interface ApiService {
         @Query("ma_san_pham") maSanPham: Int
     ): IsFavoriteResponse
 
-    @FormUrlEncoded
-    @POST("gio-hang/them-san-pham")
-    suspend fun addToCart(
-        @Field("ma_nguoi_dung") maNguoiDung: Int,
-        @Field("ma_san_pham") maSanPham: Int,
-        @Field("so_luong") soLuong: Int,
-        @Field("ma_gia_tri_tuy_chon") maGiaTriTuyChon: List<Int>?, // Optional
-        @Field("ghi_chu") ghiChu: String? = null
-    ): AddToCartResponse
-
-
     @GET("san-pham/danh-muc/{ma_danh_muc}")
     suspend fun getSanPhamTheoDanhMuc(
         @Path("ma_danh_muc") maDanhMuc: Int
     ): ProductListResponse
 
+    @POST("themVaoGioHang")
+    suspend fun themVaoGioHang(
+        @Body request: ThemVaoGioHangRequest
+    ): AapiResponse<ThemGioHangResponse>
+
+    @GET("layGioHang/{ma_nguoi_dung}")
+    suspend fun getGioHang(
+        @Path("ma_nguoi_dung") maNguoiDung: Int
+    ): GioHangResponse
+
+    @DELETE("xoaKhoiGioHang/{ma_mat_hang_gio_hang}")
+    suspend fun xoaMatHangGioHang(
+        @Path("ma_mat_hang_gio_hang") maMatHangGioHang: Int
+    ): ApiResponse
 }

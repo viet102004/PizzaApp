@@ -2,6 +2,7 @@
 
 package com.example.pizza_app.ui.cart
 
+import androidx.compose.runtime.collectAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -24,8 +25,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import com.example.pizza_app.ui.cart.CartItemCard
+import com.example.pizza_app.data.model.CartItem
 import com.example.pizza_app.ui.components.AuthDialog
+import com.example.pizza_app.ui.cart.CartItemCard
 
 @Composable
 fun CartScreen(
@@ -39,6 +41,10 @@ fun CartScreen(
     val itemCount by cartViewModel.itemCount.collectAsState()
 
     var showAuthDialog by remember { mutableStateOf(false) }
+
+    LaunchedEffect(Unit) {
+        cartViewModel.fetchCartItems()
+    }
 
     Column(
         modifier = Modifier
@@ -66,14 +72,8 @@ fun CartScreen(
                     if (cartItems.isNotEmpty()) {
                         Box(
                             modifier = Modifier
-                                .shadow(
-                                    elevation = 4.dp,
-                                    shape = CircleShape
-                                )
-                                .background(
-                                    color = Color(0xFFFF6B35),
-                                    shape = CircleShape
-                                )
+                                .shadow(elevation = 4.dp, shape = CircleShape)
+                                .background(color = Color(0xFFFF6B35), shape = CircleShape)
                                 .size(28.dp),
                             contentAlignment = Alignment.Center
                         ) {
@@ -110,9 +110,7 @@ fun CartScreen(
                 }
                 Spacer(modifier = Modifier.width(16.dp))
             },
-            colors = TopAppBarDefaults.topAppBarColors(
-                containerColor = Color.Transparent
-            )
+            colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
         )
 
         if (cartItems.isEmpty()) {
@@ -126,12 +124,9 @@ fun CartScreen(
                         .weight(1f)
                         .padding(horizontal = 16.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp),
-                    contentPadding = PaddingValues(
-                        top = 16.dp,
-                        bottom = 16.dp
-                    )
+                    contentPadding = PaddingValues(top = 16.dp, bottom = 16.dp)
                 ) {
-                    items(cartItems) { item ->
+                    items(cartItems, key = { it.id }) { item: CartItem ->
                         CartItemCard(
                             item = item,
                             onQuantityChange = { newQuantity ->
@@ -153,21 +148,13 @@ fun CartScreen(
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(
-                                start = 12.dp,
-                                end = 12.dp,
-                                top = 20.dp,
-                                bottom = 80.dp
-                            )
+                            .padding(start = 12.dp, end = 12.dp, top = 20.dp, bottom = 80.dp)
                     ) {
                         Box(
                             modifier = Modifier
                                 .width(40.dp)
                                 .height(4.dp)
-                                .background(
-                                    Color(0xFFE0E0E0),
-                                    RoundedCornerShape(2.dp)
-                                )
+                                .background(Color(0xFFE0E0E0), RoundedCornerShape(2.dp))
                                 .align(Alignment.CenterHorizontally)
                         )
 
@@ -221,13 +208,9 @@ fun CartScreen(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .height(48.dp),
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = Color(0xFFFFB700)
-                            ),
+                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFFB700)),
                             shape = RoundedCornerShape(12.dp),
-                            elevation = ButtonDefaults.buttonElevation(
-                                defaultElevation = 4.dp
-                            )
+                            elevation = ButtonDefaults.buttonElevation(defaultElevation = 4.dp)
                         ) {
                             Text(
                                 text = "Thanh toán",
@@ -262,16 +245,10 @@ fun CartEmptyContent(navController: NavController) {
         Box(
             modifier = Modifier
                 .size(140.dp)
-                .background(
-                    Color(0xFFFFB700).copy(alpha = 0.1f),
-                    shape = CircleShape
-                ),
+                .background(Color(0xFFFFB700).copy(alpha = 0.1f), shape = CircleShape),
             contentAlignment = Alignment.Center
         ) {
-            Text(
-                text = "🍕",
-                fontSize = 80.sp
-            )
+            Text(text = "🍕", fontSize = 80.sp)
         }
 
         Spacer(modifier = Modifier.height(24.dp))
@@ -301,13 +278,9 @@ fun CartEmptyContent(navController: NavController) {
             modifier = Modifier
                 .fillMaxWidth()
                 .height(52.dp),
-            colors = ButtonDefaults.buttonColors(
-                containerColor = Color(0xFFFFB700)
-            ),
+            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFFB700)),
             shape = RoundedCornerShape(16.dp),
-            elevation = ButtonDefaults.buttonElevation(
-                defaultElevation = 4.dp
-            )
+            elevation = ButtonDefaults.buttonElevation(defaultElevation = 4.dp)
         ) {
             Text(
                 "Đặt món ngay",
@@ -322,3 +295,4 @@ fun CartEmptyContent(navController: NavController) {
 fun formatCurrency(amount: Double): String {
     return "${String.format("%,.0f", amount)}đ"
 }
+

@@ -1,3 +1,5 @@
+@file:OptIn(ExperimentalMaterial3Api::class)
+
 package com.example.pizza_app.ui.cart
 
 import androidx.compose.foundation.Image
@@ -32,7 +34,7 @@ fun CartItemCard(
     onQuantityChange: (Int) -> Unit,
     onRemove: () -> Unit
 ) {
-    val selectedOptionsDisplay = item.selectedOptions.values.map {
+    val selectedOptionsDisplay = item.selectedOptions.map {
         "${it.tenLoai}: ${it.tenGiaTri}" + if (it.giaThem > 0) " (+${formatCurrency(it.giaThem)})" else ""
     }
 

@@ -41,8 +41,6 @@ android {
 
 dependencies {
 
-    //implementation("com.google.accompanist:accompanist-glide:0.31.5")
-
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
 
     implementation("com.squareup.retrofit2:retrofit:2.9.0")

@@ -11,6 +11,7 @@ import com.example.pizza_app.data.model.IsFavoriteResponse
 import com.example.pizza_app.data.model.LoginResponse
 import com.example.pizza_app.data.model.Product
 import com.example.pizza_app.data.model.ProductImage
+import com.example.pizza_app.data.model.ProductListResponse
 import com.example.pizza_app.data.model.ProductOptionsResponse
 import com.example.pizza_app.data.model.UserResponse
 import okhttp3.MultipartBody
@@ -24,6 +25,7 @@ import retrofit2.http.POST
 import retrofit2.http.PUT
 import retrofit2.http.Part
 import retrofit2.http.Path
+import retrofit2.http.Header
 
 interface ApiService {
     @GET("getSanPhamHienThi")
@@ -70,14 +72,12 @@ interface ApiService {
         @Field("mat_khau_moi") matKhauMoi: String
     ): ApiResponse
 
-
     @Multipart
     @PUT("nguoi-dung/{ma_nguoi_dung}/doi-anh-dai-dien")
     suspend fun updateAvatar(
         @Path("ma_nguoi_dung") maNguoiDung: Int,
         @Part anh_dai_dien: MultipartBody.Part
     ): ApiResponse
-
 
     @FormUrlEncoded
     @PUT("nguoi-dung/{ma_nguoi_dung}/doi-ten")
@@ -144,9 +144,9 @@ interface ApiService {
     ): AddToCartResponse
 
 
-
-
-
-
+    @GET("san-pham/danh-muc/{ma_danh_muc}")
+    suspend fun getSanPhamTheoDanhMuc(
+        @Path("ma_danh_muc") maDanhMuc: Int
+    ): ProductListResponse
 
 }

@@ -80,7 +80,9 @@ fun CategorySection(
                 items(categories) { category ->
                     CategoryItem(
                         category = category,
-                        onClick = { /* Handle category click */ }
+                        onClick = {
+                            navController.navigate("category_products/${category.ma_danh_muc}/${category.ten_danh_muc}")
+                        }
                     )
                 }
             }

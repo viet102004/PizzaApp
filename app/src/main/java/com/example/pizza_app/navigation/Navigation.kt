@@ -31,6 +31,7 @@ import com.example.pizza_app.ui.auth.LoginScreen
 import com.example.pizza_app.ui.auth.RegisterScreen
 import com.example.pizza_app.ui.cart.PayScreen
 import com.example.pizza_app.ui.home.AllCategoriesScreen
+import com.example.pizza_app.ui.home.CategoryProductsScreen
 import com.example.pizza_app.ui.home.CategoryViewModel
 import com.example.pizza_app.ui.home.FavoriteScreen
 import com.example.pizza_app.ui.home.ProductDetailScreen
@@ -142,12 +143,29 @@ fun AppNavigation(navController: NavHostController) {
             AllCategoriesScreen(
                 categories = categories,
                 onCategoryClick = { category ->
-
+                    navController.navigate("category_products/${category.ma_danh_muc}/${category.ten_danh_muc}")
                 },
                 onBackClick = {
                     navController.popBackStack()
                 }
             )
+        }
+
+        composable("category_products/{categoryId}/{categoryName}") { backStackEntry ->
+            val categoryId = backStackEntry.arguments?.getString("categoryId")?.toIntOrNull()
+            val categoryName = backStackEntry.arguments?.getString("categoryName")
+
+            if (categoryId != null && categoryName != null) {
+                val category = com.example.pizza_app.data.model.Category(
+                    ma_danh_muc = categoryId,
+                    ten_danh_muc = categoryName,
+                    hinh_anh = ""
+                )
+                CategoryProductsScreen(
+                    navController = navController,
+                    category = category
+                )
+            }
         }
     }
 }

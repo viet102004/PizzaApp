@@ -6,13 +6,9 @@ import android.util.Log
 import androidx.compose.material3.*
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.navigation.NavController
 import com.example.pizza_app.data.model.*
 import com.example.pizza_app.data.source.UserManager
 import com.example.pizza_app.data.source.remote.RetrofitInstance
-import com.example.pizza_app.ui.components.AuthDialog
-import com.example.pizza_app.ui.cart.CartItemCard
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow

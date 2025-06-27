@@ -8,9 +8,6 @@ object RetrofitInstance {
 
     private const val BASE_URL = "https://related-burro-selected.ngrok-free.app/"
 
-
-
-
     val api: ApiService by lazy {
         Retrofit.Builder()
             .baseUrl(BASE_URL)

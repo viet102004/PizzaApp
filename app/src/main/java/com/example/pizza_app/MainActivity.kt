@@ -19,6 +19,7 @@ import com.example.pizza_app.ui.auth.ForgotPasswordScreen
 import com.example.pizza_app.ui.auth.LoginScreen
 import com.example.pizza_app.ui.auth.RegisterScreen
 import com.example.pizza_app.ui.theme.Pizza_appTheme
+import dagger.hilt.android.HiltAndroidApp
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {

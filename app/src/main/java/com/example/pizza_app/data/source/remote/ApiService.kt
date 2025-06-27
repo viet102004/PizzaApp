@@ -8,6 +8,7 @@ import com.example.pizza_app.data.model.Banner
 import com.example.pizza_app.data.model.BaseResponse
 import com.example.pizza_app.data.model.Category
 import com.example.pizza_app.data.model.FavoriteResponse
+import com.example.pizza_app.data.model.ForgotPasswordResponse
 import com.example.pizza_app.data.model.GioHangResponse
 import com.example.pizza_app.data.model.IsFavoriteResponse
 import com.example.pizza_app.data.model.LoginResponse
@@ -163,5 +164,11 @@ interface ApiService {
     suspend fun xoaToanBoGioHang(
         @Path("ma_nguoi_dung") maNguoiDung: Int
     ): ApiResponse
+
+    @FormUrlEncoded
+    @POST("quen-mat-khau")
+    suspend fun forgotPassword(
+        @Field("email") email: String
+    ): Response<ForgotPasswordResponse>
 
 }

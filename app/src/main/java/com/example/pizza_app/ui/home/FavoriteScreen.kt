@@ -94,18 +94,13 @@ fun FavoriteScreen(
                 }
             },
             navigationIcon = {
-                Box(
-                    modifier = Modifier
-                        .size(40.dp)
-                        .background(Color(0xFFFF6B35), shape = CircleShape)
-                        .clickable { navController.popBackStack() },
-                    contentAlignment = Alignment.Center
+                IconButton(
+                    onClick = { navController.popBackStack() }
                 ) {
                     Icon(
                         imageVector = Icons.Default.ArrowBack,
                         contentDescription = "Back",
-                        tint = Color.White,
-                        modifier = Modifier.size(20.dp)
+                        tint = Color.Black
                     )
                 }
             },

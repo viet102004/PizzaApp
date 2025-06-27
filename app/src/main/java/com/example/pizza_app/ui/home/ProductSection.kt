@@ -12,6 +12,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -28,10 +29,9 @@ fun ProductSection(
     navController: NavController,
     isLoading: Boolean = false
 ) {
+
     Column(modifier = Modifier.padding(vertical = 8.dp)) {
-        // Header section
         if (isLoading) {
-            // Skeleton for title
             Box(
                 modifier = Modifier
                     .padding(start = 16.dp, bottom = 8.dp)

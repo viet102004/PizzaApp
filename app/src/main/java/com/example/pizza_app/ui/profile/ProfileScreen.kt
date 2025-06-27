@@ -134,14 +134,6 @@ fun ProfileScreen(
                             color = Color.Black
                         )
                         // Chỉ hiển thị text mô tả khi đã đăng nhập
-                        if (isLoggedIn) {
-                            Text(
-                                text = "Thành viên VIP",
-                                fontSize = 14.sp,
-                                color = Color(0xFFFFB700),
-                                fontWeight = FontWeight.Medium
-                            )
-                        }
                     }
                 }
             }
@@ -274,12 +266,6 @@ fun ProfileScreen(
                             horizontalArrangement = Arrangement.SpaceEvenly
                         ) {
                             ProfileMenuItem(
-                                icon = Icons.Default.AccountBalanceWallet,
-                                title = "Ví",
-                                modifier = Modifier.weight(1f)
-                            ) { onNavigateTo("wallet") }
-
-                            ProfileMenuItem(
                                 icon = Icons.Default.CardGiftcard,
                                 title = "Voucher",
                                 modifier = Modifier.weight(1f)
@@ -290,33 +276,29 @@ fun ProfileScreen(
                                 title = "Thông tin",
                                 modifier = Modifier.weight(1f)
                             ) { onNavigateTo("profile_details") }
-                        }
 
-                        Spacer(modifier = Modifier.height(8.dp))
-
-                        // Hàng thứ hai
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceEvenly
-                        ) {
                             ProfileMenuItem(
                                 icon = Icons.Default.LocationOn,
                                 title = "Địa chỉ",
                                 modifier = Modifier.weight(1f)
                             ) { onNavigateTo("address") }
-
-                            ProfileMenuItem(
-                                icon = Icons.Default.Chat,
-                                title = "Hỗ trợ",
-                                modifier = Modifier.weight(1f)
-                            ) { onNavigateTo("support_chat") }
-
-                            ProfileMenuItem(
-                                icon = Icons.Default.Settings,
-                                title = "Cài đặt",
-                                modifier = Modifier.weight(1f)
-                            ) { onNavigateTo("settings") }
                         }
+
+//                        Spacer(modifier = Modifier.height(8.dp))
+//
+//
+//                        Row(
+//                            modifier = Modifier.fillMaxWidth(),
+//                           horizontalArrangement = Arrangement.Start
+//                        ) {
+//                            ProfileMenuItem(
+//                                icon = Icons.Default.Chat,
+//                                title = "Hỗ trợ",
+//                                modifier = Modifier.weight(1f)
+//                            ) { onNavigateTo("support_chat") }
+//
+//
+//                        }
                     }
                 }
 

@@ -62,20 +62,6 @@ fun OrderScreen(
             },
             actions = {
                 // Icon Search với background tròn
-                Box(
-                    modifier = Modifier
-                        .size(40.dp)
-                        .background(Color(0xFFFFB700), shape = CircleShape)
-                        .clickable { /* TODO: Search */ },
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        Icons.Default.Search,
-                        contentDescription = "Tìm kiếm",
-                        tint = Color.White,
-                        modifier = Modifier.size(20.dp)
-                    )
-                }
 
                 Spacer(modifier = Modifier.width(12.dp))
 

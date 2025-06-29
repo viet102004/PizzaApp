@@ -14,6 +14,7 @@ class UserPreferences(context: Context) {
             putString("so_dien_thoai", user.so_dien_thoai)
             putString("vai_tro", user.vai_tro)
             putString("ho_ten", user.ho_ten)
+            putString("ngay_sinh", user.ngay_sinh)
             putString("anh_dai_dien", user.anh_dai_dien)
             putBoolean("hoat_dong", user.hoat_dong == 1)
             apply()
@@ -30,6 +31,7 @@ class UserPreferences(context: Context) {
             so_dien_thoai = dataStore.getString("so_dien_thoai", null),
             vai_tro = dataStore.getString("vai_tro", "") ?: "",
             ho_ten = dataStore.getString("ho_ten", null),
+            ngay_sinh = dataStore.getString("ngay_sinh", null),
             anh_dai_dien = dataStore.getString("anh_dai_dien", null),
             hoat_dong = if (dataStore.getBoolean("hoat_dong", true)) 1 else 0
         )

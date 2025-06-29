@@ -39,6 +39,8 @@ import com.example.pizza_app.data.source.UserManager
 import com.example.pizza_app.data.source.getFullImageUrl
 import com.example.pizza_app.data.model.UserPreferences
 import com.example.pizza_app.data.source.remote.RetrofitInstance
+import java.text.SimpleDateFormat
+import java.util.*
 
 @Composable
 fun ProfileDetailsScreen(navController: NavController) {
@@ -112,6 +114,19 @@ fun ProfileDetailsScreen(navController: NavController) {
         }
     }
 
+    // Format ngày sinh từ yyyy-MM-dd thành dd/MM/yyyy
+    val formattedBirthDate = remember(user?.ngay_sinh) {
+        user?.ngay_sinh?.let { dateStr ->
+            try {
+                val inputFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+                val outputFormat = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
+                val date = inputFormat.parse(dateStr)
+                date?.let { outputFormat.format(it) } ?: "Chưa cập nhật"
+            } catch (e: Exception) {
+                "Chưa cập nhật"
+            }
+        } ?: "Chưa cập nhật"
+    }
 
     Column(
         modifier = Modifier
@@ -194,7 +209,7 @@ fun ProfileDetailsScreen(navController: NavController) {
                     ProfileInfoItem("Email", user?.email ?: "(Chưa có)") {
                         navController.navigate("update_email")
                     }
-                    ProfileInfoItem("Ngày sinh", "Chưa cập nhật") {
+                    ProfileInfoItem("Ngày sinh", formattedBirthDate) {
                         navController.navigate("update_dob")
                     }
                     ProfileInfoItem("Mật khẩu", "***", isLast = true) {

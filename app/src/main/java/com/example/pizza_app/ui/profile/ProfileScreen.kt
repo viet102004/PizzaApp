@@ -133,7 +133,6 @@ fun ProfileScreen(
                             fontWeight = FontWeight.Bold,
                             color = Color.Black
                         )
-                        // Chỉ hiển thị text mô tả khi đã đăng nhập
                     }
                 }
             }

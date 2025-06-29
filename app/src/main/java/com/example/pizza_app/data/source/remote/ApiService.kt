@@ -2,6 +2,9 @@ package com.example.pizza_app.data.source.remote
 
 import com.example.pizza_app.data.model.AapiResponse
 import com.example.pizza_app.data.model.AddToCartResponse
+import com.example.pizza_app.data.model.AddressCreateRequest
+import com.example.pizza_app.data.model.AddressInfo
+import com.example.pizza_app.data.model.AddressResponse
 import retrofit2.http.Query
 import com.example.pizza_app.data.model.ApiResponse
 import com.example.pizza_app.data.model.Banner
@@ -32,6 +35,7 @@ import retrofit2.http.Part
 import retrofit2.http.Path
 import retrofit2.http.Header
 import retrofit2.http.Body
+import retrofit2.http.PATCH
 
 
 interface ApiService {
@@ -91,6 +95,13 @@ interface ApiService {
     suspend fun updateName(
         @Path("ma_nguoi_dung") maNguoiDung: Int,
         @Field("ho_ten") hoTen: String
+    ): ApiResponse
+
+    @FormUrlEncoded
+    @PUT("nguoi-dung/{ma_nguoi_dung}/doi-ngay-sinh")
+    suspend fun updateBirthDate(
+        @Path("ma_nguoi_dung") maNguoiDung: Int,
+        @Field("ngay_sinh") ngaySinh: String
     ): ApiResponse
 
     @GET("user/{ma_nguoi_dung}")
@@ -170,5 +181,45 @@ interface ApiService {
     suspend fun forgotPassword(
         @Field("email") email: String
     ): Response<ForgotPasswordResponse>
+
+    @GET("users/{ma_nguoi_dung}/delivery-addresses")
+    suspend fun getDeliveryAddresses(
+        @Path("ma_nguoi_dung") maNguoiDung: Long
+    ): AddressResponse<List<AddressInfo>>
+
+    // Lấy chi tiết một địa chỉ
+    @GET("users/{ma_nguoi_dung}/delivery-addresses/{ma_thong_tin_giao_hang}")
+    suspend fun getDeliveryAddressDetail(
+        @Path("ma_nguoi_dung") maNguoiDung: Long,
+        @Path("ma_thong_tin_giao_hang") maThongTinGiaoHang: Long
+    ): AddressResponse<AddressInfo>
+
+    // Thêm địa chỉ mới
+    @POST("users/{ma_nguoi_dung}/delivery-addresses")
+    suspend fun createDeliveryAddress(
+        @Path("ma_nguoi_dung") maNguoiDung: Long,
+        @Body addressData: AddressCreateRequest
+    ): AddressResponse<AddressInfo>
+
+    // Cập nhật địa chỉ
+    @PUT("users/{ma_nguoi_dung}/delivery-addresses/{ma_thong_tin_giao_hang}")
+    suspend fun updateDeliveryAddress(
+        @Path("ma_nguoi_dung") maNguoiDung: Long,
+        @Path("ma_thong_tin_giao_hang") maThongTinGiaoHang: Long,
+        @Body addressData: Map<String, Any>
+    ): AddressResponse<AddressInfo>
+
+    // Xóa địa chỉ
+    @DELETE("users/{ma_nguoi_dung}/delivery-addresses/{ma_thong_tin_giao_hang}")
+    suspend fun deleteDeliveryAddress(
+        @Path("ma_nguoi_dung") maNguoiDung: Long,
+        @Path("ma_thong_tin_giao_hang") maThongTinGiaoHang: Long
+    ): AddressResponse<Any>
+
+    @PATCH("users/{ma_nguoi_dung}/delivery-addresses/{ma_thong_tin_giao_hang}/set-default")
+    suspend fun setDefaultDeliveryAddress(
+        @Path("ma_nguoi_dung") maNguoiDung: Long,
+        @Path("ma_thong_tin_giao_hang") maThongTinGiaoHang: Long
+    ): AddressResponse<Any>
 
 }

@@ -127,6 +127,30 @@ class UserUpdateViewModel : ViewModel() {
         }
     }
 
+    fun updateBirthDate(newBirthDate: String, context: Context) {
+        val user = UserManager.getUser() ?: return
+        _isLoading.value = true
+
+        viewModelScope.launch {
+            try {
+                val response = RetrofitInstance.api.updateBirthDate(user.ma_nguoi_dung, newBirthDate)
+                if (response.success) {
+                    val updatedUser = user.copy(ngay_sinh = newBirthDate)
+                    UserManager.setUser(updatedUser)
+                    UserPreferences(context).saveUser(updatedUser)
+                    _success.value = true
+                } else {
+                    _message.value = response.message
+                }
+            } catch (e: Exception) {
+                _message.value = "Lỗi kết nối máy chủ"
+                Log.e("UserUpdateViewModel", "Lỗi updateBirthDate: ${e.message}")
+            } finally {
+                _isLoading.value = false
+            }
+        }
+    }
+
 
     fun refreshUserFromServer(context: Context) {
         val user = UserManager.getUser() ?: return

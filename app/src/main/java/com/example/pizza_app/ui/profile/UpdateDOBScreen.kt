@@ -2,49 +2,82 @@
 
 package com.example.pizza_app.ui.profile
 
+import android.widget.Toast
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.window.Dialog
-import androidx.compose.ui.draw.alpha
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import kotlinx.coroutines.launch
-import kotlin.math.abs
+import com.example.pizza_app.data.source.UserManager
+import java.text.SimpleDateFormat
+import java.util.*
 
 @Composable
-fun UpdateDOBScreen(navController: NavController) {
-    var selectedDate by remember { mutableStateOf("19 tháng 10, 2004") }
+fun UpdateDOBScreen(
+    navController: NavController,
+    viewModel: UserUpdateViewModel = viewModel()
+) {
+    val context = LocalContext.current
+    val user by UserManager.currentUser.collectAsState()
+
+    // States
+    var selectedDate by remember { mutableStateOf(getCurrentDate()) }
     var showDatePicker by remember { mutableStateOf(false) }
+
+    // ViewModel states
+    val isLoading by viewModel.isLoading.collectAsState()
+    val message by viewModel.message.collectAsState()
+    val success by viewModel.success.collectAsState()
+
+    // Handle success
+    LaunchedEffect(success) {
+        if (success) {
+            Toast.makeText(context, "Cập nhật ngày sinh thành công", Toast.LENGTH_SHORT).show()
+            navController.navigateUp()
+            viewModel.resetState()
+        }
+    }
+
+    LaunchedEffect(message) {
+        if (message.isNotBlank()) {
+            Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    // Initialize date from user
+    LaunchedEffect(user) {
+        user?.ngay_sinh?.let { dateStr ->
+            try {
+                val format = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+                selectedDate = format.parse(dateStr) ?: Date()
+            } catch (e: Exception) {
+                // Keep current date if parsing fails
+            }
+        }
+    }
 
     Column(
         modifier = Modifier
             .fillMaxSize()
             .background(
                 brush = Brush.verticalGradient(
-                    colors = listOf(
-                        Color(0xFFC8C8A9),
-                        Color(0xFFFFFFFF)
-                    )
+                    colors = listOf(Color(0xFFC8C8A9), Color.White)
                 )
             )
     ) {
-        // Header với TopAppBar
         TopAppBar(
             title = {
                 Text(
@@ -56,32 +89,20 @@ fun UpdateDOBScreen(navController: NavController) {
             },
             navigationIcon = {
                 IconButton(onClick = { navController.popBackStack() }) {
-                    Icon(
-                        imageVector = Icons.Default.ArrowBack,
-                        contentDescription = "Back",
-                        tint = Color.Black
-                    )
+                    Icon(Icons.Default.ArrowBack, contentDescription = "Back", tint = Color.Black)
                 }
             },
-            colors = TopAppBarDefaults.topAppBarColors(
-                containerColor = Color.Transparent
-            )
+            colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
         )
 
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(16.dp)
-        ) {
+        Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(16.dp),
                 colors = CardDefaults.cardColors(containerColor = Color.White),
                 elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
             ) {
-                Column(
-                    modifier = Modifier.padding(24.dp)
-                ) {
+                Column(modifier = Modifier.padding(24.dp)) {
                     Text(
                         text = "Cập nhật ngày sinh của bạn",
                         fontSize = 16.sp,
@@ -90,55 +111,97 @@ fun UpdateDOBScreen(navController: NavController) {
                         modifier = Modifier.padding(bottom = 16.dp)
                     )
 
-                    // Date picker field (clickable)
-                    OutlinedTextField(
-                        value = selectedDate,
-                        onValueChange = { },
-                        label = { Text("Ngày sinh") },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable { showDatePicker = true },
-                        readOnly = true,
-                        enabled = false,
-                        colors = OutlinedTextFieldDefaults.colors(
-                            disabledBorderColor = Color(0xFFCCCCCC),
-                            disabledLabelColor = Color(0xFF666666),
-                            disabledTextColor = Color.Black
+                    OutlinedCard(
+                        modifier = Modifier.fillMaxWidth(),
+                        onClick = { showDatePicker = true },
+                        shape = RoundedCornerShape(8.dp),
+                        colors = CardDefaults.outlinedCardColors(
+                            containerColor = Color(0xFFF8F9FA)
                         )
-                    )
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.DateRange,
+                                contentDescription = null,
+                                modifier = Modifier.size(24.dp),
+                                tint = Color(0xFFFFB700)
+                            )
 
-                    Spacer(modifier = Modifier.height(16.dp))
+                            Spacer(modifier = Modifier.width(12.dp))
+
+                            Column {
+                                Text(
+                                    text = "Ngày sinh",
+                                    fontSize = 12.sp,
+                                    color = Color(0xFF666666)
+                                )
+                                Text(
+                                    text = formatDate(selectedDate),
+                                    fontSize = 16.sp,
+                                    fontWeight = FontWeight.Medium,
+                                    color = Color.Black
+                                )
+                            }
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(24.dp))
 
                     Button(
                         onClick = {
-                            // TODO: Lưu ngày sinh
-                            navController.popBackStack()
+                            val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+                            val dateString = dateFormat.format(selectedDate)
+                            viewModel.updateBirthDate(dateString, context)
                         },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(48.dp),
+                        modifier = Modifier.fillMaxWidth().height(48.dp),
                         colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFFB700)),
-                        shape = RoundedCornerShape(8.dp)
+                        shape = RoundedCornerShape(8.dp),
+                        enabled = !isLoading
                     ) {
-                        Text(
-                            text = "Lưu thông tin thay đổi",
-                            fontWeight = FontWeight.Bold,
-                            color = Color.Black
-                        )
+                        if (isLoading) {
+                            CircularProgressIndicator(color = Color.White, modifier = Modifier.size(20.dp))
+                        } else {
+                            Text("Lưu thông tin thay đổi", fontWeight = FontWeight.Bold, color = Color.Black)
+                        }
                     }
                 }
             }
 
             Spacer(modifier = Modifier.height(16.dp))
+
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(12.dp),
+                colors = CardDefaults.cardColors(containerColor = Color(0xFFF8F9FA)),
+                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+            ) {
+                Row(
+                    modifier = Modifier.padding(16.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text("🎂", fontSize = 20.sp, modifier = Modifier.padding(end = 12.dp))
+                    Text(
+                        text = "Ngày sinh giúp chúng tôi gửi cho bạn những ưu đãi đặc biệt và chúc mừng sinh nhật.",
+                        fontSize = 14.sp,
+                        color = Color(0xFF666666),
+                        lineHeight = 20.sp
+                    )
+                }
+            }
         }
     }
 
-    // Date Picker Dialog
+    // Date picker
     if (showDatePicker) {
-        InfiniteScrollDatePickerDialog(
+        SimpleDatePickerDialog(
             currentDate = selectedDate,
-            onDateSelected = { date ->
-                selectedDate = date
+            onDateSelected = {
+                selectedDate = it
                 showDatePicker = false
             },
             onDismiss = { showDatePicker = false }
@@ -146,235 +209,44 @@ fun UpdateDOBScreen(navController: NavController) {
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun InfiniteScrollDatePickerDialog(
-    currentDate: String,
-    onDateSelected: (String) -> Unit,
+fun SimpleDatePickerDialog(
+    currentDate: Date,
+    onDateSelected: (Date) -> Unit,
     onDismiss: () -> Unit
 ) {
-    var selectedDay by remember { mutableStateOf(19) }
-    var selectedMonth by remember { mutableStateOf(10) }
-    var selectedYear by remember { mutableStateOf(2004) }
-
-    val months = listOf(
-        "Tháng 1", "Tháng 2", "Tháng 3", "Tháng 4", "Tháng 5", "Tháng 6",
-        "Tháng 7", "Tháng 8", "Tháng 9", "Tháng 10", "Tháng 11", "Tháng 12"
+    val datePickerState = rememberDatePickerState(
+        initialSelectedDateMillis = currentDate.time
     )
 
-    Dialog(onDismissRequest = onDismiss) {
-        Card(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(450.dp),
-            shape = RoundedCornerShape(16.dp),
-            colors = CardDefaults.cardColors(containerColor = Color.White)
-        ) {
-            Column(
-                modifier = Modifier.padding(20.dp)
+    DatePickerDialog(
+        onDismissRequest = onDismiss,
+        confirmButton = {
+            TextButton(
+                onClick = {
+                    datePickerState.selectedDateMillis?.let { millis ->
+                        onDateSelected(Date(millis))
+                    }
+                }
             ) {
-                // Header
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = "Chỉnh sửa ngày sinh của bạn",
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Color.Black
-                    )
-                    IconButton(onClick = onDismiss) {
-                        Icon(
-                            imageVector = Icons.Default.Close,
-                            contentDescription = "Close",
-                            tint = Color.Gray
-                        )
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(8.dp))
-
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(200.dp)
-                ) {
-                    Row(
-                        modifier = Modifier.fillMaxSize(),
-                        horizontalArrangement = Arrangement.SpaceEvenly
-                    ) {
-                        // Day Picker
-                        InfiniteScrollPicker(
-                            items = (1..31).map { it.toString() },
-                            selectedIndex = selectedDay - 1,
-                            onItemSelected = { index -> selectedDay = index + 1 },
-                            modifier = Modifier.weight(1f)
-                        )
-
-                        // Month Picker
-                        InfiniteScrollPicker(
-                            items = months,
-                            selectedIndex = selectedMonth - 1,
-                            onItemSelected = { index -> selectedMonth = index + 1 },
-                            modifier = Modifier.weight(2f)
-                        )
-
-                        // Year Picker
-                        InfiniteScrollPicker(
-                            items = (1950..2025).map { it.toString() },
-                            selectedIndex = selectedYear - 1950,
-                            onItemSelected = { index -> selectedYear = 1950 + index },
-                            modifier = Modifier.weight(1f)
-                        )
-                    }
-
-                    // Selection background highlight
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(40.dp)
-                            .background(
-                                Color(0xFFFF69B4).copy(alpha = 0.1f),
-                                shape = RoundedCornerShape(8.dp)
-                            )
-                            .align(Alignment.Center)
-                    )
-                }
-
-                Spacer(modifier = Modifier.height(24.dp))
-
-                // Save Button
-                Button(
-                    onClick = {
-                        val monthName = months[selectedMonth - 1].lowercase()
-                        val formattedDate = "$selectedDay $monthName, $selectedYear"
-                        onDateSelected(formattedDate)
-                    },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(48.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFF69B4)),
-                    shape = RoundedCornerShape(24.dp)
-                ) {
-                    Text(
-                        text = "Lưu",
-                        fontWeight = FontWeight.Bold,
-                        color = Color.White,
-                        fontSize = 16.sp
-                    )
-                }
+                Text("Xác nhận")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Hủy")
             }
         }
+    ) {
+        DatePicker(state = datePickerState)
     }
 }
 
-@Composable
-fun InfiniteScrollPicker(
-    items: List<String>,
-    selectedIndex: Int,
-    onItemSelected: (Int) -> Unit,
-    modifier: Modifier = Modifier
-) {
-    val listState = rememberLazyListState()
+// Helper functions
+private fun getCurrentDate(): Date = Date()
 
-    // Optimized: Only create 100 repetitions instead of 1000
-    val infiniteItems = remember(items) {
-        val repeatedItems = mutableListOf<String>()
-        repeat(100) {
-            items.forEach { item ->
-                repeatedItems.add(item)
-            }
-        }
-        repeatedItems
-    }
-
-    val middleStart = remember(items) { 50 * items.size }
-    val itemHeight = 40.dp
-
-    // Khởi tạo vị trí ban đầu của list ở giữa
-    LaunchedEffect(Unit) {
-        val initialIndex = middleStart + selectedIndex
-        listState.scrollToItem(initialIndex)
-    }
-
-    // Chỉ tự động chọn item nằm trong highlight zone khi user dừng scroll (không auto-scroll)
-    LaunchedEffect(listState.isScrollInProgress) {
-        if (!listState.isScrollInProgress) {
-            val layoutInfo = listState.layoutInfo
-            val viewportCenter = layoutInfo.viewportSize.height / 2
-
-            // Tìm item nằm trong highlight zone
-            val highlightItem = layoutInfo.visibleItemsInfo.find { itemInfo ->
-                val itemCenter = itemInfo.offset + itemInfo.size / 2
-                abs(itemCenter - viewportCenter) < 20 // Cùng threshold với highlight zone
-            }
-
-            highlightItem?.let { item ->
-                val actualIndex = item.index % items.size
-                if (actualIndex != selectedIndex) {
-                    onItemSelected(actualIndex) // Tự động chọn item trong highlight zone
-                }
-            }
-        }
-    }
-
-    LazyColumn(
-        state = listState,
-        modifier = modifier.fillMaxHeight(),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        contentPadding = PaddingValues(vertical = 80.dp)
-    ) {
-        items(infiniteItems.size) { index ->
-            val item = infiniteItems[index]
-            val actualIndex = index % items.size
-            val isSelected = actualIndex == selectedIndex
-
-            // Calculate distance from center for fade effect
-            val centerIndex = middleStart + selectedIndex
-            val distance = abs(index - centerIndex)
-            val alpha = when {
-                distance == 0 -> 1f  // Selected item
-                distance == 1 -> 0.7f  // Adjacent items
-                distance == 2 -> 0.4f  // Further items
-                else -> 0.2f  // Distant items
-            }
-
-            // Check if this item is currently in the highlight zone (center area)
-            val isInHighlightZone = remember(listState, index) {
-                derivedStateOf {
-                    val layoutInfo = listState.layoutInfo
-                    val viewportCenter = layoutInfo.viewportSize.height / 2
-                    val itemInfo = layoutInfo.visibleItemsInfo.find { it.index == index }
-                    itemInfo?.let {
-                        val itemCenter = it.offset + it.size / 2
-                        abs(itemCenter - viewportCenter) < 20 // Item trong vùng highlight (20dp threshold)
-                    } ?: false
-                }
-            }.value
-
-            Text(
-                text = item,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(itemHeight)
-                    .padding(vertical = 8.dp)
-                    .alpha(alpha)
-                    .clickable {
-                        // Chỉ cho phép chọn bằng tay (click)
-                        if (actualIndex != selectedIndex) {
-                            onItemSelected(actualIndex)
-                        }
-                    },
-                fontSize = if (isSelected) 20.sp else if (distance <= 1) 18.sp else 16.sp,
-                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                color = when {
-                    isSelected -> Color(0xFFFF1493) // Màu hồng đậm khi được chọn chính thức
-                    isInHighlightZone -> Color(0xFFFF69B4) // Màu hồng vừa khi nằm trong vùng highlight
-                    else -> Color.Black // Màu đen bình thường
-                },
-                textAlign = TextAlign.Center
-            )
-        }
-    }
+private fun formatDate(date: Date): String {
+    val format = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
+    return format.format(date)
 }

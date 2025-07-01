@@ -63,7 +63,8 @@ fun SearchScreen(navController: NavController, viewModel: SearchViewModel = view
             // Search Bar
             OutlinedTextField(
                 value = query,
-                onValueChange = { query = it },
+                onValueChange = { query = it
+                    viewModel.clearResults()},
                 label = { Text("Nhập tên sản phẩm...") },
                 leadingIcon = {
                     Icon(Icons.Default.Search, contentDescription = "Tìm kiếm")

@@ -43,7 +43,7 @@ fun AllCategoriesScreen(
         // AppBar
         TopAppBar(
             title = {
-                Text("Danh mục", style = MaterialTheme.typography.titleLarge)
+                Text("Danh mục: ", style = MaterialTheme.typography.titleLarge)
             },
             navigationIcon = {
                 IconButton(onClick = onBackClick) {

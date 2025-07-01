@@ -21,9 +21,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.pizza_app.data.model.Order
 
-
 @Composable
-fun OrderList(orders: List<Order>, onDetailClick: (Int) -> Unit = {}) {
+fun OrderList(orders: List<Order>, onDetailClick: (String) -> Unit = {}) {
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
@@ -38,44 +37,48 @@ fun OrderList(orders: List<Order>, onDetailClick: (Int) -> Unit = {}) {
                 colors = CardDefaults.cardColors(containerColor = Color.White)
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
-                    // Header với mã đơn và trạng thái
+                    // Header với null safety
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            text = "Mã đơn: #${order.ma_don_hang}",
+                            text = "Mã đơn: #${order.ma_don_hang ?: "N/A"}", // SỬA: Handle null
                             fontWeight = FontWeight.Bold,
                             fontSize = 16.sp,
                             color = Color(0xFF333333)
                         )
 
-                        // Status chip với màu phù hợp
-                        Surface(
-                            color = when (order.trang_thai) {
+                        // Status chip với null safety
+                        val statusText = order.trang_thai ?: "unknown"
+                        androidx.compose.material3.Surface(
+                            color = when (statusText) {
                                 "cho_xac_nhan" -> Color(0xFFFF9800).copy(alpha = 0.1f)
+                                "dang_chuan_bi" -> Color(0xFFFF9800).copy(alpha = 0.1f)
                                 "dang_giao" -> Color(0xFF2196F3).copy(alpha = 0.1f)
                                 "hoan_thanh" -> Color(0xFF4CAF50).copy(alpha = 0.1f)
                                 "da_huy" -> Color(0xFFF44336).copy(alpha = 0.1f)
-                                else -> Color.Gray.copy(alpha = 0.1f)
+                                else -> Color.Gray.copy(alpha = 0.1f) // SỬA: Default for null/unknown
                             },
                             shape = RoundedCornerShape(8.dp)
                         ) {
                             Text(
-                                text = when (order.trang_thai) {
+                                text = when (statusText) {
                                     "cho_xac_nhan" -> "Chờ xác nhận"
+                                    "dang_chuan_bi" -> "Đang chuẩn bị"
                                     "dang_giao" -> "Đang giao"
                                     "hoan_thanh" -> "Hoàn thành"
                                     "da_huy" -> "Đã hủy"
-                                    else -> order.trang_thai
+                                    else -> "Không xác định" // SỬA: Handle null/unknown
                                 },
-                                color = when (order.trang_thai) {
+                                color = when (statusText) {
                                     "cho_xac_nhan" -> Color(0xFFFF9800)
+                                    "dang_chuan_bi" -> Color(0xFFFF9800)
                                     "dang_giao" -> Color(0xFF2196F3)
                                     "hoan_thanh" -> Color(0xFF4CAF50)
                                     "da_huy" -> Color(0xFFF44336)
-                                    else -> Color.Gray
+                                    else -> Color.Gray // SỬA: Default color
                                 },
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.Medium,
@@ -86,19 +89,18 @@ fun OrderList(orders: List<Order>, onDetailClick: (Int) -> Unit = {}) {
 
                     Spacer(modifier = Modifier.height(8.dp))
 
-                    // Thời gian đặt hàng
+                    // Thời gian với null safety
                     Text(
-                        text = "Đặt lúc: ${order.thoi_gian_giao_du_kien}",
+                        text = "Đặt lúc: ${order.thoi_gian_giao_du_kien ?: "Không xác định"}",
                         fontSize = 12.sp,
                         color = Color(0xFF666666)
                     )
 
                     Spacer(modifier = Modifier.height(8.dp))
 
-
-                    // Danh sách món
+                    // Danh sách món với null safety
                     order.items.forEach { item ->
-                        val itemName = when (item.loai_mat_hang) {
+                        val itemName = when (item.loai_mat_hang ?: "") {
                             "san_pham" -> item.ten_san_pham ?: "Sản phẩm"
                             "combo" -> item.ten_combo ?: "Combo"
                             else -> item.ten_san_pham ?: item.ten_combo ?: "Mặt hàng"
@@ -117,7 +119,7 @@ fun OrderList(orders: List<Order>, onDetailClick: (Int) -> Unit = {}) {
                             )
 
                             Text(
-                                text = "x${item.so_luong}",
+                                text = "x${item.so_luong ?: 0}", // SỬA: Handle null quantity
                                 fontSize = 13.sp,
                                 color = Color(0xFF666666),
                                 fontWeight = FontWeight.Medium
@@ -126,36 +128,39 @@ fun OrderList(orders: List<Order>, onDetailClick: (Int) -> Unit = {}) {
                     }
 
                     Spacer(modifier = Modifier.height(12.dp))
-
-                    // Divider
-                    Divider(color = Color(0xFFE0E0E0), thickness = 1.dp)
-
+                    androidx.compose.material3.Divider(color = Color(0xFFE0E0E0), thickness = 1.dp)
                     Spacer(modifier = Modifier.height(12.dp))
 
-                    // Tổng tiền và nút action
+                    // Tổng tiền với NULL SAFETY - QUAN TRỌNG!
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Column {
-                            // Hiển thị breakdown giá nếu có giảm giá
-                            if (order.giam_gia_ma_giam_gia > 0 || order.giam_gia_combo > 0) {
+                            // SỬA: Safe format với null check
+                            val tongTienSanPham = order.tong_tien_san_pham ?: 0.0
+                            val giamGiaMa = order.giam_gia_ma_giam_gia ?: 0.0
+                            val giamGiaCombo = order.giam_gia_combo ?: 0.0
+                            val phiGiaoHang = order.phi_giao_hang ?: 0.0
+                            val tongTienCuoi = order.tong_tien_cuoi_cung ?: 0.0
+
+                            if (giamGiaMa > 0 || giamGiaCombo > 0) {
                                 Text(
-                                    text = "Tạm tính: ${String.format("%,.0f", order.tong_tien_san_pham)} đ",
+                                    text = "Tạm tính: ${String.format("%,.0f", tongTienSanPham)} đ",
                                     fontSize = 12.sp,
                                     color = Color(0xFF666666)
                                 )
-                                if (order.giam_gia_ma_giam_gia > 0) {
+                                if (giamGiaMa > 0) {
                                     Text(
-                                        text = "Giảm giá: -${String.format("%,.0f", order.giam_gia_ma_giam_gia)} đ",
+                                        text = "Giảm giá: -${String.format("%,.0f", giamGiaMa)} đ",
                                         fontSize = 12.sp,
                                         color = Color(0xFF4CAF50)
                                     )
                                 }
-                                if (order.phi_giao_hang > 0) {
+                                if (phiGiaoHang > 0) {
                                     Text(
-                                        text = "Phí giao hàng: +${String.format("%,.0f", order.phi_giao_hang)} đ",
+                                        text = "Phí giao hàng: +${String.format("%,.0f", phiGiaoHang)} đ",
                                         fontSize = 12.sp,
                                         color = Color(0xFF666666)
                                     )
@@ -163,7 +168,7 @@ fun OrderList(orders: List<Order>, onDetailClick: (Int) -> Unit = {}) {
                             }
 
                             Text(
-                                text = "Tổng tiền: ${String.format("%,.0f", order.tong_tien_cuoi_cung)} đ",
+                                text = "Tổng tiền: ${String.format("%,.0f", tongTienCuoi)} đ",
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 16.sp,
                                 color = Color(0xFFFFB700)
@@ -171,7 +176,9 @@ fun OrderList(orders: List<Order>, onDetailClick: (Int) -> Unit = {}) {
                         }
 
                         OutlinedButton(
-                            onClick = { onDetailClick(order.ma_don_hang.toInt()) },
+                            onClick = {
+                                onDetailClick(order.ma_don_hang.toString() ?: "") // SỬA: Handle null ID
+                            },
                             colors = ButtonDefaults.outlinedButtonColors(
                                 contentColor = Color(0xFFFFB700)
                             ),

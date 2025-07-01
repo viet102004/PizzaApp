@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.pizza_app.data.model.Order
 import com.example.pizza_app.data.source.UserManager
+import com.example.pizza_app.data.source.mapDatabaseStatusToUI
 import com.example.pizza_app.data.source.mapUIStatusToDatabase
 import com.example.pizza_app.data.source.remote.RetrofitInstance
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -62,7 +63,7 @@ class OrderViewModel : ViewModel() {
     }
 
     fun filterOrdersByStatus(uiStatus: String) {
-        val validStatuses = mapUIStatusToDatabase(uiStatus)
+        val validStatuses = mapDatabaseStatusToUI(uiStatus)
         _filteredOrders.value = _orders.value.filter { it.trang_thai in validStatuses }
     }
 

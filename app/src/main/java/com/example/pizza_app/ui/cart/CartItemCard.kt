@@ -20,8 +20,11 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
@@ -32,124 +35,213 @@ import com.example.pizza_app.data.source.getFullImageUrl
 fun CartItemCard(
     item: CartItem,
     onQuantityChange: (Int) -> Unit,
-    onRemove: () -> Unit
+    onRemove: () -> Unit,
+    showControls: Boolean = true
 ) {
-    val selectedOptionsDisplay = item.selectedOptions.map {
-        "${it.tenLoai}: ${it.tenGiaTri}" + if (it.giaThem > 0) " (+${formatCurrency(it.giaThem)})" else ""
-    }
-
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 8.dp, vertical = 6.dp),
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
     ) {
-        Row(
+        Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically
+                .padding(16.dp)
         ) {
-            Box(
-                modifier = Modifier
-                    .size(80.dp)
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(Color(0xFFFFF3E0)),
-                contentAlignment = Alignment.Center
+            // Header: Hình ảnh + Thông tin cơ bản + Giá + Nút xóa
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.Top
             ) {
-                DisplayImage(item)
-            }
-
-            Spacer(modifier = Modifier.width(16.dp))
-
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = item.product.ten_san_pham,
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color.Black
-                )
-                Spacer(modifier = Modifier.height(4.dp))
-
-                selectedOptionsDisplay.forEach { optionDisplay ->
-                    Text(
-                        text = optionDisplay,
-                        fontSize = 14.sp,
-                        color = Color.Gray
-                    )
+                // Hình ảnh sản phẩm
+                Box(
+                    modifier = Modifier
+                        .size(80.dp)
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(Color(0xFFFFF3E0)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    DisplayImage(item)
                 }
 
-                Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.width(12.dp))
 
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    IconButton(
-                        onClick = {
-                            if (item.quantity > 1) onQuantityChange(item.quantity - 1)
-                        },
-                        modifier = Modifier
-                            .size(32.dp)
-                            .background(Color(0xFFF5F5F5), CircleShape)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Remove,
-                            contentDescription = "Giảm",
-                            tint = Color.Black,
-                            modifier = Modifier.size(16.dp)
-                        )
-                    }
-
-                    Spacer(modifier = Modifier.width(16.dp))
-
+                // Thông tin sản phẩm
+                Column(
+                    modifier = Modifier.weight(1f)
+                ) {
+                    // Tên sản phẩm
                     Text(
-                        text = item.quantity.toString().padStart(2, '0'),
-                        fontSize = 16.sp,
+                        text = item.product.ten_san_pham,
+                        fontSize = 18.sp,
                         fontWeight = FontWeight.Bold,
                         color = Color.Black,
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier.width(24.dp)
+                        maxLines = 2
                     )
 
-                    Spacer(modifier = Modifier.width(16.dp))
+                    Spacer(modifier = Modifier.height(8.dp))
 
+                    // Giá tiền
+                    Text(
+                        text = formatCurrency(item.totalPrice),
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFFFF6B35)
+                    )
+                }
+
+                // Nút xóa (góc trên phải)
+                if (showControls) {
                     IconButton(
-                        onClick = { onQuantityChange(item.quantity + 1) },
+                        onClick = onRemove,
                         modifier = Modifier
-                            .size(32.dp)
-                            .background(Color(0xFFFF6B35), CircleShape)
+                            .size(40.dp)
+                            .background(Color(0xFFFFE4E6), CircleShape)
                     ) {
                         Icon(
-                            imageVector = Icons.Default.Add,
-                            contentDescription = "Tăng",
-                            tint = Color.White,
-                            modifier = Modifier.size(16.dp)
+                            imageVector = Icons.Default.Delete,
+                            contentDescription = "Xóa",
+                            tint = Color(0xFFFF4757),
+                            modifier = Modifier.size(18.dp)
                         )
                     }
                 }
             }
 
-            Spacer(modifier = Modifier.width(16.dp))
+            // Tùy chọn sản phẩm
+            if (item.selectedOptions.isNotEmpty()) {
+                Spacer(modifier = Modifier.height(12.dp))
 
-            Column(horizontalAlignment = Alignment.End) {
-                Text(
-                    text = formatCurrency(item.totalPrice),
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color(0xFFFF6B35)
-                )
-
-                Spacer(modifier = Modifier.height(8.dp))
-
-                IconButton(
-                    onClick = onRemove,
-                    modifier = Modifier
-                        .size(48.dp)
-                        .background(Color(0xFFFFE4E6), CircleShape)
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(8.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color(0xFFF8F9FA))
                 ) {
-                    Icon(
-                        imageVector = Icons.Default.Delete,
-                        contentDescription = "Xóa",
-                        tint = Color(0xFFFF4757),
-                        modifier = Modifier.size(20.dp)
+                    Column(
+                        modifier = Modifier.padding(12.dp)
+                    ) {
+                        item.selectedOptions.forEach { option ->
+                            val annotatedText = buildAnnotatedString {
+                                withStyle(style = SpanStyle(fontWeight = FontWeight.SemiBold)) {
+                                    append(option.tenLoai)
+                                }
+                                append(": ${option.tenGiaTri}")
+
+                                if (option.giaThem > 0) {
+                                    append(" ")
+                                    withStyle(style = SpanStyle(
+                                        color = Color(0xFF4CAF50),
+                                        fontWeight = FontWeight.Medium
+                                    )) {
+                                        append("(+${formatCurrency(option.giaThem)})")
+                                    }
+                                }
+                            }
+
+                            Text(
+                                text = annotatedText,
+                                fontSize = 14.sp,
+                                color = Color(0xFF666666),
+                                modifier = Modifier.padding(vertical = 2.dp)
+                            )
+                        }
+                    }
+                }
+            }
+
+            // Footer: Controls hoặc thông tin số lượng
+            Spacer(modifier = Modifier.height(16.dp))
+
+            if (showControls) {
+                // Controls tăng giảm số lượng
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "Số lượng:",
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = Color.Black
+                    )
+
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        // Nút giảm
+                        IconButton(
+                            onClick = {
+                                if (item.quantity > 1) onQuantityChange(item.quantity - 1)
+                            },
+                            modifier = Modifier
+                                .size(36.dp)
+                                .background(
+                                    if (item.quantity > 1) Color(0xFFF5F5F5) else Color(0xFFE0E0E0),
+                                    CircleShape
+                                )
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Remove,
+                                contentDescription = "Giảm",
+                                tint = if (item.quantity > 1) Color.Black else Color.Gray,
+                                modifier = Modifier.size(18.dp)
+                            )
+                        }
+
+                        // Hiển thị số lượng
+                        Surface(
+                            modifier = Modifier.width(48.dp),
+                            shape = RoundedCornerShape(8.dp),
+                            color = Color(0xFFF8F9FA)
+                        ) {
+                            Text(
+                                text = item.quantity.toString(),
+                                fontSize = 18.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color.Black,
+                                textAlign = TextAlign.Center,
+                                modifier = Modifier.padding(vertical = 8.dp)
+                            )
+                        }
+
+                        // Nút tăng
+                        IconButton(
+                            onClick = { onQuantityChange(item.quantity + 1) },
+                            modifier = Modifier
+                                .size(36.dp)
+                                .background(Color(0xFFFF6B35), CircleShape)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Add,
+                                contentDescription = "Tăng",
+                                tint = Color.White,
+                                modifier = Modifier.size(18.dp)
+                            )
+                        }
+                    }
+                }
+            } else {
+                // Chỉ hiển thị thông tin số lượng
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text(
+                        text = "Số lượng:",
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = Color.Black
+                    )
+                    Text(
+                        text = item.quantity.toString(),
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFFFF6B35)
                     )
                 }
             }

@@ -17,7 +17,6 @@ import androidx.navigation.compose.navigation
 import androidx.navigation.navArgument
 import com.example.pizza_app.data.model.User
 import com.example.pizza_app.data.model.UserPreferences
-import com.example.pizza_app.data.source.ItemXamp
 import com.example.pizza_app.data.source.UserManager
 import com.example.pizza_app.ui.auth.ForgotPasswordScreen
 import com.example.pizza_app.ui.cart.CartScreen

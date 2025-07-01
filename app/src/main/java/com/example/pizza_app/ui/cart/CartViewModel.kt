@@ -48,6 +48,8 @@ class CartViewModel : ViewModel() {
         fetchCartItems()
     }
 
+
+
     fun fetchCartItems() {
         val user = UserManager.getUser()
 
@@ -125,6 +127,45 @@ class CartViewModel : ViewModel() {
         }
     }
 
+    fun updateCartItem(maMatHangGioHang: Int, newQuantity: Int, currentItem: CartItem) {
+        val user = UserManager.getUser()
+        if (user == null) {
+            _message.value = "Người dùng chưa đăng nhập"
+            clearCart()
+            return
+        }
+
+        viewModelScope.launch {
+            try {
+                val request = CapNhatGioHangRequest(
+                    so_luong = newQuantity,
+                    ghi_chu = currentItem.note,
+                    tuy_chon = currentItem.extraOptions, // Sử dụng extraOptions vì nó đã có đúng cấu trúc
+                    chi_tiet_combo = emptyList() // Nếu không phải combo
+                )
+
+                val response = RetrofitInstance.api.capNhatGioHang(maMatHangGioHang, request)
+
+                if (response.success) {
+                    _success.value = true
+                    _message.value = response.message ?: "Đã cập nhật giỏ hàng thành công"
+
+                    // Refresh lại giỏ hàng sau khi cập nhật
+                    fetchCartItems()
+                } else {
+                    _success.value = false
+                    _message.value = response.message ?: "Cập nhật thất bại"
+                }
+
+            } catch (e: Exception) {
+                _success.value = false
+                _message.value = "Lỗi cập nhật giỏ hàng: ${e.message}"
+                Log.e("CartViewModel", "Lỗi cập nhật giỏ hàng", e)
+            }
+        }
+    }
+
+    // Cập nhật lại function updateQuantity để sử dụng API
     fun updateQuantity(itemId: String, newQuantity: Int) {
         val user = UserManager.getUser()
         if (user == null) {
@@ -132,13 +173,26 @@ class CartViewModel : ViewModel() {
             return
         }
 
-        val updatedItems = _cartItems.value.map { item ->
-            if (item.id == itemId) item.copy(quantity = newQuantity, totalPrice = item.basePrice * newQuantity)
-            else item
+        // Tìm item hiện tại
+        val currentItem = _cartItems.value.find { it.id == itemId }
+        if (currentItem == null) {
+            _message.value = "Không tìm thấy mặt hàng trong giỏ hàng"
+            return
         }
-        _cartItems.value = updatedItems
-        updateSummary()
+
+        val updatedItem = currentItem.copy(
+            quantity = newQuantity,
+            totalPrice = calculateItemTotal(currentItem, newQuantity)
+        )
+
+        _cartItems.value = _cartItems.value.map {
+            if (it.id == itemId) updatedItem else it
+        }
+
+        // Thay đổi duy nhất: truyền currentItem thay vì updatedItem
+        updateCartItem(currentItem.maMatHangGioHang, newQuantity, currentItem)
     }
+
 
     fun removeFromCart(itemId: String) {
         val user = UserManager.getUser()
@@ -212,9 +266,16 @@ class CartViewModel : ViewModel() {
         }
     }
 
+    private fun calculateItemTotal(item: CartItem, newQuantity: Int): Double {
+        val basePrice = item.product.gia_co_ban
+        val optionsPrice = item.selectedOptions.sumOf { it.giaThem }
+        return (basePrice + optionsPrice) * newQuantity
+    }
+
     private fun updateSummary() {
         val items = _cartItems.value
         _itemCount.value = items.sumOf { it.quantity }
         _totalAmount.value = items.sumOf { it.totalPrice }
     }
+
 }

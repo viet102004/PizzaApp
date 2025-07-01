@@ -8,6 +8,7 @@ import com.example.pizza_app.data.model.AddressCreateRequest
 import com.example.pizza_app.data.model.AddressInfo
 import com.example.pizza_app.data.source.UserManager
 import com.example.pizza_app.data.source.remote.RetrofitInstance
+import com.example.pizza_app.data.source.remote.RetrofitInstance.api
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
@@ -138,6 +139,54 @@ class AddressViewModel : ViewModel() {
             }
         }
     }
+
+    fun updateAddress(
+        maThongTinGiaoHang: Long,
+        name: String,
+        phone: String,
+        street: String,
+        ward: String,
+        district: String,
+        province: String,
+        isDefault: Boolean, // <-- vẫn nhận từ UI là Boolean
+        notes: String?
+    ) {
+//        viewModelScope.launch {
+//            val userId = getUserId()
+//            if (userId == null) {
+//                success.value = false
+//                isLoading.value = false
+//                return@launch
+//            }
+//
+//            isLoading.value = true
+//            try {
+//                val result = api.updateDeliveryAddress(
+//                    maNguoiDung = userId,
+//                    maThongTinGiaoHang = maThongTinGiaoHang,
+//                    addressData = mapOf(
+//                        "ten_nguoi_nhan" to name,
+//                        "so_dien_thoai_nguoi_nhan" to phone,
+//                        "so_duong" to street,
+//                        "phuong_xa" to ward,
+//                        "quan_huyen" to district,
+//                        "tinh_thanh_pho" to province,
+//                        "la_dia_chi_mac_dinh" to if (isDefault) 1 else 0,
+//                        "ghi_chu" to notes.orEmpty()
+//                    )
+//                )
+//                message.value = "Cập nhật địa chỉ thành công"
+//                success.value = true
+//            } catch (e: Exception) {
+//                message.value = "Lỗi cập nhật: ${e.message}"
+//                success.value = false
+//            } finally {
+//                isLoading.value = false
+//            }
+//        }
+    }
+
+
 
     fun getAddressDetail(addressId: Long, onResult: (AddressInfo?) -> Unit) {
         val userId = getUserId() ?: return

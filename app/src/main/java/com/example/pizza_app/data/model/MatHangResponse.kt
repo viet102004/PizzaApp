@@ -25,6 +25,13 @@ data class MatHangResponse(
             )
         }
 
+        val extraOptions = (tuy_chon ?: emptyList()).map {
+            TuyChonRequest(
+                ma_gia_tri = it.ma_gia_tri,
+                gia_them = it.gia_them
+            )
+        }
+
         val id = "${loai_mat_hang}_${ma_mat_hang_gio_hang}"
         val name = ten_san_pham ?: ten_combo ?: "Không tên"
         val image = hinh_anh ?: hinh_anh_combo ?: ""
@@ -45,7 +52,10 @@ data class MatHangResponse(
             imageUrl = image,
             basePrice = gia_san_pham,
             selectedOptions = selectedOptions,
-            totalPrice = thanh_tien
+            extraOptions = extraOptions, // <-- thêm dòng này
+            totalPrice = thanh_tien,
+            maMatHangGioHang = this.ma_mat_hang_gio_hang,
+            note = this.ghi_chu
         )
     }
 }

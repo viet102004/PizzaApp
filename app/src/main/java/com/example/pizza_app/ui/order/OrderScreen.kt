@@ -2,6 +2,7 @@
 
 package com.example.pizza_app.ui.order
 
+import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -29,6 +30,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.pizza_app.R
 import com.example.pizza_app.ui.components.AuthDialog
@@ -40,62 +42,48 @@ fun OrderScreen(
     onNavigateTo: (String) -> Unit
 ) {
     val tabs = listOf("Chờ xác nhận", "Đang giao", "Hoàn thành", "Đã hủy")
+    val statusMap = listOf("cho_xac_nhan", "dang_giao", "hoan_thanh", "da_huy")
     var selectedTabIndex by remember { mutableStateOf(0) }
 
-    // State cho dialog
+    val viewModel: OrderViewModel = viewModel()
+    val orders by viewModel.orders.collectAsState()
+    val isLoading by viewModel.isLoading.collectAsState()
+    val errorMessage by viewModel.errorMessage.collectAsState()
+
     var showAuthDialog by remember { mutableStateOf(false) }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color(0xFFF8F9FA))
-    ) {
-        // Header
+    LaunchedEffect(Unit) {
+        if (isLoggedIn) {
+            viewModel.loadOrders()
+        }
+    }
+
+    // Debug logs
+    LaunchedEffect(orders) {
+        Log.d("OrderScreen", "Orders loaded: ${orders.size}")
+        orders.forEach { order ->
+            Log.d("OrderScreen", "Order ${order.ma_don_hang}: DB Status = ${order.trang_thai}, UI Status = ${order.trang_thai}")
+        }
+    }
+
+    Column(modifier = Modifier.fillMaxSize().background(Color(0xFFF8F9FA))) {
+        // TopAppBar
         TopAppBar(
-            title = {
-                Text(
-                    text = "Đơn hàng của tôi",
-                    fontSize = 26.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color.Black
-                )
-            },
+            title = { Text("Đơn hàng của tôi", fontSize = 26.sp, fontWeight = FontWeight.Bold) },
             actions = {
-                // Icon Search với background tròn
-
-                Spacer(modifier = Modifier.width(12.dp))
-
-                // Icon Favorite với background tròn
-                Box(
-                    modifier = Modifier
-                        .size(40.dp)
-                        .background(Color(0xFFFFB700), shape = CircleShape)
-                        .clickable {
-                            if (isLoggedIn) {
-                                onNavigateTo("favorite")
-                            } else {
-                                // Hiển thị dialog thay vì navigate trực tiếp
-                                showAuthDialog = true
-                            }
-                        },
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        Icons.Default.FavoriteBorder,
-                        contentDescription = "Yêu thích",
-                        tint = Color.White,
-                        modifier = Modifier.size(20.dp)
-                    )
+                IconButton(onClick = { /* TODO */ }) {
+                    Icon(Icons.Default.Search, contentDescription = "Search", tint = Color(0xFFFFB700))
                 }
-
-                Spacer(modifier = Modifier.width(16.dp))
+                IconButton(onClick = {
+                    if (isLoggedIn) onNavigateTo("favorite") else showAuthDialog = true
+                }) {
+                    Icon(Icons.Default.FavoriteBorder, contentDescription = "Favorite", tint = Color(0xFFFFB700))
+                }
             },
-            colors = TopAppBarDefaults.topAppBarColors(
-                containerColor = Color.Transparent
-            )
+            colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
         )
 
-        // Tabs với thiết kế đẹp hơn
+        // Tabs
         ScrollableTabRow(
             selectedTabIndex = selectedTabIndex,
             containerColor = Color.White,
@@ -128,28 +116,67 @@ fun OrderScreen(
 
         Divider(color = Color(0xFFE0E0E0), thickness = 1.dp)
 
-        // Nội dung theo tab
-        when (selectedTabIndex) {
-            0 -> OrderEmptyContent(onNavigateTo = onNavigateTo)
-            1 -> OrderEmptyContent(
-                title = "Chưa có đơn hàng đang giao",
-                subtitle = "Các đơn hàng đang được giao sẽ hiện thị tại đây",
+        // Content
+        if (!isLoggedIn) {
+            OrderEmptyContent(
+                title = "Vui lòng đăng nhập",
+                subtitle = "Bạn cần đăng nhập để xem các đơn hàng",
                 onNavigateTo = onNavigateTo
             )
-            2 -> OrderEmptyContent(
-                title = "Chưa có đơn hàng hoàn thành",
-                subtitle = "Lịch sử các đơn hàng đã hoàn thành sẽ xuất hiện ở đây",
-                onNavigateTo = onNavigateTo
-            )
-            3 -> OrderEmptyContent(
-                title = "Chưa có đơn hàng bị hủy",
-                subtitle = "Các đơn hàng đã hủy sẽ được hiển thị tại đây",
-                onNavigateTo = onNavigateTo
-            )
+        } else if (isLoading) {
+            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                CircularProgressIndicator(color = Color(0xFFFFB700))
+            }
+        } else if (errorMessage != null) {
+            // Error state
+            Column(
+                modifier = Modifier.fillMaxSize(),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+                Text(
+                    text = "Lỗi: $errorMessage",
+                    color = Color.Red,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.padding(16.dp)
+                )
+                Button(
+                    onClick = {
+                        viewModel.resetError()
+                        viewModel.loadOrders()
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFFB700))
+                ) {
+                    Text("Thử lại", color = Color.White)
+                }
+            }
+        } else {
+            val currentStatus = statusMap[selectedTabIndex]
+            val filteredOrders = orders.filter { it.trang_thai == currentStatus }
+
+            // Debug filtering
+            LaunchedEffect(selectedTabIndex, orders) {
+                Log.d("OrderScreen", "Filtering for status: $currentStatus")
+                Log.d("OrderScreen", "Available orders: ${orders.map { "${it.ma_don_hang}:${it.trang_thai}" }}")
+                Log.d("OrderScreen", "Filtered orders: ${filteredOrders.size}")
+            }
+
+            if (filteredOrders.isEmpty()) {
+                val emptyTitle = when (currentStatus) {
+                    "cho_xac_nhan" -> "Bạn chưa có đơn hàng nào đang chờ xác nhận"
+                    "dang_giao" -> "Chưa có đơn hàng đang giao"
+                    "hoan_thanh" -> "Chưa có đơn hàng hoàn thành"
+                    "da_huy" -> "Chưa có đơn hàng bị hủy"
+                    else -> "Không có đơn hàng"
+                }
+
+                OrderEmptyContent(title = emptyTitle, onNavigateTo = onNavigateTo)
+            } else {
+                OrderList(orders = filteredOrders)
+            }
         }
     }
 
-    // Auth Dialog - Thêm phần này giống như HomeScreen và CartScreen
     AuthDialog(
         showDialog = showAuthDialog,
         onDismiss = { showAuthDialog = false },
@@ -157,6 +184,7 @@ fun OrderScreen(
         onRegisterClick = { onNavigateTo("register") }
     )
 }
+
 
 @Composable
 fun OrderEmptyContent(

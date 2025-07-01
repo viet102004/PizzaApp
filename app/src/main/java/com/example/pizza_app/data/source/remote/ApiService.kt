@@ -1,7 +1,6 @@
 package com.example.pizza_app.data.source.remote
 
 import com.example.pizza_app.data.model.AapiResponse
-import com.example.pizza_app.data.model.AddToCartResponse
 import com.example.pizza_app.data.model.AddressCreateRequest
 import com.example.pizza_app.data.model.AddressInfo
 import com.example.pizza_app.data.model.AddressResponse
@@ -9,16 +8,20 @@ import retrofit2.http.Query
 import com.example.pizza_app.data.model.ApiResponse
 import com.example.pizza_app.data.model.Banner
 import com.example.pizza_app.data.model.BaseResponse
+import com.example.pizza_app.data.model.CapNhatGioHangRequest
 import com.example.pizza_app.data.model.Category
+import com.example.pizza_app.data.model.DatHangRequest
 import com.example.pizza_app.data.model.FavoriteResponse
 import com.example.pizza_app.data.model.ForgotPasswordResponse
 import com.example.pizza_app.data.model.GioHangResponse
 import com.example.pizza_app.data.model.IsFavoriteResponse
 import com.example.pizza_app.data.model.LoginResponse
+import com.example.pizza_app.data.model.Order
 import com.example.pizza_app.data.model.Product
 import com.example.pizza_app.data.model.ProductImage
 import com.example.pizza_app.data.model.ProductListResponse
 import com.example.pizza_app.data.model.ProductOptionsResponse
+import com.example.pizza_app.data.model.ResultResponse
 import com.example.pizza_app.data.model.ThemGioHangResponse
 import com.example.pizza_app.data.model.ThemVaoGioHangRequest
 import com.example.pizza_app.data.model.UserResponse
@@ -176,6 +179,12 @@ interface ApiService {
         @Path("ma_nguoi_dung") maNguoiDung: Int
     ): ApiResponse
 
+    @PUT("capNhatGioHang/{ma_mat_hang_gio_hang}")
+    suspend fun capNhatGioHang(
+        @Path("ma_mat_hang_gio_hang") maMatHangGioHang: Int,
+        @Body request: CapNhatGioHangRequest
+    ): ApiResponse
+
     @FormUrlEncoded
     @POST("quen-mat-khau")
     suspend fun forgotPassword(
@@ -221,5 +230,14 @@ interface ApiService {
         @Path("ma_nguoi_dung") maNguoiDung: Long,
         @Path("ma_thong_tin_giao_hang") maThongTinGiaoHang: Long
     ): AddressResponse<Any>
+
+    @POST("datHang")
+    suspend fun datHang(
+        @Body request: DatHangRequest
+    ): ResultResponse
+
+    @GET("danhSachDonHang/{ma_nguoi_dung}")
+    suspend fun getOrders(@Path("ma_nguoi_dung") maNguoiDung: Int): List<Order>
+
 
 }

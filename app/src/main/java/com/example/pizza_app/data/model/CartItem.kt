@@ -10,5 +10,7 @@ data class CartItem(
     val basePrice: Double,
     val extraOptions: List<TuyChonRequest> = emptyList(),
     val selectedOptions: List<TuyChonHienThi> = emptyList(),
-    val totalPrice: Double
+    val totalPrice: Double,
+    val maMatHangGioHang: Int,
+    val note: String? = null
 )

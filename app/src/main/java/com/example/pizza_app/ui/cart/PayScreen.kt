@@ -1,9 +1,11 @@
+
 package com.example.pizza_app.ui.cart
 
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -11,739 +13,776 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.KeyboardArrowRight
-import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.CardGiftcard
 import androidx.compose.material.icons.filled.CreditCard
 import androidx.compose.material.icons.filled.AccountBalanceWallet
 import androidx.compose.material.icons.filled.LocalOffer
-import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Payment
+import androidx.compose.material.icons.filled.Note
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
-
-data class VoucherItem(
-    val id: String,
-    val title: String,
-    val description: String,
-    val discount: String,
-    val minOrder: String,
-    val expiry: String,
-    val discountValue: Int,
-    val isEligible: Boolean = true,
-    val isUsed: Boolean = false
-)
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.pizza_app.data.model.CartItem
+import com.example.pizza_app.data.model.AddressInfo
+import com.example.pizza_app.ui.cart.CartItemCard
+import com.example.pizza_app.ui.profile.AddressViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun PayScreen(navController: NavController) {
-    var noteText by remember { mutableStateOf("") }
-    var selectedPaymentMethod by remember { mutableStateOf("cash") }
-    var selectedVoucher by remember { mutableStateOf<VoucherItem?>(null) }
-    var showVoucherDialog by remember { mutableStateOf(false) }
+fun PayScreen(
+    navController: NavController,
+    cartViewModel: CartViewModel = viewModel(),
+    addressViewModel: AddressViewModel = viewModel()
+) {
+    val cartItems by cartViewModel.cartItems.collectAsState()
+    val cartTotal by cartViewModel.totalAmount.collectAsState()
 
-    // Danh sách voucher với logic thực tế
-    val voucherList = listOf(
-        VoucherItem(
-            id = "SAVE13",
-            title = "Giảm 13%",
-            description = "Giảm 13% cho toàn bộ đơn hàng",
-            discount = "13%",
-            minOrder = "Đơn tối thiểu 100.000đ",
-            expiry = "HSD: 31/12/2024",
-            discountValue = 8580, // 13% của 66000
-            isEligible = false // Đơn hàng chưa đủ điều kiện
-        ),
-        VoucherItem(
-            id = "FLAT15K",
-            title = "Giảm 15.000đ",
-            description = "Giảm ngay 15.000đ cho đơn hàng",
-            discount = "15K",
-            minOrder = "Đơn tối thiểu 50.000đ",
-            expiry = "HSD: 25/12/2024",
-            discountValue = 15000,
-            isEligible = true
-        ),
-        VoucherItem(
-            id = "FLAT10K",
-            title = "Giảm 10.000đ",
-            description = "Giảm ngay 10.000đ cho đơn hàng",
-            discount = "10K",
-            minOrder = "Đơn tối thiểu 30.000đ",
-            expiry = "HSD: 28/12/2024",
-            discountValue = 10000,
-            isEligible = true
-        ),
-        VoucherItem(
-            id = "SAVE5",
-            title = "Giảm 5%",
-            description = "Giảm 5% cho toàn bộ đơn hàng",
-            discount = "5%",
-            minOrder = "Đơn tối thiểu 50.000đ",
-            expiry = "HSD: 31/01/2025",
-            discountValue = 3300,
-            isEligible = true
-        ),
-        VoucherItem(
-            id = "SAVE20",
-            title = "Giảm 20%",
-            description = "Giảm 20% cho toàn bộ đơn hàng",
-            discount = "20%",
-            minOrder = "Đơn tối thiểu 200.000đ",
-            expiry = "HSD: 30/11/2024",
-            discountValue = 0,
-            isEligible = false
-        )
+    // Address states
+    val isAddressLoading by addressViewModel.isLoading.collectAsState()
+    val addressMessage by addressViewModel.message.collectAsState()
+
+
+    var selectedDiscount by remember { mutableStateOf("") }
+    var selectedPaymentMethod by remember { mutableStateOf("Tiền mặt") }
+    var orderNote by remember { mutableStateOf("") }
+    var showAddressDialog by remember { mutableStateOf(false) }
+    var showDiscountDialog by remember { mutableStateOf(false) }
+    var discountAmount by remember { mutableStateOf(0.0) }
+
+
+    val viewModel = remember { PayViewModel() }
+    val isLoading by viewModel.isLoading.collectAsState()
+    val orderResult by viewModel.orderResult.collectAsState()
+    val errorMessage by viewModel.message.collectAsState()
+
+    val addressList by addressViewModel.addressList.collectAsState()
+    var selectedAddress by remember { mutableStateOf<AddressInfo?>(null) }
+    val selectedAddressId = selectedAddress?.ma_thong_tin_giao_hang
+
+
+
+
+    val paymentMethods = listOf(
+        PaymentMethod("Tiền mặt", "💰", "Thanh toán khi nhận hàng"),
+        PaymentMethod("MoMo", "📱", "Ví điện tử MoMo"),
+        PaymentMethod("ZaloPay", "⚡", "Ví điện tử ZaloPay"),
+        PaymentMethod("Thẻ tín dụng", "💳", "Visa, Master, JCB")
     )
 
-    val originalTotal = 66000
-    val discountAmount = selectedVoucher?.discountValue ?: 0
-    val finalTotal = originalTotal - discountAmount
+    val discountCodes = mapOf(
+        "GIAM10" to DiscountCode("GIAM10", "Giảm 10K", 10000.0, "Cho đơn từ 50K"),
+        "GIAM20" to DiscountCode("GIAM20", "Giảm 20K", 20000.0, "Cho đơn từ 100K"),
+        "FREESHIP" to DiscountCode("FREESHIP", "Miễn phí ship", 15000.0, "Cho đơn từ 80K")
+    )
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color.White)
-    ) {
-        // Header
-        TopAppBar(
-            title = {
-                Text(
-                    text = "Thanh toán",
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Medium,
-                    color = Color.Black
+    // Load data when screen opens
+    LaunchedEffect(Unit) {
+        cartViewModel.fetchCartItems()
+        addressViewModel.getDeliveryAddresses()
+    }
+
+    // Set default address when address list is loaded
+    LaunchedEffect(addressList) {
+        if (selectedAddress == null && addressList.isNotEmpty()) {
+            // Find default address or use first address
+            val defaultAddress = addressList.find { it.la_dia_chi_mac_dinh == 1 }
+                ?: addressList.firstOrNull()
+            selectedAddress = defaultAddress
+        }
+    }
+
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = {
+                    Text(
+                        "Thanh toán",
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White
+                    )
+                },
+                navigationIcon = {
+                    IconButton(onClick = { navController.popBackStack() }) {
+                        Icon(
+                            Icons.Default.ArrowBack,
+                            contentDescription = "Quay lại",
+                            tint = Color.White
+                        )
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = Color(0xFFFF6B35)
                 )
-            },
-            navigationIcon = {
-                IconButton(onClick = { navController.popBackStack() }) {
-                    Icon(
-                        imageVector = Icons.Default.ArrowBack,
-                        contentDescription = "Back",
-                        tint = Color.Black
-                    )
-                }
-            },
-            colors = TopAppBarDefaults.topAppBarColors(
-                containerColor = Color.Transparent
             )
-        )
-
-        Divider(color = Color.LightGray, thickness = 0.5.dp)
-
-        Column(
+        }
+    ) { padding ->
+        Box(
             modifier = Modifier
-                .weight(1f)
-                .verticalScroll(rememberScrollState())
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+                .fillMaxSize()
+                .padding(padding)
+                .background(Color(0xFFF8F9FA))
         ) {
-            // Địa chỉ giao hàng
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(containerColor = Color.White),
-                elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(bottom = 120.dp), // Space for bottom section
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+                contentPadding = PaddingValues(16.dp)
             ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.LocationOn,
-                        contentDescription = null,
-                        tint = Color.Gray,
-                        modifier = Modifier.size(20.dp)
-                    )
-
-                    Column(
-                        modifier = Modifier
-                            .weight(1f)
-                            .padding(start = 12.dp)
+                // 1. Địa chỉ giao hàng - Updated to show selected address
+                item {
+                    ModernCard(
+                        icon = Icons.Default.LocationOn,
+                        iconColor = Color(0xFF4CAF50),
+                        title = "Địa chỉ giao hàng",
+                        action = "Thay đổi",
+                        onActionClick = {
+                            addressViewModel.getDeliveryAddresses() // Refresh addresses
+                            showAddressDialog = true
+                        }
                     ) {
-                        Text(
-                            text = "100 Chiến Thắng",
-                            fontSize = 16.sp,
-                            fontWeight = FontWeight.Medium
-                        )
-                        Text(
-                            text = "P.9, Q.Phú Nhuận, Hồ Chí Minh",
-                            fontSize = 14.sp,
-                            color = Color.Gray
-                        )
-                    }
-
-                    Icon(
-                        imageVector = Icons.Default.KeyboardArrowRight,
-                        contentDescription = null,
-                        tint = Color.Gray
-                    )
-                }
-            }
-
-            // Thông tin món ăn
-            Text(
-                text = "Trà Sữa Maycha - 5A Thích Quảng Đức",
-                fontSize = 16.sp,
-                fontWeight = FontWeight.Medium
-            )
-
-            // Item món ăn
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(containerColor = Color.White),
-                elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
-            ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp)
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .size(60.dp)
-                            .clip(RoundedCornerShape(8.dp))
-                            .background(Color.LightGray),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text("🧋", fontSize = 24.sp)
-                    }
-
-                    Column(
-                        modifier = Modifier
-                            .weight(1f)
-                            .padding(start = 12.dp)
-                    ) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
+                        if (selectedAddress != null) {
+                            Column {
+                                Text(
+                                    text = selectedAddress!!.ten_nguoi_nhan ?: "",
+                                    fontSize = 14.sp,
+                                    fontWeight = FontWeight.Medium,
+                                    color = Color(0xFF1A1A1A)
+                                )
+                                Text(
+                                    text = selectedAddress!!.so_dien_thoai_nguoi_nhan ?: "",
+                                    fontSize = 13.sp,
+                                    color = Color(0xFF666666),
+                                    modifier = Modifier.padding(top = 2.dp)
+                                )
+                                Text(
+                                    text = buildString {
+                                        selectedAddress!!.so_duong?.let { append(it) }
+                                        selectedAddress!!.phuong_xa?.let { append(", $it") }
+                                        selectedAddress!!.quan_huyen?.let { append(", $it") }
+                                        selectedAddress!!.tinh_thanh_pho?.let { append(", $it") }
+                                    },
+                                    fontSize = 13.sp,
+                                    color = Color(0xFF666666),
+                                    lineHeight = 18.sp,
+                                    modifier = Modifier.padding(top = 4.dp)
+                                )
+                                if (selectedAddress!!.la_dia_chi_mac_dinh == 1) {
+                                    Surface(
+                                        shape = RoundedCornerShape(12.dp),
+                                        color = Color(0xFF4CAF50).copy(alpha = 0.1f),
+                                        modifier = Modifier.padding(top = 6.dp)
+                                    ) {
+                                        Text(
+                                            text = "Địa chỉ mặc định",
+                                            fontSize = 11.sp,
+                                            fontWeight = FontWeight.Medium,
+                                            color = Color(0xFF4CAF50),
+                                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                                        )
+                                    }
+                                }
+                            }
+                        } else {
                             Text(
-                                text = "x1",
+                                text = if (addressList.isEmpty()) "Chưa có địa chỉ giao hàng" else "Đang tải địa chỉ...",
                                 fontSize = 14.sp,
-                                fontWeight = FontWeight.Medium
-                            )
-                            Text(
-                                text = "45.000đ",
-                                fontSize = 16.sp,
-                                fontWeight = FontWeight.Bold
+                                color = Color(0xFF888888)
                             )
                         }
+                    }
+                }
 
-                        Text(
-                            text = "Lục Trà Măng Cụt Chanh Dây",
-                            fontSize = 14.sp,
-                            fontWeight = FontWeight.Medium,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
-                        )
+                // 2. Danh sách sản phẩm - Enhanced header
+                item {
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.cardColors(containerColor = Color.White),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 3.dp),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(16.dp)
+                        ) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = "Sản phẩm đã chọn",
+                                    fontSize = 16.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color(0xFF1A1A1A)
+                                )
+                                Surface(
+                                    shape = RoundedCornerShape(20.dp),
+                                    color = Color(0xFFFF6B35).copy(alpha = 0.1f)
+                                ) {
+                                    Text(
+                                        text = "${cartItems.size} món",
+                                        fontSize = 12.sp,
+                                        fontWeight = FontWeight.Medium,
+                                        color = Color(0xFFFF6B35),
+                                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp)
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
 
-                        Text(
-                            text = "Chọn size: Size M",
-                            fontSize = 12.sp,
-                            color = Color.Gray
-                        )
+                // Items trong giỏ hàng - Keep original
+                items(cartItems, key = { it.id }) { item ->
+                    PaymentItemCard(item = item)
+                }
 
-                        Text(
-                            text = "Chọn mức ngọt: Ngọt bình thường",
-                            fontSize = 12.sp,
-                            color = Color.Gray
-                        )
+                // 3. Tổng tiền sản phẩm - Enhanced design
+                item {
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.cardColors(containerColor = Color.White),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 3.dp),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(16.dp)
+                        ) {
+                            Text(
+                                text = "Chi tiết thanh toán",
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color(0xFF1A1A1A),
+                                modifier = Modifier.padding(bottom = 12.dp)
+                            )
 
-                        Text(
-                            text = "Chọn mức đá: Không đá",
-                            fontSize = 12.sp,
-                            color = Color.Gray
-                        )
+                            PaymentDetailRow("Tạm tính", formatCurrency(cartTotal))
+                            PaymentDetailRow("Phí vận chuyển", "Miễn phí", valueColor = Color(0xFF4CAF50))
 
-                        Text(
-                            text = "Topping: Kem trứng khế",
-                            fontSize = 12.sp,
-                            color = Color.Gray
-                        )
+                            if (selectedDiscount.isNotEmpty()) {
+                                PaymentDetailRow(
+                                    "Giảm giá ($selectedDiscount)",
+                                    "-${formatCurrency(discountAmount)}",
+                                    valueColor = Color(0xFFFF6B35)
+                                )
+                            }
 
-                        Text(
-                            text = "Sửa",
-                            fontSize = 12.sp,
-                            color = Color.Blue,
-                            modifier = Modifier.padding(top = 4.dp)
+                            Divider(
+                                modifier = Modifier.padding(vertical = 12.dp),
+                                color = Color(0xFFE0E0E0)
+                            )
+
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = "Tổng cộng",
+                                    fontSize = 16.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color(0xFF1A1A1A)
+                                )
+                                Text(
+                                    text = formatCurrency(cartTotal - discountAmount),
+                                    fontSize = 18.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color(0xFFFF6B35)
+                                )
+                            }
+                        }
+                    }
+                }
+
+                // 4. Mã giảm giá - Enhanced design
+                item {
+                    ModernCard(
+                        icon = Icons.Default.LocalOffer,
+                        iconColor = Color(0xFFFF6B35),
+                        title = "Mã giảm giá",
+                        action = "Chọn mã",
+                        onActionClick = { showDiscountDialog = true }
+                    ) {
+                        if (selectedDiscount.isNotEmpty()) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Column {
+                                    Text(
+                                        text = selectedDiscount,
+                                        fontSize = 14.sp,
+                                        fontWeight = FontWeight.Medium,
+                                        color = Color(0xFF4CAF50)
+                                    )
+                                    Text(
+                                        text = discountCodes[selectedDiscount]?.description ?: "",
+                                        fontSize = 12.sp,
+                                        color = Color(0xFF888888)
+                                    )
+                                }
+                                Surface(
+                                    shape = RoundedCornerShape(8.dp),
+                                    color = Color(0xFF4CAF50).copy(alpha = 0.1f)
+                                ) {
+                                    Text(
+                                        text = "-${formatCurrency(discountAmount)}",
+                                        fontSize = 14.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = Color(0xFF4CAF50),
+                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                                    )
+                                }
+                            }
+                        } else {
+                            Text(
+                                text = "Chọn mã giảm giá để tiết kiệm hơn",
+                                fontSize = 14.sp,
+                                color = Color(0xFF888888)
+                            )
+                        }
+                    }
+                }
+
+                // 5. Phương thức thanh toán - Enhanced design
+                item {
+                    ModernCard(
+                        icon = Icons.Default.Payment,
+                        iconColor = Color(0xFF2196F3),
+                        title = "Phương thức thanh toán"
+                    ) {
+                        Column(
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            paymentMethods.forEach { method ->
+                                PaymentMethodItem(
+                                    method = method,
+                                    isSelected = selectedPaymentMethod == method.name,
+                                    onSelect = { selectedPaymentMethod = method.name }
+                                )
+                            }
+                        }
+                    }
+                }
+
+                // 6. Ghi chú - Enhanced design
+                item {
+                    ModernCard(
+                        icon = Icons.Default.Note,
+                        iconColor = Color(0xFF9C27B0),
+                        title = "Ghi chú đơn hàng"
+                    ) {
+                        OutlinedTextField(
+                            value = orderNote,
+                            onValueChange = { orderNote = it },
+                            modifier = Modifier.fillMaxWidth(),
+                            placeholder = {
+                                Text(
+                                    "Nhập ghi chú cho đơn hàng...",
+                                    color = Color(0xFF999999)
+                                )
+                            },
+                            maxLines = 3,
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedBorderColor = Color(0xFFFF6B35),
+                                cursorColor = Color(0xFFFF6B35),
+                                unfocusedBorderColor = Color(0xFFE0E0E0)
+                            ),
+                            shape = RoundedCornerShape(8.dp)
                         )
                     }
                 }
             }
 
-            // Chi tiết thanh toán
+            // 7. Bottom section - Enhanced design
             Card(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .align(Alignment.BottomCenter),
                 colors = CardDefaults.cardColors(containerColor = Color.White),
-                elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+                elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
+                shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp)
             ) {
                 Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp)
+                    modifier = Modifier.padding(20.dp)
                 ) {
-                    Text(
-                        text = "Chi tiết thanh toán",
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.Medium,
-                        modifier = Modifier.padding(bottom = 12.dp)
-                    )
-
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Text(
-                            text = "Tạm tính (1 phần)",
-                            fontSize = 14.sp,
-                            color = Color.Gray
-                        )
-                        Text(
-                            text = "45.000đ",
-                            fontSize = 14.sp,
-                            color = Color.Gray
-                        )
-                    }
-
-                    Spacer(modifier = Modifier.height(8.dp))
-
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
+                        Column {
                             Text(
-                                text = "Phí áp dụng",
+                                text = "Tổng thanh toán",
                                 fontSize = 14.sp,
-                                color = Color.Gray
+                                color = Color(0xFF666666)
                             )
                             Text(
-                                text = " ⓘ",
-                                fontSize = 12.sp,
-                                color = Color.Gray
+                                text = formatCurrency(cartTotal - discountAmount),
+                                fontSize = 24.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color(0xFFFF6B35)
                             )
+                            if (discountAmount > 0) {
+                                Text(
+                                    text = "Tiết kiệm ${formatCurrency(discountAmount)}",
+                                    fontSize = 12.sp,
+                                    color = Color(0xFF4CAF50),
+                                    fontWeight = FontWeight.Medium
+                                )
+                            }
                         }
-                        Text(
-                            text = "21.000đ",
-                            fontSize = 14.sp,
-                            color = Color.Gray
-                        )
-                    }
 
-                    // Hiển thị giảm giá nếu có
-                    if (selectedVoucher != null) {
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween
+                        Button(
+                            onClick = {
+                                viewModel.datHang(
+                                    maThongTinGiaoHang = selectedAddressId!!.toInt(),
+                                    phuongThucThanhToan = selectedPaymentMethod,
+                                    maGiamGia = null,
+                                    ghiChu = "noteText",
+                                    thoiGianGiaoDuKien = "2025-07-01 15:00:00" // Nếu có chọn lịch, format yyyy-MM-dd HH:mm:ss
+                                )
+                            },
+                            enabled = !isLoading,
+                            modifier = Modifier.fillMaxWidth()
                         ) {
-                            Text(
-                                text = "Giảm giá (${selectedVoucher!!.title})",
-                                fontSize = 14.sp,
-                                color = Color.Red
-                            )
-                            Text(
-                                text = "-${String.format("%,d", discountAmount)}đ",
-                                fontSize = 14.sp,
-                                color = Color.Red
-                            )
+                            if (isLoading) {
+                                CircularProgressIndicator(
+                                    color = Color.White,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                            } else {
+                                Text("Đặt hàng")
+                            }
                         }
-                    }
 
-                    Divider(
-                        modifier = Modifier.padding(vertical = 12.dp),
-                        color = Color.LightGray,
-                        thickness = 0.5.dp
-                    )
-
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Text(
-                            text = "Tổng cộng",
-                            fontSize = 16.sp,
-                            fontWeight = FontWeight.Bold
-                        )
-                        Text(
-                            text = "${String.format("%,d", finalTotal)}đ",
-                            fontSize = 16.sp,
-                            fontWeight = FontWeight.Bold
-                        )
                     }
                 }
-            }
-
-            // Voucher - UI đã cải thiện
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable { showVoucherDialog = true },
-                colors = CardDefaults.cardColors(containerColor = Color.White),
-                elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
-            ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.LocalOffer,
-                        contentDescription = null,
-                        tint = Color(0xFFFF6B35),
-                        modifier = Modifier.size(20.dp)
-                    )
-
-                    Column(
-                        modifier = Modifier
-                            .weight(1f)
-                            .padding(start = 12.dp)
-                    ) {
-                        Text(
-                            text = "Voucher giảm giá",
-                            fontSize = 16.sp,
-                            fontWeight = FontWeight.Medium
-                        )
-                        Text(
-                            text = selectedVoucher?.title ?: "Chọn hoặc nhập mã voucher",
-                            fontSize = 14.sp,
-                            color = if (selectedVoucher != null) Color(0xFFFF6B35) else Color.Gray
-                        )
-                        if (selectedVoucher != null) {
-                            Text(
-                                text = "Tiết kiệm: ${String.format("%,d", discountAmount)}đ",
-                                fontSize = 12.sp,
-                                color = Color(0xFF4CAF50),
-                                fontWeight = FontWeight.Medium
-                            )
-                        }
-                    }
-
-                    Icon(
-                        imageVector = Icons.Default.KeyboardArrowRight,
-                        contentDescription = null,
-                        tint = Color.Gray
-                    )
-                }
-            }
-
-            // Phương thức thanh toán
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(containerColor = Color.White),
-                elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
-            ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp)
-                ) {
-                    Text(
-                        text = "Phương thức thanh toán",
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.Medium,
-                        modifier = Modifier.padding(bottom = 12.dp)
-                    )
-
-                    // Tiền mặt
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable { selectedPaymentMethod = "cash" }
-                            .padding(vertical = 8.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = "💰",
-                            fontSize = 18.sp,
-                            modifier = Modifier.padding(end = 12.dp)
-                        )
-                        Text(
-                            text = "Tiền mặt",
-                            fontSize = 14.sp,
-                            modifier = Modifier.weight(1f)
-                        )
-                        RadioButton(
-                            selected = selectedPaymentMethod == "cash",
-                            onClick = { selectedPaymentMethod = "cash" }
-                        )
-                    }
-
-                    // Thẻ tín dụng/ghi nợ
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable { selectedPaymentMethod = "card" }
-                            .padding(vertical = 8.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.CreditCard,
-                            contentDescription = null,
-                            tint = Color(0xFF4CAF50),
-                            modifier = Modifier.size(18.dp)
-                        )
-                        Spacer(modifier = Modifier.width(12.dp))
-                        Text(
-                            text = "Thẻ tín dụng/ghi nợ",
-                            fontSize = 14.sp,
-                            modifier = Modifier.weight(1f)
-                        )
-                        RadioButton(
-                            selected = selectedPaymentMethod == "card",
-                            onClick = { selectedPaymentMethod = "card" }
-                        )
-                    }
-
-                    // Ví điện tử
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable { selectedPaymentMethod = "ewallet" }
-                            .padding(vertical = 8.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.AccountBalanceWallet,
-                            contentDescription = null,
-                            tint = Color(0xFF2196F3),
-                            modifier = Modifier.size(18.dp)
-                        )
-                        Spacer(modifier = Modifier.width(12.dp))
-                        Text(
-                            text = "Ví điện tử",
-                            fontSize = 14.sp,
-                            modifier = Modifier.weight(1f)
-                        )
-                        RadioButton(
-                            selected = selectedPaymentMethod == "ewallet",
-                            onClick = { selectedPaymentMethod = "ewallet" }
-                        )
-                    }
-                }
-            }
-        }
-
-        // Bottom section - Tổng tiền và nút đặt món
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            colors = CardDefaults.cardColors(containerColor = Color.White),
-            elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
-        ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp)
-            ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Column {
-                        Text(
-                            text = "Tổng số tiền",
-                            fontSize = 14.sp,
-                            color = Color.Gray
-                        )
-                        if (selectedVoucher != null) {
-                            Text(
-                                text = "Đã tiết kiệm: ${String.format("%,d", discountAmount)}đ",
-                                fontSize = 12.sp,
-                                color = Color(0xFF4CAF50),
-                                fontWeight = FontWeight.Medium
-                            )
-                        }
-                    }
-                    Text(
-                        text = "${String.format("%,d", finalTotal)}đ",
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Color.Black
-                    )
-                }
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                Button(
-                    onClick = { /* Handle order */ },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(48.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = Color(0xFFFF6B35)
-                    ),
-                    shape = RoundedCornerShape(8.dp)
-                ) {
-                    Text(
-                        text = "Đặt món",
-                        color = Color.White,
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-                }
-
-                Spacer(modifier = Modifier.height(16.dp))
             }
         }
     }
 
-    // Dialog chọn voucher - UI đã cải thiện đáng kể
-    if (showVoucherDialog) {
+    if (showAddressDialog) {
         AlertDialog(
-            onDismissRequest = { showVoucherDialog = false },
-            containerColor = Color.White,
-            modifier = Modifier.fillMaxWidth(),
+            onDismissRequest = { showAddressDialog = false },
             title = {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = "Chọn voucher",
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Color.Black
-                    )
-                    IconButton(
-                        onClick = { showVoucherDialog = false },
-                        modifier = Modifier.size(24.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Close,
-                            contentDescription = "Đóng",
-                            tint = Color.Gray
-                        )
-                    }
-                }
+                Text(
+                    "Chọn địa chỉ giao hàng",
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 18.sp
+                )
             },
             text = {
-                Column(
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    // Header thông tin
-                    Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = CardDefaults.cardColors(
-                            containerColor = Color(0xFFF5F5F5)
-                        ),
-                        shape = RoundedCornerShape(8.dp)
-                    ) {
-                        Row(
+                Column {
+                    if (isAddressLoading) {
+                        // Show loading indicator
+                        Box(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(12.dp),
-                            verticalAlignment = Alignment.CenterVertically
+                                .height(100.dp),
+                            contentAlignment = Alignment.Center
                         ) {
-                            Icon(
-                                imageVector = Icons.Default.LocalOffer,
-                                contentDescription = null,
-                                tint = Color(0xFFFF6B35),
-                                modifier = Modifier.size(20.dp)
+                            CircularProgressIndicator(
+                                color = Color(0xFFFF6B35)
                             )
-                            Spacer(modifier = Modifier.width(8.dp))
+                        }
+                    } else if (addressList.isEmpty()) {
+                        // Show empty state
+                        Column(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
                             Text(
-                                text = "Đơn hàng: ${String.format("%,d", originalTotal)}đ",
+                                "Chưa có địa chỉ giao hàng",
                                 fontSize = 14.sp,
-                                fontWeight = FontWeight.Medium,
-                                color = Color.Black
+                                color = Color(0xFF666666)
+                            )
+                            Spacer(modifier = Modifier.height(16.dp))
+                        }
+                    } else {
+                        // Show address list
+                        addressList.forEach { address ->
+                            AddressRadioItem(
+                                address = address,
+                                isSelected = selectedAddress?.ma_thong_tin_giao_hang == address.ma_thong_tin_giao_hang,
+                                onSelect = {
+                                    selectedAddress = address
+                                    showAddressDialog = false
+                                }
                             )
                         }
+                        Spacer(modifier = Modifier.height(16.dp))
                     }
 
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    // Không chọn voucher
-                    VoucherDialogItem(
-                        title = "Không sử dụng voucher",
-                        description = null,
-                        discount = null,
-                        savings = null,
-                        isSelected = selectedVoucher == null,
-                        isEligible = true,
-                        onClick = {
-                            selectedVoucher = null
-                            showVoucherDialog = false
-                        }
-                    )
-
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    // Danh sách voucher
-                    voucherList.forEach { voucher ->
-                        VoucherDialogItem(
-                            title = voucher.title,
-                            description = voucher.description,
-                            discount = voucher.discount,
-                            savings = if (voucher.isEligible) voucher.discountValue else null,
-                            isSelected = selectedVoucher?.id == voucher.id,
-                            isEligible = voucher.isEligible,
-                            minOrder = voucher.minOrder,
-                            onClick = {
-                                if (voucher.isEligible) {
-                                    selectedVoucher = voucher
-                                    showVoucherDialog = false
-                                }
-                            }
-                        )
-
-                        if (voucher != voucherList.last()) {
-                            Spacer(modifier = Modifier.height(8.dp))
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    // Button nhập mã
+                    // Nút Thêm địa chỉ mới
                     OutlinedButton(
                         onClick = {
-                            // TODO: Navigate to voucher input screen
-                            showVoucherDialog = false
+                            showAddressDialog = false
+                            navController.navigate("add_address")
                         },
                         modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp),
+                        border = ButtonDefaults.outlinedButtonBorder.copy(
+                            width = 1.dp,
+                            brush = androidx.compose.ui.graphics.Brush.linearGradient(
+                                listOf(Color(0xFFFF6B35), Color(0xFFFFB700))
+                            )
+                        ),
                         colors = ButtonDefaults.outlinedButtonColors(
                             contentColor = Color(0xFFFF6B35)
-                        ),
-                        border = androidx.compose.foundation.BorderStroke(
-                            1.dp,
-                            Color(0xFFFF6B35)
-                        ),
-                        shape = RoundedCornerShape(8.dp)
+                        )
                     ) {
-                        Icon(
-                            imageVector = Icons.Default.CardGiftcard,
-                            contentDescription = null,
-                            modifier = Modifier.size(16.dp)
-                        )
+                        Icon(Icons.Default.Add, contentDescription = null)
                         Spacer(modifier = Modifier.width(8.dp))
-                        Text(
-                            text = "Nhập mã voucher",
-                            fontSize = 14.sp,
-                            fontWeight = FontWeight.Medium
-                        )
+                        Text("Thêm địa chỉ mới")
                     }
                 }
             },
-            confirmButton = {},
-            dismissButton = {}
+            confirmButton = {
+                TextButton(
+                    onClick = { showAddressDialog = false },
+                    colors = ButtonDefaults.textButtonColors(
+                        contentColor = Color(0xFFFF6B35)
+                    )
+                ) {
+                    Text("Đóng", fontWeight = FontWeight.Medium)
+                }
+            },
+            shape = RoundedCornerShape(16.dp)
+        )
+    }
+
+    // Enhanced Discount Dialog (unchanged)
+    if (showDiscountDialog) {
+        AlertDialog(
+            onDismissRequest = { showDiscountDialog = false },
+            title = {
+                Text(
+                    "Chọn mã giảm giá",
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 18.sp
+                )
+            },
+            text = {
+                Column {
+                    discountCodes.forEach { (code, discount) ->
+                        Surface(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    selectedDiscount = code
+                                    discountAmount = discount.amount
+                                    showDiscountDialog = false
+                                }
+                                .padding(vertical = 4.dp),
+                            shape = RoundedCornerShape(8.dp),
+                            color = if (selectedDiscount == code)
+                                Color(0xFFFF6B35).copy(alpha = 0.1f)
+                            else Color.Transparent
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(12.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        code,
+                                        fontSize = 14.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = Color(0xFF1A1A1A)
+                                    )
+                                    Text(
+                                        discount.title,
+                                        fontSize = 12.sp,
+                                        color = Color(0xFF666666)
+                                    )
+                                    Text(
+                                        discount.description,
+                                        fontSize = 11.sp,
+                                        color = Color(0xFF888888)
+                                    )
+                                }
+                                Text(
+                                    "-${formatCurrency(discount.amount)}",
+                                    fontSize = 14.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color(0xFFFF6B35)
+                                )
+                            }
+                        }
+                    }
+
+                    if (selectedDiscount.isNotEmpty()) {
+                        Divider(modifier = Modifier.padding(vertical = 8.dp))
+                        Surface(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    selectedDiscount = ""
+                                    discountAmount = 0.0
+                                    showDiscountDialog = false
+                                }
+                                .padding(vertical = 4.dp),
+                            shape = RoundedCornerShape(8.dp),
+                            color = Color.Transparent
+                        ) {
+                            Text(
+                                "Không sử dụng mã giảm giá",
+                                fontSize = 14.sp,
+                                color = Color(0xFFFF5722),
+                                modifier = Modifier.padding(12.dp),
+                                fontWeight = FontWeight.Medium
+                            )
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = { showDiscountDialog = false },
+                    colors = ButtonDefaults.textButtonColors(
+                        contentColor = Color(0xFFFF6B35)
+                    )
+                ) {
+                    Text("Đóng", fontWeight = FontWeight.Medium)
+                }
+            },
+            shape = RoundedCornerShape(16.dp)
         )
     }
 }
+
+// New composable for address radio items
+@Composable
+fun AddressRadioItem(
+    address: AddressInfo,
+    isSelected: Boolean,
+    onSelect: () -> Unit
+) {
+    Surface(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onSelect() }
+            .padding(vertical = 4.dp),
+        shape = RoundedCornerShape(8.dp),
+        color = if (isSelected) Color(0xFFFF6B35).copy(alpha = 0.05f) else Color.Transparent,
+        border = if (isSelected) androidx.compose.foundation.BorderStroke(
+            1.dp,
+            Color(0xFFFF6B35).copy(alpha = 0.3f)
+        ) else null
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(12.dp),
+            verticalAlignment = Alignment.Top
+        ) {
+            RadioButton(
+                selected = isSelected,
+                onClick = onSelect,
+                colors = RadioButtonDefaults.colors(
+                    selectedColor = Color(0xFFFF6B35)
+                ),
+                modifier = Modifier.padding(top = 4.dp)
+            )
+            Spacer(modifier = Modifier.width(12.dp))
+            Column(
+                modifier = Modifier.weight(1f)
+            ) {
+                // Name and phone
+                Row(
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(
+                        text = address.ten_nguoi_nhan ?: "",
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = Color(0xFF1A1A1A)
+                    )
+                    if (address.la_dia_chi_mac_dinh == 1) {
+                        Surface(
+                            shape = RoundedCornerShape(8.dp),
+                            color = Color(0xFF4CAF50).copy(alpha = 0.1f)
+                        ) {
+                            Text(
+                                text = "Mặc định",
+                                fontSize = 10.sp,
+                                fontWeight = FontWeight.Medium,
+                                color = Color(0xFF4CAF50),
+                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                            )
+                        }
+                    }
+                }
+
+                Text(
+                    text = address.so_dien_thoai_nguoi_nhan ?: "",
+                    fontSize = 13.sp,
+                    color = Color(0xFF666666),
+                    modifier = Modifier.padding(top = 2.dp)
+                )
+
+                // Full address
+                Text(
+                    text = buildString {
+                        address.so_duong?.let { append(it) }
+                        address.phuong_xa?.let { append(", $it") }
+                        address.quan_huyen?.let { append(", $it") }
+                        address.tinh_thanh_pho?.let { append(", $it") }
+                    },
+                    fontSize = 13.sp,
+                    color = Color(0xFF666666),
+                    lineHeight = 18.sp,
+                    modifier = Modifier.padding(top = 4.dp)
+                )
+
+                // Notes if available
+                address.ghi_chu?.let { notes ->
+                    if (notes.isNotBlank()) {
+                        Text(
+                            text = "Ghi chú: $notes",
+                            fontSize = 12.sp,
+                            color = Color(0xFF888888),
+                            modifier = Modifier.padding(top = 4.dp)
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+// Data classes for better organization (unchanged)
+data class PaymentMethod(
+    val name: String,
+    val icon: String,
+    val description: String
+)
+
+data class DiscountCode(
+    val code: String,
+    val title: String,
+    val amount: Double,
+    val description: String
+)

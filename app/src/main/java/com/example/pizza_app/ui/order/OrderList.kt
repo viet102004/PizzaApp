@@ -1,7 +1,13 @@
 package com.example.pizza_app.ui.order
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.Divider
+import androidx.compose.material.Surface
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.OutlinedButton
@@ -17,37 +23,162 @@ import com.example.pizza_app.data.model.Order
 
 
 @Composable
-fun OrderList(orders: List<Order>) {
-    Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
-        orders.forEach { order ->
+fun OrderList(orders: List<Order>, onDetailClick: (Int) -> Unit = {}) {
+    LazyColumn(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        items(orders) { order ->
             Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 8.dp),
+                modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(12.dp),
-                elevation = CardDefaults.cardElevation(4.dp)
+                elevation = CardDefaults.cardElevation(4.dp),
+                colors = CardDefaults.cardColors(containerColor = Color.White)
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text(order.storeName, fontWeight = FontWeight.Bold, fontSize = 16.sp)
-                        Spacer(modifier = Modifier.weight(1f))
-                        Text(order.status, color = Color.Red, fontSize = 12.sp)
+                    // Header với mã đơn và trạng thái
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "Mã đơn: #${order.ma_don_hang}",
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 16.sp,
+                            color = Color(0xFF333333)
+                        )
+
+                        // Status chip với màu phù hợp
+                        Surface(
+                            color = when (order.trang_thai) {
+                                "cho_xac_nhan" -> Color(0xFFFF9800).copy(alpha = 0.1f)
+                                "dang_giao" -> Color(0xFF2196F3).copy(alpha = 0.1f)
+                                "hoan_thanh" -> Color(0xFF4CAF50).copy(alpha = 0.1f)
+                                "da_huy" -> Color(0xFFF44336).copy(alpha = 0.1f)
+                                else -> Color.Gray.copy(alpha = 0.1f)
+                            },
+                            shape = RoundedCornerShape(8.dp)
+                        ) {
+                            Text(
+                                text = when (order.trang_thai) {
+                                    "cho_xac_nhan" -> "Chờ xác nhận"
+                                    "dang_giao" -> "Đang giao"
+                                    "hoan_thanh" -> "Hoàn thành"
+                                    "da_huy" -> "Đã hủy"
+                                    else -> order.trang_thai
+                                },
+                                color = when (order.trang_thai) {
+                                    "cho_xac_nhan" -> Color(0xFFFF9800)
+                                    "dang_giao" -> Color(0xFF2196F3)
+                                    "hoan_thanh" -> Color(0xFF4CAF50)
+                                    "da_huy" -> Color(0xFFF44336)
+                                    else -> Color.Gray
+                                },
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Medium,
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                            )
+                        }
                     }
 
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text(order.orderTime, fontSize = 12.sp, color = Color.Gray)
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    // Thời gian đặt hàng
+                    Text(
+                        text = "Đặt lúc: ${order.thoi_gian_giao_du_kien}",
+                        fontSize = 12.sp,
+                        color = Color(0xFF666666)
+                    )
 
                     Spacer(modifier = Modifier.height(8.dp))
-                    order.items.forEach {
-                        Text("• $it", fontSize = 13.sp)
+
+
+                    // Danh sách món
+                    order.items.forEach { item ->
+                        val itemName = when (item.loai_mat_hang) {
+                            "san_pham" -> item.ten_san_pham ?: "Sản phẩm"
+                            "combo" -> item.ten_combo ?: "Combo"
+                            else -> item.ten_san_pham ?: item.ten_combo ?: "Mặt hàng"
+                        }
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = "• $itemName",
+                                fontSize = 13.sp,
+                                color = Color(0xFF666666),
+                                modifier = Modifier.weight(1f)
+                            )
+
+                            Text(
+                                text = "x${item.so_luong}",
+                                fontSize = 13.sp,
+                                color = Color(0xFF666666),
+                                fontWeight = FontWeight.Medium
+                            )
+                        }
                     }
 
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text("Tổng tiền: ${order.totalPrice}", fontWeight = FontWeight.Bold)
+                    Spacer(modifier = Modifier.height(12.dp))
 
-                    Spacer(modifier = Modifier.height(8.dp))
-                    OutlinedButton(onClick = { /* TODO: Go to detail */ }) {
-                        Text("Xem chi tiết", fontSize = 13.sp)
+                    // Divider
+                    Divider(color = Color(0xFFE0E0E0), thickness = 1.dp)
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    // Tổng tiền và nút action
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column {
+                            // Hiển thị breakdown giá nếu có giảm giá
+                            if (order.giam_gia_ma_giam_gia > 0 || order.giam_gia_combo > 0) {
+                                Text(
+                                    text = "Tạm tính: ${String.format("%,.0f", order.tong_tien_san_pham)} đ",
+                                    fontSize = 12.sp,
+                                    color = Color(0xFF666666)
+                                )
+                                if (order.giam_gia_ma_giam_gia > 0) {
+                                    Text(
+                                        text = "Giảm giá: -${String.format("%,.0f", order.giam_gia_ma_giam_gia)} đ",
+                                        fontSize = 12.sp,
+                                        color = Color(0xFF4CAF50)
+                                    )
+                                }
+                                if (order.phi_giao_hang > 0) {
+                                    Text(
+                                        text = "Phí giao hàng: +${String.format("%,.0f", order.phi_giao_hang)} đ",
+                                        fontSize = 12.sp,
+                                        color = Color(0xFF666666)
+                                    )
+                                }
+                            }
+
+                            Text(
+                                text = "Tổng tiền: ${String.format("%,.0f", order.tong_tien_cuoi_cung)} đ",
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 16.sp,
+                                color = Color(0xFFFFB700)
+                            )
+                        }
+
+                        OutlinedButton(
+                            onClick = { onDetailClick(order.ma_don_hang.toInt()) },
+                            colors = ButtonDefaults.outlinedButtonColors(
+                                contentColor = Color(0xFFFFB700)
+                            ),
+                            border = BorderStroke(1.dp, Color(0xFFFFB700))
+                        ) {
+                            Text("Xem chi tiết", fontSize = 13.sp)
+                        }
                     }
                 }
             }

@@ -91,7 +91,7 @@ fun OrderList(orders: List<Order>, onDetailClick: (String) -> Unit = {}) {
 
                     // Thời gian với null safety
                     Text(
-                        text = "Đặt lúc: ${order.thoi_gian_giao_du_kien ?: "Không xác định"}",
+                        text = "Đặt lúc: ${order.ngay_tao ?: "Không xác định"}",
                         fontSize = 12.sp,
                         color = Color(0xFF666666)
                     )

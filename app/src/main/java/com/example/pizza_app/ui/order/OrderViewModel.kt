@@ -11,6 +11,7 @@ import com.example.pizza_app.data.source.remote.RetrofitInstance
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.delay
 
 class OrderViewModel : ViewModel() {
 
@@ -26,7 +27,32 @@ class OrderViewModel : ViewModel() {
     private val _errorMessage = MutableStateFlow<String?>(null)
     val errorMessage: StateFlow<String?> = _errorMessage
 
-    fun loadOrders() {
+    // Auto refresh sau mỗi 30 giây
+    private val REFRESH_INTERVAL = 30_000L
+
+    init {
+        loadOrders()
+        startAutoRefresh()
+    }
+
+    private fun startAutoRefresh() {
+        viewModelScope.launch {
+            while (true) {
+                delay(REFRESH_INTERVAL)
+                loadOrders(isRefresh = true)
+            }
+        }
+    }
+
+    fun refreshData() {
+        loadOrders(isRefresh = true)
+    }
+
+    fun onResume() {
+        loadOrders(isRefresh = true)
+    }
+
+    fun loadOrders(isRefresh: Boolean = false) {
         val user = UserManager.getUser()
         if (user == null) {
             _errorMessage.value = "Không tìm thấy thông tin người dùng"
@@ -40,13 +66,14 @@ class OrderViewModel : ViewModel() {
             return
         }
 
-        _isLoading.value = true
         viewModelScope.launch {
             try {
+                if (!isRefresh) _isLoading.value = true
+                _errorMessage.value = null
+
                 val response = RetrofitInstance.api.getOrders(maNguoiDung = userId)
                 _orders.value = response
-                _filteredOrders.value = response // mặc định hiển thị tất cả
-                _errorMessage.value = null
+                _filteredOrders.value = response
 
                 Log.d("OrderViewModel", "Tổng số đơn: ${response.size}")
                 response.forEach { order ->

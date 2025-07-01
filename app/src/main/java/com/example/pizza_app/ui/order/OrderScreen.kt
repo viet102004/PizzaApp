@@ -165,13 +165,6 @@ fun OrderScreen(
                 }
             }
         } else {
-            // DEBUG INFO
-            Text(
-                text = "Debug: Tổng ${orders.size} đơn hàng",
-                modifier = Modifier.padding(16.dp),
-                fontSize = 12.sp,
-                color = Color.Gray
-            )
 
             val currentStatus = statusMap[selectedTabIndex]
 
@@ -198,34 +191,6 @@ fun OrderScreen(
                 // Debug info khi empty
                 if (orders.isNotEmpty()) {
                     Column(modifier = Modifier.padding(16.dp)) {
-                        Text(
-                            text = "Debug Info:",
-                            fontWeight = FontWeight.Bold,
-                            color = Color.Red
-                        )
-                        Text(
-                            text = "- Tổng đơn hàng: ${orders.size}",
-                            color = Color.Red,
-                            fontSize = 12.sp
-                        )
-                        Text(
-                            text = "- Đang tìm status: '$currentStatus'",
-                            color = Color.Red,
-                            fontSize = 12.sp
-                        )
-                        Text(
-                            text = "- Các status có sẵn:",
-                            color = Color.Red,
-                            fontSize = 12.sp
-                        )
-                        orders.forEach { order ->
-                            val status = order.trang_thai ?: "null"
-                            Text(
-                                text = "  + '$status'",
-                                color = Color.Red,
-                                fontSize = 10.sp
-                            )
-                        }
 
                         // THÊM: Hiển thị tất cả đơn hàng khi status = null
                         if (orders.all { it.trang_thai == null }) {

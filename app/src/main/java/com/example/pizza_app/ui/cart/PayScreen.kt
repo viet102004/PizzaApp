@@ -459,6 +459,7 @@ fun PayScreen(
                                     ghiChu = "noteText",
                                     thoiGianGiaoDuKien = "2025-07-01 15:00:00" // Nếu có chọn lịch, format yyyy-MM-dd HH:mm:ss
                                 )
+                                navController.navigate("home")
                             },
                             enabled = !isLoading,
                             modifier = Modifier.fillMaxWidth()

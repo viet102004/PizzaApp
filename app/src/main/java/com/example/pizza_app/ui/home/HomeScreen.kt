@@ -90,7 +90,11 @@ fun HomeScreen(
 
     val pullRefreshState = rememberPullRefreshState(
         refreshing = false,
-        onRefresh = { viewModel.refreshData() }
+        onRefresh = {
+            viewModel.refreshData()
+            bannerViewModel.refreshData()
+            categoryViewModel.refreshData()
+        }
     )
 
     val lifecycleOwner = LocalLifecycleOwner.current
@@ -98,6 +102,8 @@ fun HomeScreen(
         val observer = LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_RESUME) {
                 viewModel.onResume()
+                bannerViewModel.onResume()
+                categoryViewModel.onResume()
             }
         }
         lifecycleOwner.lifecycle.addObserver(observer)

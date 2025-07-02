@@ -75,21 +75,7 @@ fun LoginScreen(navController: NavController) {
             )
     ) {
 
-        Box(
-            modifier = Modifier
-                .padding(top = 45.dp, start = 16.dp)
-                .size(40.dp)
-                .background(primaryColor, CircleShape)
-                .clickable { navController.popBackStack() },
-            contentAlignment = Alignment.Center
-        ) {
-            Icon(
-                Icons.Default.ArrowBack,
-                contentDescription = "Quay lại",
-                tint = Color.White,
-                modifier = Modifier.size(20.dp)
-            )
-        }
+
 
         Column(
             modifier = Modifier

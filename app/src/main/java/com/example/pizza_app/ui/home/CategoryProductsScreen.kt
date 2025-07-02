@@ -80,11 +80,7 @@ fun CategoryProductsScreen(
                         fontWeight = FontWeight.Bold
                     )
                     // Debug info
-                    Text(
-                        text = "ID: ${category.ma_danh_muc} | Items: ${products.size}",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = Color.Gray
-                    )
+
                 }
             },
             navigationIcon = {

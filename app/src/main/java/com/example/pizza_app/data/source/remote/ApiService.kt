@@ -22,8 +22,10 @@ import com.example.pizza_app.data.model.Product
 import com.example.pizza_app.data.model.ProductImage
 import com.example.pizza_app.data.model.ProductListResponse
 import com.example.pizza_app.data.model.ProductOptionsResponse
+import com.example.pizza_app.data.model.ProductReviewsResponse
 import com.example.pizza_app.data.model.ResultResponse
 import com.example.pizza_app.data.model.ReviewRequest
+import com.example.pizza_app.data.model.ReviewStatsResponse
 import com.example.pizza_app.data.model.ThemGioHangResponse
 import com.example.pizza_app.data.model.ThemVaoGioHangRequest
 import com.example.pizza_app.data.model.UserResponse
@@ -254,6 +256,20 @@ interface ApiService {
     ): Response<Any>
 
     @POST("danhGia")
-    suspend fun submitReview(@Body request: ReviewRequest)
+    suspend fun submitReview(
+        @Body request: ReviewRequest
+    )
+
+    @GET("danhGia/sanPham/{ma_san_pham}")
+    suspend fun getProductReviews(
+        @Path("ma_san_pham") maSanPham: Int,
+        @Query("page") page: Int = 1,
+        @Query("limit") limit: Int = 10
+    ): ProductReviewsResponse
+
+    @GET("danhGia/thongKe/{ma_san_pham}")
+    suspend fun getReviewStats(
+        @Path("ma_san_pham") maSanPham: Int
+    ): ReviewStatsResponse
 
 }

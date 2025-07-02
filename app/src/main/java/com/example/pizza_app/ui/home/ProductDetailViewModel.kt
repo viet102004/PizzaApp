@@ -1,14 +1,18 @@
 package com.example.pizza_app.ui.home
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.pizza_app.data.model.Product
 import com.example.pizza_app.data.model.ProductImage
 import com.example.pizza_app.data.model.ProductOption
+import com.example.pizza_app.data.model.ReviewResponse
+import com.example.pizza_app.data.model.ReviewStatsResponse
 import com.example.pizza_app.data.source.UserManager
 import com.example.pizza_app.data.source.remote.RetrofitInstance
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
 class ProductDetailViewModel : ViewModel() {
@@ -30,6 +34,15 @@ class ProductDetailViewModel : ViewModel() {
     // Thêm StateFlow cho cart
     private val _addToCartState = MutableStateFlow<AddToCartState>(AddToCartState.Idle)
     val addToCartState: StateFlow<AddToCartState> = _addToCartState
+
+    private val _reviews = MutableStateFlow<List<ReviewResponse>>(emptyList())
+    val reviews: StateFlow<List<ReviewResponse>> = _reviews.asStateFlow()
+
+    private val _reviewStats = MutableStateFlow<ReviewStatsResponse?>(null)
+    val reviewStats: StateFlow<ReviewStatsResponse?> = _reviewStats.asStateFlow()
+
+    private val _isLoadingReviews = MutableStateFlow(false)
+    val isLoadingReviews: StateFlow<Boolean> = _isLoadingReviews.asStateFlow()
 
     // Sealed class để quản lý trạng thái thêm vào giỏ hàng
     sealed class AddToCartState {
@@ -93,6 +106,33 @@ class ProductDetailViewModel : ViewModel() {
                 } catch (ex: Exception) {
                     ex.printStackTrace()
                 }
+            }
+        }
+    }
+
+    fun fetchProductReviews(maSanPham: Int, page: Int = 1) {
+        viewModelScope.launch {
+            try {
+                _isLoadingReviews.value = true
+                val response = RetrofitInstance.api.getProductReviews(maSanPham, page, 5) // Lấy 5 review đầu tiên
+                _reviews.value = response.danh_sach_danh_gia
+            } catch (e: Exception) {
+                Log.e("ProductDetailViewModel", "Error fetching reviews", e)
+                _reviews.value = emptyList()
+            } finally {
+                _isLoadingReviews.value = false
+            }
+        }
+    }
+
+    fun fetchReviewStats(maSanPham: Int) {
+        viewModelScope.launch {
+            try {
+                val response = RetrofitInstance.api.getReviewStats(maSanPham)
+                _reviewStats.value = response
+            } catch (e: Exception) {
+                Log.e("ProductDetailViewModel", "Error fetching review stats", e)
+                _reviewStats.value = null
             }
         }
     }

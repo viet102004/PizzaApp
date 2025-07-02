@@ -59,7 +59,13 @@ fun ProductDetailScreen(
     LaunchedEffect(maSanPham) {
         viewModel.fetchProductDetail(maSanPham)
         viewModel.checkIsFavorite(maSanPham)
+        viewModel.fetchProductReviews(maSanPham)
+        viewModel.fetchReviewStats(maSanPham)
     }
+
+    val reviews by viewModel.reviews.collectAsState()
+    val reviewStats by viewModel.reviewStats.collectAsState()
+    val isLoadingReviews by viewModel.isLoadingReviews.collectAsState()
 
     val options by viewModel.options.collectAsState()
     val product by viewModel.product.collectAsState()
@@ -69,10 +75,8 @@ fun ProductDetailScreen(
     val selectedImage = remember { mutableStateOf<String?>(null) }
     val quantity = remember { mutableStateOf(1) }
 
-    // State cho các lựa chọn động từ API
-    val selectedOptions = remember { mutableStateMapOf<Int, Int>() } // ma_loai_tuy_chon -> ma_gia_tri
+    val selectedOptions = remember { mutableStateMapOf<Int, Int>() }
 
-    // State cho multiple choice options
     val multipleSelectedOptions = remember { mutableStateMapOf<Int, MutableSet<Int>>() } // ma_loai_tuy_chon -> Set<ma_gia_tri>
 
     // State cho dialog tùy chọn sản phẩm
@@ -115,11 +119,6 @@ fun ProductDetailScreen(
                 }
             }
         }
-    }
-
-    // Extension function để format tiền tệ
-    fun Double.formatCurrency(): String {
-        return "${String.format("%,.0f", this)}đ"
     }
 
     // Function để tính tổng giá với tùy chọn
@@ -327,6 +326,20 @@ fun ProductDetailScreen(
                         Text(product?.mo_ta ?: "", fontSize = 14.sp, color = Color.Gray, lineHeight = 20.sp)
                     }
                 }
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // THÊM PHẦN REVIEWS VÀO ĐÂY
+                ReviewsSection(
+                    reviews = reviews,
+                    reviewStats = reviewStats,
+                    isLoading = isLoadingReviews,
+                    onSeeAllClick = {
+                        // Navigate to full reviews screen
+                        onNavigateTo("reviews/$maSanPham")
+                    },
+                    primaryColor = primaryColor,
+                    cardColor = cardColor
+                )
 
                 Spacer(modifier = Modifier.height(100.dp))
             }

@@ -17,11 +17,13 @@ import com.example.pizza_app.data.model.GioHangResponse
 import com.example.pizza_app.data.model.IsFavoriteResponse
 import com.example.pizza_app.data.model.LoginResponse
 import com.example.pizza_app.data.model.Order
+import com.example.pizza_app.data.model.OrderDetail
 import com.example.pizza_app.data.model.Product
 import com.example.pizza_app.data.model.ProductImage
 import com.example.pizza_app.data.model.ProductListResponse
 import com.example.pizza_app.data.model.ProductOptionsResponse
 import com.example.pizza_app.data.model.ResultResponse
+import com.example.pizza_app.data.model.ReviewRequest
 import com.example.pizza_app.data.model.ThemGioHangResponse
 import com.example.pizza_app.data.model.ThemVaoGioHangRequest
 import com.example.pizza_app.data.model.UserResponse
@@ -237,7 +239,21 @@ interface ApiService {
     ): ResultResponse
 
     @GET("danhSachDonHang/{ma_nguoi_dung}")
-    suspend fun getOrders(@Path("ma_nguoi_dung") maNguoiDung: Int): List<Order>
+    suspend fun getOrders(
+        @Path("ma_nguoi_dung") maNguoiDung: Int
+    ): List<Order>
 
+    @GET("chiTietDonHang/{ma_don_hang}")
+    suspend fun getOrderDetail(
+        @Path("ma_don_hang") maDonHang: Int
+    ): Response<OrderDetail>
+
+    @PUT("huyDonHang/{orderId}")
+    suspend fun cancelOrder(
+        @Path("orderId") orderId: Int
+    ): Response<Any>
+
+    @POST("danhGia")
+    suspend fun themDanhGia(@Body request: ReviewRequest)
 
 }

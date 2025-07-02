@@ -31,7 +31,7 @@ private val routesWithoutBottomNav = setOf(
     "update_phone", "update_dob", "pay", "wallet", "settings",
     "support_chat","forgot_password","register", "all_categories", "favorite",
     "search", "category_products/{categoryId}/{categoryName}", "add_address",
-    "address"
+    "address", "order_detail/{orderId}"
 )
 
 @Composable

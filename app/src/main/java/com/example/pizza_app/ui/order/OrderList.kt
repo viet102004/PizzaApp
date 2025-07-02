@@ -22,7 +22,7 @@ import androidx.compose.ui.unit.sp
 import com.example.pizza_app.data.model.Order
 
 @Composable
-fun OrderList(orders: List<Order>, onDetailClick: (String) -> Unit = {}) {
+fun OrderList(orders: List<Order>, onDetailClick: (Int) -> Unit) {
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
@@ -138,7 +138,7 @@ fun OrderList(orders: List<Order>, onDetailClick: (String) -> Unit = {}) {
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Column {
-                            // SỬA: Safe format với null check
+
                             val tongTienSanPham = order.tong_tien_san_pham ?: 0.0
                             val giamGiaMa = order.giam_gia_ma_giam_gia ?: 0.0
                             val giamGiaCombo = order.giam_gia_combo ?: 0.0
@@ -160,7 +160,12 @@ fun OrderList(orders: List<Order>, onDetailClick: (String) -> Unit = {}) {
                                 }
                                 if (phiGiaoHang > 0) {
                                     Text(
-                                        text = "Phí giao hàng: +${String.format("%,.0f", phiGiaoHang)} đ",
+                                        text = "Phí giao hàng: +${
+                                            String.format(
+                                                "%,.0f",
+                                                phiGiaoHang
+                                            )
+                                        } đ",
                                         fontSize = 12.sp,
                                         color = Color(0xFF666666)
                                     )
@@ -177,7 +182,7 @@ fun OrderList(orders: List<Order>, onDetailClick: (String) -> Unit = {}) {
 
                         OutlinedButton(
                             onClick = {
-                                onDetailClick(order.ma_don_hang.toString() ?: "") // SỬA: Handle null ID
+                                order.ma_don_hang.toInt().let { onDetailClick(it) } // CHỈNH: tránh truyền null
                             },
                             colors = ButtonDefaults.outlinedButtonColors(
                                 contentColor = Color(0xFFFFB700)

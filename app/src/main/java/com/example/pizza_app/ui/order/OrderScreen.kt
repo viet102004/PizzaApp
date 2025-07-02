@@ -186,7 +186,13 @@ fun OrderScreen(
                         onNavigateTo = onNavigateTo
                     )
                 } else {
-                    OrderList(orders = filteredOrders)
+                    OrderList(
+                        orders = filteredOrders,
+                        onDetailClick = { maDonHang ->
+                            navController.navigate("order_detail/$maDonHang") // Dùng NavController dẫn đến màn chi tiết
+                        }
+                    )
+
                 }
             }
         }

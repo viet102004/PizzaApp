@@ -3,6 +3,7 @@
 package com.example.pizza_app.navigation
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
@@ -15,6 +16,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.navigation
 import androidx.navigation.navArgument
+import com.example.pizza_app.data.model.OrderDetail
 import com.example.pizza_app.data.model.User
 import com.example.pizza_app.data.model.UserPreferences
 import com.example.pizza_app.data.source.UserManager
@@ -36,6 +38,8 @@ import com.example.pizza_app.ui.home.CategoryViewModel
 import com.example.pizza_app.ui.home.FavoriteScreen
 import com.example.pizza_app.ui.home.ProductDetailScreen
 import com.example.pizza_app.ui.home.SearchScreen
+import com.example.pizza_app.ui.order.OrderDetailScreen
+import com.example.pizza_app.ui.order.OrderDetailViewModel
 import com.example.pizza_app.ui.profile.AddressListScreen
 import com.example.pizza_app.ui.profile.UpdateDOBScreen
 import com.example.pizza_app.ui.settings.SettingsScreen
@@ -78,6 +82,15 @@ fun AppNavigation(navController: NavHostController) {
                 onNavigateTo = { destination -> navController.navigate(destination) }
             )
         }
+
+        composable("order_detail/{orderId}") { backStackEntry ->
+            val orderId = backStackEntry.arguments?.getString("orderId")?.toIntOrNull()
+            if (orderId != null) {
+                OrderDetailScreen(orderId = orderId, onBackClick = { navController.popBackStack() })
+            }
+        }
+
+
 
         composable("profile") {
 

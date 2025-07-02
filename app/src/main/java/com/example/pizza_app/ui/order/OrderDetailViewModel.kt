@@ -8,6 +8,7 @@ import com.example.pizza_app.data.source.UserManager
 import com.example.pizza_app.data.source.remote.RetrofitInstance
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
 class OrderDetailViewModel : ViewModel() {
@@ -91,24 +92,34 @@ class OrderDetailViewModel : ViewModel() {
     }
 
     private val _isSubmittingReview = MutableStateFlow(false)
-    val isSubmittingReview: StateFlow<Boolean> = _isSubmittingReview
+    val isSubmittingReview: StateFlow<Boolean> = _isSubmittingReview.asStateFlow()
 
-    fun submitReview(orderId: Int, productId: Long, rating: Int, comment: String) {
+    fun submitReview(orderId: Int, productId: Long, rating: Int, comment: String, imageUri: String?) {
         viewModelScope.launch {
-            _isSubmittingReview.value = true
-
             try {
-                val user = UserManager.getUser() ?: throw Exception("Chưa đăng nhập")
+                _isSubmittingReview.value = true
 
-                val request = ReviewRequest(
-                    ma_nguoi_dung = user.ma_nguoi_dung,
+                // If image is provided, upload it first
+                var imageUrl: String? = null
+                if (imageUri != null) {
+                    // Upload image and get URL
+                    imageUrl = uploadImage(imageUri) // You need to implement this
+                }
+
+                val reviewRequest = ReviewRequest(
+                    ma_nguoi_dung = getCurrentUserId(), // Implement this method
                     ma_san_pham = productId,
                     ma_don_hang = orderId,
                     diem_so = rating,
-                    binh_luan = comment
+                    binh_luan = comment.takeIf { it.isNotBlank() },
+                    hinh_anh_danh_gia = imageUrl
                 )
 
-                RetrofitInstance.api.themDanhGia(request)
+                // Call API to submit review
+                RetrofitInstance.api.submitReview(reviewRequest)
+
+                // Refresh order detail to show updated status
+                getOrderDetail(orderId)
 
             } catch (e: Exception) {
                 _errorMessage.value = "Lỗi khi gửi đánh giá: ${e.message}"
@@ -118,5 +129,16 @@ class OrderDetailViewModel : ViewModel() {
         }
     }
 
+    private suspend fun uploadImage(imageUri: String): String? {
+        // Implement image upload logic here
+        // This should upload the image to your server and return the URL
+        // For now, return the URI as placeholder
+        return imageUri
+    }
 
+    private fun getCurrentUserId(): Int {
+        val user = UserManager.getUser()
+
+        return user!!.ma_nguoi_dung // Replace with actual implementation
+    }
 }

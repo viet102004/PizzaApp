@@ -113,11 +113,10 @@ fun OrderDetailScreen(
                     fontSize = 16.sp
                 )
             }
-
             orderDetail != null -> OrderDetailContent(
                 orderDetail = orderDetail!!,
                 onCancelOrder = { showCancelDialog = true },
-                //onReviewOrder = { showReviewDialog = true },
+                onReviewOrder = { showReviewDialog = true }, // SỬA: Uncomment dòng này
                 isCancelling = isCancelling
             )
 
@@ -176,8 +175,8 @@ fun OrderDetailScreen(
             orderDetail = orderDetail!!,
             isSubmitting = isSubmittingReview,
             onDismiss = { showReviewDialog = false },
-            onSubmitReview = { productId, rating, comment ->
-                viewModel.submitReview(orderId, productId, rating, comment)
+            onSubmitReview = { productId, rating, comment, imageUri ->
+                viewModel.submitReview(orderId, productId, rating, comment, imageUri = null)
                 showReviewDialog = false
             }
         )
@@ -188,6 +187,7 @@ fun OrderDetailScreen(
 fun OrderDetailContent(
     orderDetail: OrderDetail,
     onCancelOrder: () -> Unit,
+    onReviewOrder: () -> Unit, // THÊM parameter này
     isCancelling: Boolean
 ) {
     LazyColumn(
@@ -213,6 +213,12 @@ fun OrderDetailContent(
                     onCancelOrder = onCancelOrder,
                     isCancelling = isCancelling
                 )
+            }
+        }
+
+        if (orderDetail.don_hang.trang_thai == "hoan_thanh") {
+            item {
+                ReviewOrderButton(onReviewOrder = onReviewOrder)
             }
         }
 

@@ -254,6 +254,6 @@ interface ApiService {
     ): Response<Any>
 
     @POST("danhGia")
-    suspend fun themDanhGia(@Body request: ReviewRequest)
+    suspend fun submitReview(@Body request: ReviewRequest)
 
 }

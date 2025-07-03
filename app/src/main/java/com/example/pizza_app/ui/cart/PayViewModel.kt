@@ -36,9 +36,11 @@ class PayViewModel : ViewModel() {
         }
 
         val userId = try {
-            user.ma_nguoi_dung
-        } catch (e: NumberFormatException) {
+            // Kiểm tra tên field chính xác trong User model
+            user.ma_nguoi_dung // hoặc user.maNguoiDung tùy thuộc vào model
+        } catch (e: Exception) {
             _message.value = "ID người dùng không hợp lệ"
+            Log.e("PayViewModel", "Lỗi lấy user ID", e)
             return
         }
 
@@ -57,6 +59,7 @@ class PayViewModel : ViewModel() {
                 )
                 _orderResult.value = response
                 _message.value = "Đặt hàng thành công"
+                Log.d("PayViewModel", "Đặt hàng thành công: $response")
             } catch (e: Exception) {
                 _message.value = "Lỗi: ${e.message ?: "Không xác định"}"
                 Log.e("PayViewModel", "Lỗi đặt hàng", e)

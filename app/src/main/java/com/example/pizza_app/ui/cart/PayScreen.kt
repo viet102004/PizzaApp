@@ -39,8 +39,10 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.pizza_app.data.model.CartItem
 import com.example.pizza_app.data.model.AddressInfo
+import com.example.pizza_app.data.model.MaGiamGia
 import com.example.pizza_app.ui.cart.CartItemCard
 import com.example.pizza_app.ui.profile.AddressViewModel
+import com.example.pizza_app.ui.vouchers.VoucherViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -49,6 +51,11 @@ fun PayScreen(
     cartViewModel: CartViewModel = viewModel(),
     addressViewModel: AddressViewModel = viewModel()
 ) {
+
+    val voucherViewModel: VoucherViewModel = viewModel()
+    val vouchers by voucherViewModel.voucherList.collectAsState()
+
+
     val cartItems by cartViewModel.cartItems.collectAsState()
     val cartTotal by cartViewModel.totalAmount.collectAsState()
 
@@ -57,12 +64,24 @@ fun PayScreen(
     val addressMessage by addressViewModel.message.collectAsState()
 
 
-    var selectedDiscount by remember { mutableStateOf("") }
+    var selectedVoucher by remember { mutableStateOf<MaGiamGia?>(null) }
     var selectedPaymentMethod by remember { mutableStateOf("Tiền mặt") }
     var orderNote by remember { mutableStateOf("") }
     var showAddressDialog by remember { mutableStateOf(false) }
     var showDiscountDialog by remember { mutableStateOf(false) }
-    var discountAmount by remember { mutableStateOf(0.0) }
+
+    val discountAmount = remember(cartTotal, selectedVoucher) {
+        selectedVoucher?.let { voucher ->
+            val isValid = cartTotal >= (voucher.gia_tri_don_hang_toi_thieu?.toDouble() ?: 0.0)
+            if (!isValid) return@remember 0.0
+            when (voucher.loai_giam_gia.lowercase()) {
+                "phan_tram" -> cartTotal * (voucher.gia_tri_giam.toDouble() / 100)
+                "co_dinh" -> voucher.gia_tri_giam.toDouble()
+                else -> 0.0
+            }
+        } ?: 0.0
+    }
+
 
 
     val viewModel = remember { PayViewModel() }
@@ -77,6 +96,7 @@ fun PayScreen(
 
 
 
+
     val paymentMethods = listOf(
         PaymentMethod("Tiền mặt", "💰", "Thanh toán khi nhận hàng"),
         PaymentMethod("MoMo", "📱", "Ví điện tử MoMo"),
@@ -84,16 +104,11 @@ fun PayScreen(
         PaymentMethod("Thẻ tín dụng", "💳", "Visa, Master, JCB")
     )
 
-    val discountCodes = mapOf(
-        "GIAM10" to DiscountCode("GIAM10", "Giảm 10K", 10000.0, "Cho đơn từ 50K"),
-        "GIAM20" to DiscountCode("GIAM20", "Giảm 20K", 20000.0, "Cho đơn từ 100K"),
-        "FREESHIP" to DiscountCode("FREESHIP", "Miễn phí ship", 15000.0, "Cho đơn từ 80K")
-    )
-
     // Load data when screen opens
     LaunchedEffect(Unit) {
         cartViewModel.fetchCartItems()
         addressViewModel.getDeliveryAddresses()
+        voucherViewModel.fetchVouchers()
     }
 
     // Set default address when address list is loaded
@@ -253,7 +268,7 @@ fun PayScreen(
                     PaymentItemCard(item = item)
                 }
 
-                // 3. Tổng tiền sản phẩm - Enhanced design
+                // 3. Tổng tiền sản phẩm - Đã sửa để dùng selectedVoucher
                 item {
                     Card(
                         modifier = Modifier.fillMaxWidth(),
@@ -275,9 +290,9 @@ fun PayScreen(
                             PaymentDetailRow("Tạm tính", formatCurrency(cartTotal))
                             PaymentDetailRow("Phí vận chuyển", "Miễn phí", valueColor = Color(0xFF4CAF50))
 
-                            if (selectedDiscount.isNotEmpty()) {
+                            if (selectedVoucher != null && discountAmount > 0) {
                                 PaymentDetailRow(
-                                    "Giảm giá ($selectedDiscount)",
+                                    "Giảm giá (${selectedVoucher!!.ma_code})",
                                     "-${formatCurrency(discountAmount)}",
                                     valueColor = Color(0xFFFF6B35)
                                 )
@@ -310,7 +325,7 @@ fun PayScreen(
                     }
                 }
 
-                // 4. Mã giảm giá - Enhanced design
+                // 4. Mã giảm giá - Sửa lại để dùng dữ liệu từ API
                 item {
                     ModernCard(
                         icon = Icons.Default.LocalOffer,
@@ -319,7 +334,7 @@ fun PayScreen(
                         action = "Chọn mã",
                         onActionClick = { showDiscountDialog = true }
                     ) {
-                        if (selectedDiscount.isNotEmpty()) {
+                        if (selectedVoucher != null) {
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -327,16 +342,19 @@ fun PayScreen(
                             ) {
                                 Column {
                                     Text(
-                                        text = selectedDiscount,
+                                        text = selectedVoucher!!.ma_code,
                                         fontSize = 14.sp,
                                         fontWeight = FontWeight.Medium,
                                         color = Color(0xFF4CAF50)
                                     )
-                                    Text(
-                                        text = discountCodes[selectedDiscount]?.description ?: "",
-                                        fontSize = 12.sp,
-                                        color = Color(0xFF888888)
-                                    )
+                                    val minOrder = selectedVoucher!!.gia_tri_don_hang_toi_thieu?.toDouble() ?: 0.0
+                                    if (minOrder > 0.0) {
+                                        Text(
+                                            text = "Đơn từ ${formatCurrency(minOrder)}",
+                                            fontSize = 12.sp,
+                                            color = Color(0xFF888888)
+                                        )
+                                    }
                                 }
                                 Surface(
                                     shape = RoundedCornerShape(8.dp),
@@ -455,9 +473,9 @@ fun PayScreen(
                                 viewModel.datHang(
                                     maThongTinGiaoHang = selectedAddressId!!.toInt(),
                                     phuongThucThanhToan = selectedPaymentMethod,
-                                    maGiamGia = null,
-                                    ghiChu = "noteText",
-                                    thoiGianGiaoDuKien = "2025-07-01 15:00:00" // Nếu có chọn lịch, format yyyy-MM-dd HH:mm:ss
+                                    maGiamGia = selectedVoucher?.ma_giam_gia, // ✅ Đây là phần bạn cần sửa
+                                    ghiChu = orderNote,
+                                    thoiGianGiaoDuKien = null
                                 )
                                 navController.navigate("home")
                             },
@@ -583,20 +601,22 @@ fun PayScreen(
             },
             text = {
                 Column {
-                    discountCodes.forEach { (code, discount) ->
+                    vouchers.forEach { voucher ->
+                        val isSelected = selectedVoucher?.ma_giam_gia == voucher.ma_giam_gia
+                        val isValid = cartTotal >= (voucher.gia_tri_don_hang_toi_thieu?.toDouble() ?: 0.0)
+
                         Surface(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .clickable {
-                                    selectedDiscount = code
-                                    discountAmount = discount.amount
-                                    showDiscountDialog = false
+                                    if (isValid) {
+                                        selectedVoucher = voucher
+                                        showDiscountDialog = false
+                                    }
                                 }
                                 .padding(vertical = 4.dp),
                             shape = RoundedCornerShape(8.dp),
-                            color = if (selectedDiscount == code)
-                                Color(0xFFFF6B35).copy(alpha = 0.1f)
-                            else Color.Transparent
+                            color = if (isSelected) Color(0xFFFF6B35).copy(alpha = 0.1f) else Color.Transparent
                         ) {
                             Row(
                                 modifier = Modifier
@@ -606,56 +626,22 @@ fun PayScreen(
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Column(modifier = Modifier.weight(1f)) {
-                                    Text(
-                                        code,
-                                        fontSize = 14.sp,
-                                        fontWeight = FontWeight.Bold,
-                                        color = Color(0xFF1A1A1A)
-                                    )
-                                    Text(
-                                        discount.title,
-                                        fontSize = 12.sp,
-                                        color = Color(0xFF666666)
-                                    )
-                                    Text(
-                                        discount.description,
-                                        fontSize = 11.sp,
-                                        color = Color(0xFF888888)
-                                    )
+                                    Text(voucher.ma_code, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                                    Text("Giảm ${voucher.gia_tri_giam} (${voucher.loai_giam_gia})", fontSize = 12.sp)
+                                    if (voucher.gia_tri_don_hang_toi_thieu != null) {
+                                        Text("Áp dụng cho đơn từ ${formatCurrency(voucher.gia_tri_don_hang_toi_thieu.toDouble())}", fontSize = 11.sp)
+                                    }
+                                    if (!isValid) {
+                                        Text("Không đủ điều kiện", fontSize = 11.sp, color = Color.Red)
+                                    }
                                 }
-                                Text(
-                                    "-${formatCurrency(discount.amount)}",
-                                    fontSize = 14.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = Color(0xFFFF6B35)
-                                )
+                                if (isSelected) {
+                                    Text("-${formatCurrency(discountAmount)}", fontWeight = FontWeight.Bold, color = Color(0xFFFF6B35))
+                                }
                             }
                         }
                     }
 
-                    if (selectedDiscount.isNotEmpty()) {
-                        Divider(modifier = Modifier.padding(vertical = 8.dp))
-                        Surface(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable {
-                                    selectedDiscount = ""
-                                    discountAmount = 0.0
-                                    showDiscountDialog = false
-                                }
-                                .padding(vertical = 4.dp),
-                            shape = RoundedCornerShape(8.dp),
-                            color = Color.Transparent
-                        ) {
-                            Text(
-                                "Không sử dụng mã giảm giá",
-                                fontSize = 14.sp,
-                                color = Color(0xFFFF5722),
-                                modifier = Modifier.padding(12.dp),
-                                fontWeight = FontWeight.Medium
-                            )
-                        }
-                    }
                 }
             },
             confirmButton = {

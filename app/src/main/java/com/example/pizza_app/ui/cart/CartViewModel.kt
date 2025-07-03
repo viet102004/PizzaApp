@@ -99,7 +99,7 @@ class CartViewModel : ViewModel() {
                     val giaThem = options.find { it.ma_loai_tuy_chon == maLoaiTuyChon }
                         ?.gia_tri?.find { it.ma_gia_tri == maGiaTri }?.gia_them
                     giaThem?.let {
-                        TuyChonRequest(ma_gia_tri = maGiaTri, gia_them = it, ma_loai_tuy_chon = maLoaiTuyChon)
+                        TuyChonRequest(ma_gia_tri = maGiaTri, gia_them = it)
                     }
                 }
 
@@ -139,22 +139,29 @@ class CartViewModel : ViewModel() {
             return
         }
 
+        Log.d("CartViewModel", "=== UPDATE CART ITEM API CALL ===")
+        Log.d("CartViewModel", "API URL will be: /capNhatGioHang/$maMatHangGioHang")
+        Log.d("CartViewModel", "Request payload - so_luong: $newQuantity")
+        Log.d("CartViewModel", "Request payload - ghi_chu: ${currentItem.note}")
+        Log.d("CartViewModel", "Request payload - tuy_chon count: ${currentItem.extraOptions.size}")
+
         viewModelScope.launch {
             try {
                 val request = CapNhatGioHangRequest(
                     so_luong = newQuantity,
                     ghi_chu = currentItem.note,
-                    tuy_chon = currentItem.extraOptions, // Sử dụng extraOptions vì nó đã có đúng cấu trúc
-                    chi_tiet_combo = emptyList() // Nếu không phải combo
+                    tuy_chon = currentItem.extraOptions,
+                    chi_tiet_combo = emptyList()
                 )
 
+                Log.d("CartViewModel", "Making API call...")
                 val response = RetrofitInstance.api.capNhatGioHang(maMatHangGioHang, request)
+                Log.d("CartViewModel", "API Response - success: ${response.success}")
+                Log.d("CartViewModel", "API Response - message: ${response.message}")
 
                 if (response.success) {
                     _success.value = true
                     _message.value = response.message ?: "Đã cập nhật giỏ hàng thành công"
-
-                    // Refresh lại giỏ hàng sau khi cập nhật
                     fetchCartItems()
                 } else {
                     _success.value = false
@@ -164,12 +171,16 @@ class CartViewModel : ViewModel() {
             } catch (e: Exception) {
                 _success.value = false
                 _message.value = "Lỗi cập nhật giỏ hàng: ${e.message}"
-                Log.e("CartViewModel", "Lỗi cập nhật giỏ hàng", e)
+                Log.e("CartViewModel", "API Error details: ${e.message}")
+                Log.e("CartViewModel", "Exception type: ${e::class.java.simpleName}")
+                if (e is retrofit2.HttpException) {
+                    Log.e("CartViewModel", "HTTP Status Code: ${e.code()}")
+                    Log.e("CartViewModel", "HTTP Response: ${e.response()?.errorBody()?.string()}")
+                }
             }
         }
     }
 
-    // Cập nhật lại function updateQuantity để sử dụng API
     fun updateQuantity(itemId: String, newQuantity: Int) {
         val user = UserManager.getUser()
         if (user == null) {
@@ -177,13 +188,29 @@ class CartViewModel : ViewModel() {
             return
         }
 
-        // Tìm item hiện tại
         val currentItem = _cartItems.value.find { it.id == itemId }
         if (currentItem == null) {
             _message.value = "Không tìm thấy mặt hàng trong giỏ hàng"
+            Log.e("CartViewModel", "Item not found with ID: $itemId")
             return
         }
 
+        // Enhanced debugging
+        Log.d("CartViewModel", "=== UPDATE QUANTITY DEBUG ===")
+        Log.d("CartViewModel", "Item ID: $itemId")
+        Log.d("CartViewModel", "maMatHangGioHang: ${currentItem.maMatHangGioHang}")
+        Log.d("CartViewModel", "New quantity: $newQuantity")
+        Log.d("CartViewModel", "Current quantity: ${currentItem.quantity}")
+        Log.d("CartViewModel", "Product name: ${currentItem.product.ten_san_pham}")
+        Log.d("CartViewModel", "Extra options count: ${currentItem.extraOptions.size}")
+
+        // Log the full cart items to see the structure
+        Log.d("CartViewModel", "All cart items:")
+        _cartItems.value.forEach { item ->
+            Log.d("CartViewModel", "  - ID: ${item.id}, maMatHangGioHang: ${item.maMatHangGioHang}, Product: ${item.product.ten_san_pham}")
+        }
+
+        // Cập nhật UI ngay
         val updatedItem = currentItem.copy(
             quantity = newQuantity,
             totalPrice = calculateItemTotal(currentItem, newQuantity)
@@ -192,11 +219,14 @@ class CartViewModel : ViewModel() {
         _cartItems.value = _cartItems.value.map {
             if (it.id == itemId) updatedItem else it
         }
+        updateSummary()
 
-        // Thay đổi duy nhất: truyền currentItem thay vì updatedItem
+        // Gọi API với thêm debug
+        Log.d("CartViewModel", "Calling updateCartItem with maMatHangGioHang: ${currentItem.maMatHangGioHang}")
         updateCartItem(currentItem.maMatHangGioHang, newQuantity, currentItem)
     }
 
+    // Also add debugging to updateCartItem
 
     fun removeFromCart(itemId: String) {
         val user = UserManager.getUser()

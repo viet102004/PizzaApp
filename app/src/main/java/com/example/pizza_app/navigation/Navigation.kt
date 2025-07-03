@@ -118,7 +118,9 @@ fun AppNavigation(navController: NavHostController) {
 
         composable("search") { SearchScreen(navController) }
         composable("wallet") { WalletScreen(navController) }
-        composable("vouchers") { VoucherScreen(navController) }
+        composable("vouchers") {
+            VoucherScreen(navController = navController)
+        }
         composable("profile_details") { ProfileDetailsScreen(navController) }
         composable("address") { AddressListScreen(navController) }
         composable ("register"){ RegisterScreen(navController) }

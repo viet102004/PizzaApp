@@ -118,8 +118,8 @@ fun CartItemCard(
                 Spacer(modifier = Modifier.height(12.dp))
 
                 Card(
-                    modifier = Modifier.fillMaxWidth()
-                        .clickable{onEditClick()},
+                    modifier = Modifier.fillMaxWidth(),
+              //          .clickable{onEditClick()},
                     shape = RoundedCornerShape(8.dp),
                     colors = CardDefaults.cardColors(containerColor = Color(0xFFF8F9FA))
 

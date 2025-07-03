@@ -28,7 +28,6 @@ data class MatHangResponse(
 
         val extraOptions = (tuy_chon ?: emptyList()).map {
             TuyChonRequest(
-                ma_loai_tuy_chon = it.ma_loai_tuy_chon,
                 ma_gia_tri = it.ma_gia_tri,
                 gia_them = it.gia_them
             )

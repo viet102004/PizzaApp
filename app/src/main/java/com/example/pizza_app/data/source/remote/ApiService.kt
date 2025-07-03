@@ -17,6 +17,8 @@ import com.example.pizza_app.data.model.ForgotPasswordResponse
 import com.example.pizza_app.data.model.GioHangResponse
 import com.example.pizza_app.data.model.IsFavoriteResponse
 import com.example.pizza_app.data.model.LoginResponse
+import com.example.pizza_app.data.model.MaGiamGiaListResponse
+import com.example.pizza_app.data.model.MaGiamGiaNguoiDungResponse
 import com.example.pizza_app.data.model.Order
 import com.example.pizza_app.data.model.OrderDetail
 import com.example.pizza_app.data.model.Product
@@ -272,5 +274,12 @@ interface ApiService {
     suspend fun getReviewStats(
         @Path("ma_san_pham") maSanPham: Int
     ): ReviewStatsResponse
+
+    @GET("maGiamGia/nguoiDung/{ma_nguoi_dung}")
+    suspend fun layMaGiamGiaNguoiDung(
+        @Path("ma_nguoi_dung") maNguoiDung: Int
+    ): MaGiamGiaNguoiDungResponse
+
+
 
 }

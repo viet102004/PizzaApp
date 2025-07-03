@@ -1,9 +1,11 @@
 package com.example.pizza_app.data.model
 
 data class TuyChonRequest(
+    val ma_loai_tuy_chon: Int,
     val ma_gia_tri: Int,
     val gia_them: Double
 )
+
 
 data class ChiTietComboRequest(
     val ma_chi_tiet_combo: Int,

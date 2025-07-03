@@ -315,12 +315,12 @@ fun ProductDetailScreen(
                                 Text("(+${additionalPrice.formatCurrency()})", fontSize = 14.sp, color = Color.Gray)
                             }
                             Spacer(modifier = Modifier.weight(1f))
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Icon(Icons.Default.Star, contentDescription = null, tint = secondaryColor, modifier = Modifier.size(16.dp))
-                                Spacer(modifier = Modifier.width(4.dp))
-                                Text("4.6", fontSize = 14.sp, fontWeight = FontWeight.Medium)
-                                Text(" (2k+ Reviews)", fontSize = 12.sp, color = Color.Gray)
-                            }
+//                            Row(verticalAlignment = Alignment.CenterVertically) {
+//                                Icon(Icons.Default.Star, contentDescription = null, tint = secondaryColor, modifier = Modifier.size(16.dp))
+//                                Spacer(modifier = Modifier.width(4.dp))
+//                                Text("4.6", fontSize = 14.sp, fontWeight = FontWeight.Medium)
+//                                Text(" (2k+ Reviews)", fontSize = 12.sp, color = Color.Gray)
+//                            }
                         }
                         Spacer(modifier = Modifier.height(16.dp))
                         Text(product?.mo_ta ?: "", fontSize = 14.sp, color = Color.Gray, lineHeight = 20.sp)
@@ -328,7 +328,7 @@ fun ProductDetailScreen(
                 }
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // THÊM PHẦN REVIEWS VÀO ĐÂY
+                // REVIEWS VÀO ĐÂY
                 ReviewsSection(
                     reviews = reviews,
                     reviewStats = reviewStats,

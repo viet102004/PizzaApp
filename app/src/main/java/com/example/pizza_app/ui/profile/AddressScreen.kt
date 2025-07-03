@@ -196,10 +196,11 @@ fun AddressListScreen(
                     val addressId = address.ma_thong_tin_giao_hang
 
                     if (addressId != null) {
+
                         AddressCard(
                             address = address,
                             onEditClick = {
-                                navController.navigate("edit_address/$addressId")
+                                navController.navigate("edit_address/${addressId.toLong()}")
                             },
                             onDeleteClick = {
                                 addressToDelete = address

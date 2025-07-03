@@ -167,7 +167,7 @@ fun ForgotPasswordScreen(
                                 keyboardType = KeyboardType.Email,
                                 imeAction = ImeAction.Done
                             ),
-                            placeholder = { Text("Ví dụ: example@email.com", color = Color.Gray) },
+                            placeholder = {  },
                             enabled = !uiState.isLoading,
                             singleLine = true, // Ràng buộc chỉ một dòng
                             maxLines = 1 // Giới hạn tối đa 1 dòng

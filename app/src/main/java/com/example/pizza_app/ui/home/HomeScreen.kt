@@ -4,6 +4,8 @@ import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
@@ -24,6 +26,7 @@ import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.zIndex
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -63,9 +66,7 @@ fun PizzaKimchiLogo() {
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterialApi::class,
-    ExperimentalMaterialApi::class
-)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterialApi::class)
 @Composable
 fun HomeScreen(
     navController: NavController,
@@ -87,6 +88,8 @@ fun HomeScreen(
     val isBannerLoading by bannerViewModel.isLoading.collectAsState()
 
     var showAuthDialog by remember { mutableStateOf(false) }
+
+    val scrollState = rememberScrollState()
 
     val pullRefreshState = rememberPullRefreshState(
         refreshing = false,
@@ -112,6 +115,20 @@ fun HomeScreen(
         }
     }
 
+    // Tính toán xem có nên hiển thị banner hay không
+    val showBanner by remember {
+        derivedStateOf {
+            scrollState.value < 200 // Banner sẽ biến mất khi scroll xuống 200px
+        }
+    }
+
+    // Tính toán xem category có nên sticky hay không
+    val isCategorySticky by remember {
+        derivedStateOf {
+            scrollState.value >= 200 // Category trở thành sticky khi scroll xuống 200px
+        }
+    }
+
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -122,6 +139,7 @@ fun HomeScreen(
                 .fillMaxSize()
                 .background(Color(0xFFF8F9FA))
         ) {
+            // TopAppBar - luôn cố định
             TopAppBar(
                 title = {
                     PizzaKimchiLogo()
@@ -166,33 +184,54 @@ fun HomeScreen(
                     }
                     Spacer(modifier = Modifier.width(16.dp))
                 },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
             )
 
-            Spacer(modifier = Modifier.height(16.dp))
-
-            PromoBanner(
-                banners = banners,
-                isLoading = isBannerLoading,
-                onBannerClick = { banner ->
-                    banner.ma_san_pham?.let { navController.navigate("product_detail/$it") }
+            // Category Sticky khi scroll
+            if (isCategorySticky) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(Color.White)
+                        .zIndex(1f)
+                ) {
+                    CategorySection(
+                        categories = categories,
+                        navController = navController
+                    )
                 }
-            )
+            }
 
-            Spacer(modifier = Modifier.height(16.dp))
-
-            CategorySection(
-                categories = categories,
-                navController = navController
-            )
-
-            Spacer(modifier = Modifier.height(16.dp))
-
+            // Phần nội dung có thể scroll
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .verticalScroll(rememberScrollState())
+                    .verticalScroll(scrollState)
             ) {
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // Banner - chỉ hiển thị khi showBanner = true
+                if (showBanner) {
+                    PromoBanner(
+                        banners = banners,
+                        isLoading = isBannerLoading,
+                        onBannerClick = { banner ->
+                            banner.ma_san_pham?.let { navController.navigate("product_detail/$it") }
+                        }
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+                }
+
+                // Category - hiển thị trong scroll khi chưa sticky
+                if (!isCategorySticky) {
+                    CategorySection(
+                        categories = categories,
+                        navController = navController
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+                }
+
+                // Error message nếu có
                 error?.let {
                     Card(
                         modifier = Modifier
@@ -209,11 +248,13 @@ fun HomeScreen(
                     Spacer(modifier = Modifier.height(8.dp))
                 }
 
+                // Product section
                 ProductSection(
                     products = productList,
                     navController = navController
                 )
 
+                // Loading indicator
                 if (isLoading && productList.isEmpty()) {
                     Box(
                         modifier = Modifier
@@ -224,8 +265,6 @@ fun HomeScreen(
                         CircularProgressIndicator(color = Color(0xFFFFB700))
                     }
                 }
-
-                Spacer(modifier = Modifier.height(80.dp))
             }
         }
 

@@ -4,6 +4,7 @@ package com.example.pizza_app.ui.cart
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -36,6 +37,7 @@ fun CartItemCard(
     item: CartItem,
     onQuantityChange: (Int) -> Unit,
     onRemove: () -> Unit,
+    onEditClick: () -> Unit = {},
     showControls: Boolean = true
 ) {
     Card(
@@ -116,9 +118,11 @@ fun CartItemCard(
                 Spacer(modifier = Modifier.height(12.dp))
 
                 Card(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier.fillMaxWidth()
+                        .clickable{onEditClick()},
                     shape = RoundedCornerShape(8.dp),
                     colors = CardDefaults.cardColors(containerColor = Color(0xFFF8F9FA))
+
                 ) {
                     Column(
                         modifier = Modifier.padding(12.dp)

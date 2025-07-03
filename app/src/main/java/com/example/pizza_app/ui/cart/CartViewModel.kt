@@ -18,6 +18,9 @@ class CartViewModel : ViewModel() {
     private val _cartItems = MutableStateFlow<List<CartItem>>(emptyList())
     val cartItems: StateFlow<List<CartItem>> = _cartItems.asStateFlow()
 
+    private val _options = MutableStateFlow<List<ProductOption>>(emptyList())
+    val options: StateFlow<List<ProductOption>> = _options
+
     private val _totalAmount = MutableStateFlow(0.0)
     val totalAmount: StateFlow<Double> = _totalAmount.asStateFlow()
 
@@ -29,6 +32,7 @@ class CartViewModel : ViewModel() {
 
     private val _success = MutableStateFlow(false)
     val success: StateFlow<Boolean> = _success.asStateFlow()
+
 
     fun resetState() {
         _message.value = ""
@@ -95,7 +99,7 @@ class CartViewModel : ViewModel() {
                     val giaThem = options.find { it.ma_loai_tuy_chon == maLoaiTuyChon }
                         ?.gia_tri?.find { it.ma_gia_tri == maGiaTri }?.gia_them
                     giaThem?.let {
-                        TuyChonRequest(ma_gia_tri = maGiaTri, gia_them = it)
+                        TuyChonRequest(ma_gia_tri = maGiaTri, gia_them = it, ma_loai_tuy_chon = maLoaiTuyChon)
                     }
                 }
 

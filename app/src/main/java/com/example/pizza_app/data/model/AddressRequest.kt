@@ -11,6 +11,18 @@ data class AddressCreateRequest(
     val ghi_chu: String? = null
 )
 
+data class AddressUpdateRequest(
+    val ten_nguoi_nhan: String? = null,
+    val so_dien_thoai_nguoi_nhan: String? = null,
+    val so_duong: String? = null,
+    val phuong_xa: String? = null,
+    val quan_huyen: String? = null,
+    val tinh_thanh_pho: String? = null,
+    val la_dia_chi_mac_dinh: Boolean? = null,
+    val ghi_chu: String? = null
+)
+
+
 // Cập nhật ApiResponse để hỗ trợ generic type
 data class AddressResponse<T>(
     val success: Boolean,
@@ -18,3 +30,4 @@ data class AddressResponse<T>(
     val data: T? = null,
     val total: Int? = null
 )
+

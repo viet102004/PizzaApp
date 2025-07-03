@@ -5,7 +5,7 @@ import com.google.gson.annotations.SerializedName
 data class ProductOption(
     val ma_loai_tuy_chon: Int,
     val ten_loai: String,
-    val loai_lua_chon: String, // "radio", "checkbox", "single", "multiple"
+    val loai_lua_chon: String,
     val bat_buoc: Boolean,
     val gia_tri: List<ProductOptionValue>
 )
@@ -21,3 +21,5 @@ data class ProductOptionsResponse(
     @SerializedName("tuy_chon")
     val tuy_chon: List<ProductOption>
 )
+
+

@@ -2,6 +2,7 @@
 
 package com.example.pizza_app.ui.profile
 
+import android.util.Log
 import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -27,6 +28,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import com.example.pizza_app.data.model.AddressInfo
 import com.example.pizza_app.data.model.Province
 import com.example.pizza_app.data.model.District
 import com.example.pizza_app.data.model.Ward
@@ -35,34 +37,47 @@ import com.example.pizza_app.ui.components.DistrictPickerDialog
 import com.example.pizza_app.ui.components.WardPickerDialog
 
 @Composable
-fun AddAddressScreen(
+fun AddOrEditAddressScreen(
     navController: NavController,
-    viewModel: AddressViewModel = viewModel()
+    viewModel: AddressViewModel = viewModel(),
+    isEditMode: Boolean = false,
+    existingAddress: AddressInfo? = null
 ) {
     val context = LocalContext.current
     val scrollState = rememberScrollState()
 
-    // Collect states from ViewModel
     val isLoading by viewModel.isLoading.collectAsState()
     val message by viewModel.message.collectAsState()
     val success by viewModel.success.collectAsState()
 
-    // Form states
     var name by remember { mutableStateOf("") }
     var phone by remember { mutableStateOf("") }
     var selectedProvince by remember { mutableStateOf<Province?>(null) }
     var selectedDistrict by remember { mutableStateOf<District?>(null) }
     var selectedWard by remember { mutableStateOf<Ward?>(null) }
     var streetAddress by remember { mutableStateOf("") }
-    var isDefault by remember { mutableStateOf(false) }
+    var isDefault by remember { mutableStateOf(0) } // 0 = không mặc định, 1 = mặc định
     var notes by remember { mutableStateOf("") }
-
-    // Dialog states
     var showProvinceDialog by remember { mutableStateOf(false) }
     var showDistrictDialog by remember { mutableStateOf(false) }
     var showWardDialog by remember { mutableStateOf(false) }
 
-    // Error states
+    LaunchedEffect(existingAddress) {
+        if (existingAddress != null) {
+            name = existingAddress.ten_nguoi_nhan
+            phone = existingAddress.so_dien_thoai_nguoi_nhan
+            streetAddress = existingAddress.so_duong
+            notes = existingAddress.ghi_chu ?: ""
+            isDefault = existingAddress.la_dia_chi_mac_dinh // <- Sửa dòng này
+
+            selectedProvince = Province(code = "", name = existingAddress.tinh_thanh_pho, districts = emptyList())
+            selectedDistrict = District(code = "", name = existingAddress.quan_huyen, wards = emptyList())
+            selectedWard = Ward(code = "", name = existingAddress.phuong_xa)
+        }
+    }
+
+
+
     var nameError by remember { mutableStateOf(false) }
     var phoneError by remember { mutableStateOf(false) }
     var provinceError by remember { mutableStateOf(false) }
@@ -413,16 +428,16 @@ fun AddAddressScreen(
 
                     SwitchRow(
                         title = "Đặt làm địa chỉ mặc định",
-                        checked = isDefault,
-                        onCheckedChange = { isDefault = it }
+                        checked = isDefault == 1,
+                        onCheckedChange = { isDefault = if (it) 1 else 0 }
                     )
+
                 }
             }
 
             // Save Button
             Button(
                 onClick = {
-                    // Validate form
                     var hasError = false
 
                     if (name.isBlank()) {
@@ -456,16 +471,32 @@ fun AddAddressScreen(
                     }
 
                     if (!hasError) {
-                        viewModel.createAddress(
-                            name = name,
-                            phone = phone,
-                            street = streetAddress,
-                            ward = selectedWard!!.name,
-                            district = selectedDistrict!!.name,
-                            province = selectedProvince!!.name,
-                            isDefault = isDefault,
-                            notes = notes
-                        )
+                        if (isEditMode && existingAddress != null && existingAddress.ma_thong_tin_giao_hang != null) {
+                            Log.d("SubmitButton", "Calling updateAddress")
+                            viewModel.updateAddress(
+                                maThongTinGiaoHang = existingAddress.ma_thong_tin_giao_hang.toLong(),
+                                name = name,
+                                phone = phone,
+                                street = streetAddress,
+                                ward = selectedWard!!.name,
+                                district = selectedDistrict!!.name,
+                                province = selectedProvince!!.name,
+                                isDefault = isDefault,
+                                notes = notes
+                            )
+                        } else {
+                            Log.d("SubmitButton", "Calling createAddress")
+                            viewModel.createAddress(
+                                name = name,
+                                phone = phone,
+                                street = streetAddress,
+                                ward = selectedWard!!.name,
+                                district = selectedDistrict!!.name,
+                                province = selectedProvince!!.name,
+                                isDefault = isDefault == 1, // Int -> Boolean
+                                notes = notes
+                            )
+                        }
                     } else {
                         Toast.makeText(context, "Vui lòng điền đầy đủ thông tin", Toast.LENGTH_SHORT).show()
                     }

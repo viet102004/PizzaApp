@@ -2,12 +2,17 @@
 
 package com.example.pizza_app.navigation
 
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material.CircularProgressIndicator
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
@@ -40,7 +45,9 @@ import com.example.pizza_app.ui.home.ProductDetailScreen
 import com.example.pizza_app.ui.home.SearchScreen
 import com.example.pizza_app.ui.order.OrderDetailScreen
 import com.example.pizza_app.ui.order.OrderDetailViewModel
+import com.example.pizza_app.ui.profile.AddOrEditAddressScreen
 import com.example.pizza_app.ui.profile.AddressListScreen
+import com.example.pizza_app.ui.profile.AddressViewModel
 import com.example.pizza_app.ui.profile.UpdateDOBScreen
 import com.example.pizza_app.ui.settings.SettingsScreen
 import com.example.pizza_app.ui.profile.UpdateEmailScreen
@@ -48,7 +55,6 @@ import com.example.pizza_app.ui.profile.UpdateNameScreen
 import com.example.pizza_app.ui.profile.UpdatePasswordScreen
 import com.example.pizza_app.ui.profile.UpdatePhoneScreen
 import com.example.pizza_app.ui.vouchers.VoucherScreen
-import com.example.pizza_app.ui.profile.AddAddressScreen
 
 @Composable
 fun AppNavigation(navController: NavHostController) {
@@ -122,8 +128,36 @@ fun AppNavigation(navController: NavHostController) {
         composable("login") { LoginScreen(navController) }
         composable ("pay"){ PayScreen(navController) }
         composable ("favorite"){ FavoriteScreen(navController) }
-        composable ("add_address"){ AddAddressScreen(navController) }
 
+        composable("add_address") {
+            AddOrEditAddressScreen(
+                navController = navController,
+                isEditMode = false
+            )
+        }
+
+        composable("edit_address/{id}") { backStackEntry ->
+            val id = backStackEntry.arguments?.getString("id")?.toLongOrNull()
+            val viewModel: AddressViewModel = viewModel()
+            val addressList by viewModel.addressList.collectAsState()
+
+            LaunchedEffect(id) {
+                if (id != null) {
+                    viewModel.getDeliveryAddresses()
+                }
+            }
+
+            val address = addressList.find { it.ma_thong_tin_giao_hang == id }
+
+            address?.let {
+                AddOrEditAddressScreen(
+                    navController = navController,
+                    isEditMode = true,
+                    existingAddress = it,
+                    viewModel = viewModel
+                )
+            }
+        }
 
         composable("product_detail/{id}") { backStackEntry ->
             val id = backStackEntry.arguments?.getString("id")?.toIntOrNull()

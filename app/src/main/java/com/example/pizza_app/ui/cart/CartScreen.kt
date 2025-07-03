@@ -27,6 +27,9 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.pizza_app.data.model.CartItem
+import com.example.pizza_app.data.model.Product
+import com.example.pizza_app.data.model.ProductOption
+import com.example.pizza_app.data.source.remote.RetrofitInstance
 import com.example.pizza_app.ui.components.AuthDialog
 import com.example.pizza_app.ui.cart.CartItemCard
 
@@ -37,11 +40,30 @@ fun CartScreen(
     isLoggedIn: Boolean,
     onNavigateTo: (String) -> Unit
 ) {
+     // true khi bấm "chỉnh sửa"
+
     val cartItems by cartViewModel.cartItems.collectAsState()
     val cartTotal by cartViewModel.totalAmount.collectAsState()
     val itemCount by cartViewModel.itemCount.collectAsState()
 
+    val isEditMode = mutableStateOf(false)
+    val showDialog = remember { mutableStateOf(false) }
+    val selectedCartItem = remember { mutableStateOf<CartItem?>(null) }
+    val product = remember { mutableStateOf<Product?>(null) }
+    val quantity = remember { mutableStateOf(1) }
+    val selectedImage = remember { mutableStateOf<String?>(null) }
+    val dialogAction = remember { mutableStateOf("add_to_cart") }
+
+    val selectedOptions = remember { mutableStateMapOf<Long, Long>() }
+
+    val multipleSelectedOptions = remember { mutableStateMapOf<Long, MutableSet<Long>>() }
+
     var showAuthDialog by remember { mutableStateOf(false) }
+    val productOptionViewModel: CartViewModel = viewModel()
+    val options by productOptionViewModel.options.collectAsState()
+
+
+    //val options = remember { mutableStateListOf<ProductOption>() }
 
     LaunchedEffect(Unit) {
         cartViewModel.fetchCartItems()
@@ -158,7 +180,25 @@ fun CartScreen(
                             },
                             onRemove = {
                                 cartViewModel.removeFromCart(item.id)
+                            },
+                            onEditClick = {
+                                selectedCartItem.value = item
+                                product.value = item.product
+                                quantity.value = item.quantity
+                                selectedImage.value = item.imageUrl
+                                dialogAction.value = "edit_cart"
+                                isEditMode.value = true
+
+                                restoreSelectedOptionsFromCartItem(
+                                    item = item,
+                                    options = options,
+                                    selectedOptions = selectedOptions,
+                                    multipleSelectedOptions = multipleSelectedOptions
+                                )
+
+                                showDialog.value = true
                             }
+
                         )
                     }
                 }
@@ -221,6 +261,36 @@ fun CartScreen(
         onRegisterClick = { onNavigateTo("register") }
     )
 }
+
+fun restoreSelectedOptionsFromCartItem(
+    item: CartItem,
+    options: List<ProductOption>,
+    selectedOptions: MutableMap<Long, Long>,
+    multipleSelectedOptions: MutableMap<Long, MutableSet<Long>>
+) {
+    selectedOptions.clear()
+    multipleSelectedOptions.clear()
+
+    item.extraOptions.forEach { selected ->
+        val matchedOption = options.find { option ->
+            option.gia_tri.any { it.ma_gia_tri == selected.ma_gia_tri }
+        }
+
+        matchedOption?.let { option ->
+            when (option.loai_lua_chon) {
+                "radio", "single" -> {
+                    selectedOptions[option.ma_loai_tuy_chon.toLong()] = selected.ma_gia_tri.toLong()
+                }
+                "checkbox", "multiple" -> {
+                    val current = multipleSelectedOptions.getOrPut(option.ma_loai_tuy_chon.toLong()) { mutableSetOf() }
+                    current.add(selected.ma_gia_tri.toLong())
+                }
+            }
+        }
+    }
+}
+
+
 
 @Composable
 fun CartEmptyContent(navController: NavController) {

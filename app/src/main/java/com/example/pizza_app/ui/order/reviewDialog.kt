@@ -104,9 +104,11 @@ fun ReviewOrderButton(onReviewOrder: () -> Unit) {
         }
     }
 }
+
 @Composable
 fun ReviewDialog(
     orderDetail: OrderDetail,
+    reviewedProductIds: Set<Long> = emptySet(), // Thêm parameter này
     isSubmitting: Boolean,
     onDismiss: () -> Unit,
     onSubmitReview: (Long, Int, String, String?) -> Unit
@@ -123,8 +125,11 @@ fun ReviewDialog(
         selectedImageUri = uri
     }
 
+    // Lọc ra những sản phẩm chưa được đánh giá
     val reviewableProducts = orderDetail.mat_hang.filter {
-        it.loai_mat_hang == "san_pham" && it.ma_san_pham != null
+        it.loai_mat_hang == "san_pham" &&
+                it.ma_san_pham != null &&
+                !reviewedProductIds.contains(it.ma_san_pham?.toLong())
     }
 
     if (reviewableProducts.isEmpty()) {
@@ -132,7 +137,15 @@ fun ReviewDialog(
         AlertDialog(
             onDismissRequest = onDismiss,
             title = { Text("Thông báo") },
-            text = { Text("Không có sản phẩm nào có thể đánh giá trong đơn hàng này.") },
+            text = {
+                Text(
+                    if (orderDetail.mat_hang.any { it.loai_mat_hang == "san_pham" && it.ma_san_pham != null }) {
+                        "Tất cả sản phẩm trong đơn hàng này đã được đánh giá."
+                    } else {
+                        "Không có sản phẩm nào có thể đánh giá trong đơn hàng này."
+                    }
+                )
+            },
             confirmButton = {
                 TextButton(onClick = onDismiss) {
                     Text("Đóng")

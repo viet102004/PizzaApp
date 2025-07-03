@@ -4,6 +4,7 @@ import com.example.pizza_app.data.model.AapiResponse
 import com.example.pizza_app.data.model.AddressCreateRequest
 import com.example.pizza_app.data.model.AddressInfo
 import com.example.pizza_app.data.model.AddressResponse
+import com.example.pizza_app.data.model.AddressUpdateRequest
 import retrofit2.http.Query
 import com.example.pizza_app.data.model.ApiResponse
 import com.example.pizza_app.data.model.Banner
@@ -214,13 +215,13 @@ interface ApiService {
         @Body addressData: AddressCreateRequest
     ): AddressResponse<AddressInfo>
 
-    // Cập nhật địa chỉ
     @PUT("users/{ma_nguoi_dung}/delivery-addresses/{ma_thong_tin_giao_hang}")
     suspend fun updateDeliveryAddress(
         @Path("ma_nguoi_dung") maNguoiDung: Long,
         @Path("ma_thong_tin_giao_hang") maThongTinGiaoHang: Long,
-        @Body addressData: Map<String, Any>
+        @Body addressData: AddressUpdateRequest
     ): AddressResponse<AddressInfo>
+
 
     // Xóa địa chỉ
     @DELETE("users/{ma_nguoi_dung}/delivery-addresses/{ma_thong_tin_giao_hang}")

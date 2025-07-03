@@ -30,7 +30,6 @@ class HomeViewModel : ViewModel() {
         startAutoRefresh()
     }
 
-    // CÁCH 1: Auto Refresh với Timer
     private fun startAutoRefresh() {
         viewModelScope.launch {
             while (true) {

@@ -6,6 +6,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.pizza_app.data.model.AddressCreateRequest
 import com.example.pizza_app.data.model.AddressInfo
+import com.example.pizza_app.data.model.AddressResponse
+import com.example.pizza_app.data.model.AddressUpdateRequest
 import com.example.pizza_app.data.source.UserManager
 import com.example.pizza_app.data.source.remote.RetrofitInstance
 import com.example.pizza_app.data.source.remote.RetrofitInstance.api
@@ -26,6 +28,10 @@ class AddressViewModel : ViewModel() {
     private val _addressList = MutableStateFlow<List<AddressInfo>>(emptyList())
     val addressList: StateFlow<List<AddressInfo>> = _addressList
 
+    private val _updateResult = MutableStateFlow<AddressResponse<AddressInfo>?>(null)
+    val updateResult: StateFlow<AddressResponse<AddressInfo>?> = _updateResult
+
+
     companion object {
         private const val ERROR_CANNOT_DELETE_DEFAULT = "Không thể xóa địa chỉ mặc định. Vui lòng đặt địa chỉ khác làm mặc định trước."
         private const val ERROR_USER_NOT_FOUND = "Không tìm thấy thông tin người dùng"
@@ -41,6 +47,7 @@ class AddressViewModel : ViewModel() {
     fun resetState() {
         _message.value = ""
         _success.value = false
+        _isLoading.value = false
     }
 
     private fun getUserId(): Long? {
@@ -148,44 +155,48 @@ class AddressViewModel : ViewModel() {
         ward: String,
         district: String,
         province: String,
-        isDefault: Boolean, // <-- vẫn nhận từ UI là Boolean
-        notes: String?
+        isDefault: Int,
+        notes: String
     ) {
-//        viewModelScope.launch {
-//            val userId = getUserId()
-//            if (userId == null) {
-//                success.value = false
-//                isLoading.value = false
-//                return@launch
-//            }
-//
-//            isLoading.value = true
-//            try {
-//                val result = api.updateDeliveryAddress(
-//                    maNguoiDung = userId,
-//                    maThongTinGiaoHang = maThongTinGiaoHang,
-//                    addressData = mapOf(
-//                        "ten_nguoi_nhan" to name,
-//                        "so_dien_thoai_nguoi_nhan" to phone,
-//                        "so_duong" to street,
-//                        "phuong_xa" to ward,
-//                        "quan_huyen" to district,
-//                        "tinh_thanh_pho" to province,
-//                        "la_dia_chi_mac_dinh" to if (isDefault) 1 else 0,
-//                        "ghi_chu" to notes.orEmpty()
-//                    )
-//                )
-//                message.value = "Cập nhật địa chỉ thành công"
-//                success.value = true
-//            } catch (e: Exception) {
-//                message.value = "Lỗi cập nhật: ${e.message}"
-//                success.value = false
-//            } finally {
-//                isLoading.value = false
-//            }
-//        }
-    }
+        viewModelScope.launch {
+            _isLoading.value = true
+            try {
+                val user = UserManager.getUser()
+                if (user != null) {
+                    val request = AddressUpdateRequest(
+                        ten_nguoi_nhan = name,
+                        so_dien_thoai_nguoi_nhan = phone,
+                        so_duong = street,
+                        phuong_xa = ward,
+                        quan_huyen = district,
+                        tinh_thanh_pho = province,
+                        la_dia_chi_mac_dinh = isDefault == 1,
+                        ghi_chu = notes
+                    )
+                    Log.d("AddressViewModel", "Calling updateDeliveryAddress API...")
+                    val response = RetrofitInstance.api.updateDeliveryAddress(
+                        maNguoiDung = user.ma_nguoi_dung.toLong(),
+                        maThongTinGiaoHang = maThongTinGiaoHang,
+                        addressData = request
+                    )
 
+                    if (response.success) {
+                        _success.value = true
+                        _message.value = "Cập nhật địa chỉ thành công"
+                        refreshAddresses() // optional: cập nhật lại danh sách địa chỉ
+                    } else {
+                        _success.value = false
+                        _message.value = response.message ?: "Cập nhật địa chỉ thất bại"
+                    }
+                    _updateResult.value = response
+                }
+            } catch (e: Exception) {
+                Log.e("AddressViewModel", "Update address failed", e)
+            } finally {
+                _isLoading.value = false
+            }
+        }
+    }
 
 
     fun getAddressDetail(addressId: Long, onResult: (AddressInfo?) -> Unit) {

@@ -166,7 +166,7 @@ fun LoginScreen(navController: NavController) {
                             emailTextFieldValue = it
                             email = it.text
                         },
-                        label = { Text("Email") },
+                        label = { Text("Email hoặc số điện thoại") },
                         leadingIcon = {
                             Icon(Icons.Default.Email, contentDescription = null, tint = primaryColor)
                         },

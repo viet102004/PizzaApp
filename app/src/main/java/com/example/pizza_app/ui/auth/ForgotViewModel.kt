@@ -19,6 +19,9 @@ class ForgotPasswordViewModel(
     val uiState: StateFlow<ForgotPasswordUiState> = _uiState.asStateFlow()
 
     fun forgotPassword(email: String) {
+        // Clear error trước khi validate
+        _uiState.value = _uiState.value.copy(error = null)
+
         if (email.isBlank()) {
             _uiState.value = _uiState.value.copy(
                 error = "Vui lòng nhập email"

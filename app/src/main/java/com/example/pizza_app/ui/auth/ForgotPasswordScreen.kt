@@ -52,20 +52,7 @@ fun ForgotPasswordScreen(
     val primaryColor = Color(0xFFFF6B35)
     val lightOrange = Color(0xFFFFE4D6)
 
-    // Handle UI state changes
-    LaunchedEffect(uiState.message) {
-        uiState.message?.let { message ->
-            Toast.makeText(context, message, Toast.LENGTH_LONG).show()
-            viewModel.clearMessage()
-        }
-    }
-
-    LaunchedEffect(uiState.error) {
-        uiState.error?.let { error ->
-            Toast.makeText(context, error, Toast.LENGTH_LONG).show()
-            viewModel.clearError()
-        }
-    }
+    // Không cần LaunchedEffect cho message nữa vì sẽ hiển thị inline
 
     Scaffold(
         topBar = {
@@ -144,6 +131,13 @@ fun ForgotPasswordScreen(
                                 // Chỉ cho phép nhập nếu không có ký tự xuống dòng
                                 if (!newValue.contains('\n') && !newValue.contains('\r')) {
                                     email = newValue
+                                    // Clear error và message khi user bắt đầu nhập
+                                    if (uiState.error != null) {
+                                        viewModel.clearError()
+                                    }
+                                    if (uiState.message != null) {
+                                        viewModel.clearMessage()
+                                    }
                                 }
                             },
                             label = { Text("Email") },
@@ -155,13 +149,14 @@ fun ForgotPasswordScreen(
                                 )
                             },
                             modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(bottom = 24.dp),
+                                .fillMaxWidth(),
                             shape = RoundedCornerShape(12.dp),
                             colors = OutlinedTextFieldDefaults.colors(
                                 focusedBorderColor = primaryColor,
                                 focusedLabelColor = primaryColor,
-                                cursorColor = primaryColor
+                                cursorColor = primaryColor,
+                                errorBorderColor = Color.Red,
+                                errorLabelColor = Color.Red
                             ),
                             keyboardOptions = KeyboardOptions(
                                 keyboardType = KeyboardType.Email,
@@ -169,9 +164,32 @@ fun ForgotPasswordScreen(
                             ),
                             placeholder = {  },
                             enabled = !uiState.isLoading,
-                            singleLine = true, // Ràng buộc chỉ một dòng
-                            maxLines = 1 // Giới hạn tối đa 1 dòng
+                            singleLine = true,
+                            maxLines = 1,
+                            isError = uiState.error != null
                         )
+
+                        // Hiển thị thông báo lỗi hoặc thành công dưới TextField
+                        if (uiState.error != null) {
+                            Text(
+                                text = uiState.error!!,
+                                color = Color.Red,
+                                fontSize = 12.sp,
+                                modifier = Modifier.padding(start = 16.dp, top = 4.dp)
+                            )
+                        }
+
+                        // Hiển thị thông báo thành công
+                        if (uiState.message != null) {
+                            Text(
+                                text = uiState.message!!,
+                                color = Color(0xFF4CAF50), // Màu xanh lá cho thông báo thành công
+                                fontSize = 12.sp,
+                                modifier = Modifier.padding(start = 16.dp, top = 4.dp)
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.height(if (uiState.error != null || uiState.message != null) 16.dp else 24.dp))
 
                         Button(
                             onClick = {

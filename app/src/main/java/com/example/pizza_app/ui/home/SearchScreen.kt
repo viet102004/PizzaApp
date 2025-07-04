@@ -199,6 +199,11 @@ fun ProductSearchItem(
     product: Product,
     onClick: () -> Unit
 ) {
+    val baseUrl = "https://related-burro-selected.ngrok-free.app"
+    val imageUrl = if (!product.hinh_anh.isNullOrBlank())
+        baseUrl + product.hinh_anh
+    else null
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -215,19 +220,19 @@ fun ProductSearchItem(
         ) {
             // Hình ảnh sản phẩm
             AsyncImage(
-                model = product.hinh_anh,
+                model = imageUrl,
                 contentDescription = product.ten_san_pham,
                 modifier = Modifier
                     .size(60.dp)
                     .clip(RoundedCornerShape(8.dp)),
                 contentScale = ContentScale.Crop,
                 placeholder = painterResource(R.drawable.pizza_placeholder),
-                error = painterResource(R.drawable.pizza_placeholder)
+                error = painterResource(R.drawable.pizza_placeholder),
+                fallback = painterResource(R.drawable.pizza_placeholder)
             )
 
             Spacer(modifier = Modifier.width(12.dp))
 
-            // Thông tin sản phẩm
             Column(
                 modifier = Modifier.weight(1f)
             ) {
@@ -262,7 +267,6 @@ fun ProductSearchItem(
                 )
             }
 
-            // Icon mới nếu có
             if (product.moi == 1) {
                 Card(
                     shape = RoundedCornerShape(4.dp),

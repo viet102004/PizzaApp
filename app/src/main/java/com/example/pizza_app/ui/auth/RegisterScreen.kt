@@ -149,7 +149,8 @@ fun RegisterScreen(navController: NavController) {
                                 focusedLabelColor = primaryColor,
                                 cursorColor = primaryColor
                             ),
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text, imeAction = ImeAction.Next)
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text, imeAction = ImeAction.Next),
+                            singleLine = true
                         )
 
                         OutlinedTextField(
@@ -166,7 +167,8 @@ fun RegisterScreen(navController: NavController) {
                                 focusedLabelColor = primaryColor,
                                 cursorColor = primaryColor
                             ),
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email, imeAction = ImeAction.Next)
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email, imeAction = ImeAction.Next),
+                            singleLine = true
                         )
 
                         OutlinedTextField(
@@ -189,7 +191,8 @@ fun RegisterScreen(navController: NavController) {
                                 cursorColor = primaryColor
                             ),
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone, imeAction = ImeAction.Next),
-                            placeholder = { Text("Ví dụ: 0123456789", color = Color.Gray) }
+                            placeholder = { Text("", color = Color.Gray) },
+                            singleLine = true
                         )
 
                         OutlinedTextField(
@@ -216,7 +219,8 @@ fun RegisterScreen(navController: NavController) {
                                 focusedLabelColor = primaryColor,
                                 cursorColor = primaryColor
                             ),
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, imeAction = ImeAction.Next)
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, imeAction = ImeAction.Next),
+                            singleLine = true
                         )
 
                         OutlinedTextField(
@@ -241,7 +245,8 @@ fun RegisterScreen(navController: NavController) {
                                 focusedLabelColor = primaryColor,
                                 cursorColor = primaryColor
                             ),
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, imeAction = ImeAction.Done)
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, imeAction = ImeAction.Done),
+                            singleLine = true
                         )
 
                         Spacer(modifier = Modifier.height(16.dp))

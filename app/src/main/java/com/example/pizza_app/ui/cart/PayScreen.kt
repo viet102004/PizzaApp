@@ -1,4 +1,3 @@
-
 package com.example.pizza_app.ui.cart
 
 import androidx.compose.foundation.background
@@ -22,6 +21,7 @@ import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Payment
 import androidx.compose.material.icons.filled.Note
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -69,6 +69,7 @@ fun PayScreen(
     var orderNote by remember { mutableStateOf("") }
     var showAddressDialog by remember { mutableStateOf(false) }
     var showDiscountDialog by remember { mutableStateOf(false) }
+    var showAddressRequiredDialog by remember { mutableStateOf(false) }
 
     val discountAmount = remember(cartTotal, selectedVoucher) {
         selectedVoucher?.let { voucher ->
@@ -93,9 +94,9 @@ fun PayScreen(
     var selectedAddress by remember { mutableStateOf<AddressInfo?>(null) }
     val selectedAddressId = selectedAddress?.ma_thong_tin_giao_hang
 
-
-
-
+    // Kiểm tra có địa chỉ hay không
+    val hasAddress = addressList.isNotEmpty()
+    val isOrderEnabled = hasAddress && selectedAddress != null && !isLoading
 
     val paymentMethods = listOf(
         PaymentMethod("Tiền mặt", "💰", "Thanh toán khi nhận hàng"),
@@ -160,16 +161,20 @@ fun PayScreen(
                 verticalArrangement = Arrangement.spacedBy(12.dp),
                 contentPadding = PaddingValues(16.dp)
             ) {
-                // 1. Địa chỉ giao hàng - Updated to show selected address
+                // 1. Địa chỉ giao hàng - Updated to show selected address with validation
                 item {
                     ModernCard(
                         icon = Icons.Default.LocationOn,
-                        iconColor = Color(0xFF4CAF50),
+                        iconColor = if (hasAddress) Color(0xFF4CAF50) else Color(0xFFFF6B35),
                         title = "Địa chỉ giao hàng",
-                        action = "Thay đổi",
+                        action = if (hasAddress) "Thay đổi" else "Thêm địa chỉ",
                         onActionClick = {
-                            addressViewModel.getDeliveryAddresses() // Refresh addresses
-                            showAddressDialog = true
+                            if (hasAddress) {
+                                addressViewModel.getDeliveryAddresses() // Refresh addresses
+                                showAddressDialog = true
+                            } else {
+                                navController.navigate("add_address")
+                            }
                         }
                     ) {
                         if (selectedAddress != null) {
@@ -215,11 +220,30 @@ fun PayScreen(
                                 }
                             }
                         } else {
-                            Text(
-                                text = if (addressList.isEmpty()) "Chưa có địa chỉ giao hàng" else "Đang tải địa chỉ...",
-                                fontSize = 14.sp,
-                                color = Color(0xFF888888)
-                            )
+                            // Show different message based on loading state and address availability
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                if (!hasAddress && !isAddressLoading) {
+                                    Icon(
+                                        Icons.Default.Warning,
+                                        contentDescription = null,
+                                        tint = Color(0xFFFF6B35),
+                                        modifier = Modifier.size(16.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                }
+                                Text(
+                                    text = when {
+                                        isAddressLoading -> "Đang tải địa chỉ..."
+                                        !hasAddress -> "Vui lòng thêm địa chỉ giao hàng"
+                                        else -> "Chưa có địa chỉ giao hàng"
+                                    },
+                                    fontSize = 14.sp,
+                                    color = if (!hasAddress && !isAddressLoading) Color(0xFFFF6B35) else Color(0xFF888888),
+                                    fontWeight = if (!hasAddress && !isAddressLoading) FontWeight.Medium else FontWeight.Normal
+                                )
+                            }
                         }
                     }
                 }
@@ -429,7 +453,7 @@ fun PayScreen(
                 }
             }
 
-            // 7. Bottom section - Enhanced design
+            // 7. Bottom section - Enhanced design with validation
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -470,17 +494,25 @@ fun PayScreen(
 
                         Button(
                             onClick = {
-                                viewModel.datHang(
-                                    maThongTinGiaoHang = selectedAddressId!!.toInt(),
-                                    phuongThucThanhToan = selectedPaymentMethod,
-                                    maGiamGia = selectedVoucher?.ma_giam_gia, // ✅ Đây là phần bạn cần sửa
-                                    ghiChu = orderNote,
-                                    thoiGianGiaoDuKien = null
-                                )
-                                navController.navigate("home")
+                                if (!hasAddress) {
+                                    showAddressRequiredDialog = true
+                                } else if (selectedAddressId != null) {
+                                    viewModel.datHang(
+                                        maThongTinGiaoHang = selectedAddressId!!.toInt(),
+                                        phuongThucThanhToan = selectedPaymentMethod,
+                                        maGiamGia = selectedVoucher?.ma_giam_gia,
+                                        ghiChu = orderNote,
+                                        thoiGianGiaoDuKien = null
+                                    )
+                                    navController.navigate("home")
+                                }
                             },
-                            enabled = !isLoading,
-                            modifier = Modifier.fillMaxWidth()
+                            enabled = isOrderEnabled,
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = if (isOrderEnabled) Color(0xFFFF6B35) else Color(0xFFCCCCCC),
+                                contentColor = Color.White
+                            )
                         ) {
                             if (isLoading) {
                                 CircularProgressIndicator(
@@ -488,10 +520,13 @@ fun PayScreen(
                                     modifier = Modifier.size(18.dp)
                                 )
                             } else {
-                                Text("Đặt hàng")
+                                Text(
+                                    text = if (!hasAddress) "Thêm địa chỉ để đặt hàng" else "Đặt hàng",
+                                    fontSize = 16.sp,
+                                    fontWeight = FontWeight.Medium
+                                )
                             }
                         }
-
                     }
                 }
             }
@@ -582,6 +617,66 @@ fun PayScreen(
                     )
                 ) {
                     Text("Đóng", fontWeight = FontWeight.Medium)
+                }
+            },
+            shape = RoundedCornerShape(16.dp)
+        )
+    }
+
+    // Dialog yêu cầu thêm địa chỉ
+    if (showAddressRequiredDialog) {
+        AlertDialog(
+            onDismissRequest = { showAddressRequiredDialog = false },
+            icon = {
+                Icon(
+                    Icons.Default.Warning,
+                    contentDescription = null,
+                    tint = Color(0xFFFF6B35),
+                    modifier = Modifier.size(32.dp)
+                )
+            },
+            title = {
+                Text(
+                    "Yêu cầu địa chỉ giao hàng",
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 18.sp,
+                    color = Color(0xFF1A1A1A)
+                )
+            },
+            text = {
+                Text(
+                    "Bạn cần thêm địa chỉ giao hàng để có thể đặt hàng. Vui lòng thêm địa chỉ trước khi tiếp tục.",
+                    fontSize = 14.sp,
+                    color = Color(0xFF666666),
+                    lineHeight = 20.sp
+                )
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        showAddressRequiredDialog = false
+                        navController.navigate("add_address")
+                    },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color(0xFFFF6B35)
+                    ),
+                    shape = RoundedCornerShape(8.dp)
+                ) {
+                    Text(
+                        "Thêm địa chỉ",
+                        fontWeight = FontWeight.Medium,
+                        color = Color.White
+                    )
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = { showAddressRequiredDialog = false },
+                    colors = ButtonDefaults.textButtonColors(
+                        contentColor = Color(0xFF666666)
+                    )
+                ) {
+                    Text("Để sau", fontWeight = FontWeight.Medium)
                 }
             },
             shape = RoundedCornerShape(16.dp)

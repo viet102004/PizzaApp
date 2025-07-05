@@ -366,15 +366,7 @@ fun ProductDetailScreen(
                     Text("Thêm vào giỏ", color = Color.Black, fontWeight = FontWeight.Medium, fontSize = 14.sp)
                 }
 
-                Button(
-                    onClick = { handleButtonClick("buy_now") },
-                    modifier = Modifier.weight(1f).height(52.dp),
-                    colors = ButtonDefaults.buttonColors(backgroundColor = primaryColor),
-                    shape = RoundedCornerShape(16.dp),
-                    elevation = ButtonDefaults.elevation(4.dp)
-                ) {
-                    Text("Mua ngay", color = Color.White, fontWeight = FontWeight.Medium, fontSize = 14.sp)
-                }
+
             }
         }
     }

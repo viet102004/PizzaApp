@@ -27,3 +27,10 @@ data class FavoriteProduct(
 data class IsFavoriteResponse(
     val isFavorite: Boolean
 )
+
+data class UpdateAvatarResponse(
+    val success: Boolean,
+    val message: String,
+    val ma_nguoi_dung: Int,
+    val duong_dan: String
+)

@@ -26,7 +26,6 @@ import coil.compose.rememberAsyncImagePainter
 import com.example.pizza_app.R
 import com.example.pizza_app.data.source.UserManager
 import com.example.pizza_app.data.source.getFullImageUrl
-import com.example.pizza_app.ui.profile.ProfileItem
 import com.example.pizza_app.ui.components.AuthDialog
 
 @Composable
@@ -141,113 +140,6 @@ fun ProfileScreen(
 
             // Nội dung chính - khác nhau giữa khách và người dùng đã đăng nhập
             if (isLoggedIn) {
-                // Card điểm thưởng nổi bật với gradient và design mới
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable { /* TODO: Navigate to points detail */ },
-                    shape = RoundedCornerShape(20.dp),
-                    colors = CardDefaults.cardColors(containerColor = Color.White),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .background(
-                                brush = Brush.horizontalGradient(
-                                    colors = listOf(
-                                        Color(0xFFFFB700).copy(alpha = 0.15f),
-                                        Color(0xFFFF8F00).copy(alpha = 0.1f)
-                                    )
-                                )
-                            )
-                            .padding(20.dp)
-                    ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            // Icon với background gradient
-                            Box(
-                                modifier = Modifier
-                                    .size(56.dp)
-                                    .background(
-                                        brush = Brush.radialGradient(
-                                            colors = listOf(
-                                                Color(0xFFFFB700),
-                                                Color(0xFFFF8F00)
-                                            )
-                                        ),
-                                        shape = CircleShape
-                                    ),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Icon(
-                                    Icons.Default.Star,
-                                    contentDescription = null,
-                                    tint = Color.White,
-                                    modifier = Modifier.size(28.dp)
-                                )
-                            }
-
-                            Spacer(modifier = Modifier.width(16.dp))
-
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(
-                                    text = "Điểm tích lũy hiện tại",
-                                    fontSize = 14.sp,
-                                    color = Color(0xFF666666),
-                                    fontWeight = FontWeight.Medium
-                                )
-                                Spacer(modifier = Modifier.height(4.dp))
-                                Row(
-                                    verticalAlignment = Alignment.Bottom
-                                ) {
-                                    Text(
-                                        text = "1,000",
-                                        fontSize = 28.sp,
-                                        fontWeight = FontWeight.ExtraBold,
-                                        color = Color(0xFFFFB700)
-                                    )
-                                    Spacer(modifier = Modifier.width(4.dp))
-                                    Text(
-                                        text = "điểm",
-                                        fontSize = 16.sp,
-                                        fontWeight = FontWeight.Medium,
-                                        color = Color(0xFF666666),
-                                        modifier = Modifier.padding(bottom = 2.dp)
-                                    )
-                                }
-                                Spacer(modifier = Modifier.height(4.dp))
-                                Text(
-                                    text = "Nhấn để xem chi tiết",
-                                    fontSize = 12.sp,
-                                    color = Color(0xFF999999)
-                                )
-                            }
-
-                            // Arrow với background tròn
-                            Box(
-                                modifier = Modifier
-                                    .size(32.dp)
-                                    .background(
-                                        Color(0xFFFFB700).copy(alpha = 0.2f),
-                                        shape = CircleShape
-                                    ),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Icon(
-                                    Icons.Default.ArrowForwardIos,
-                                    contentDescription = null,
-                                    tint = Color(0xFFFFB700),
-                                    modifier = Modifier.size(14.dp)
-                                )
-                            }
-                        }
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(16.dp))
 
                 // Grid menu với style mới
                 Card(

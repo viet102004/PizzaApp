@@ -31,6 +31,7 @@ import com.example.pizza_app.data.model.ReviewRequest
 import com.example.pizza_app.data.model.ReviewStatsResponse
 import com.example.pizza_app.data.model.ThemGioHangResponse
 import com.example.pizza_app.data.model.ThemVaoGioHangRequest
+import com.example.pizza_app.data.model.UpdateAvatarResponse
 import com.example.pizza_app.data.model.UserResponse
 import okhttp3.MultipartBody
 import retrofit2.Response
@@ -98,7 +99,7 @@ interface ApiService {
     suspend fun updateAvatar(
         @Path("ma_nguoi_dung") maNguoiDung: Int,
         @Part anh_dai_dien: MultipartBody.Part
-    ): ApiResponse
+    ): UpdateAvatarResponse
 
     @FormUrlEncoded
     @PUT("nguoi-dung/{ma_nguoi_dung}/doi-ten")

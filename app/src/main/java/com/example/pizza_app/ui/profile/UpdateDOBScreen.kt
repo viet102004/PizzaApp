@@ -36,6 +36,17 @@ fun UpdateDOBScreen(
     // States
     var selectedDate by remember { mutableStateOf(getCurrentDate()) }
     var showDatePicker by remember { mutableStateOf(false) }
+    var initialDate by remember { mutableStateOf(getCurrentDate()) }
+
+    // State để track thay đổi
+    val hasChanges = remember(initialDate, selectedDate) {
+        derivedStateOf {
+            selectedDate != initialDate
+        }
+    }
+
+    // State để hiển thị dialog
+    var showExitDialog by remember { mutableStateOf(false) }
 
     // ViewModel states
     val isLoading by viewModel.isLoading.collectAsState()
@@ -62,11 +73,68 @@ fun UpdateDOBScreen(
         user?.ngay_sinh?.let { dateStr ->
             try {
                 val format = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
-                selectedDate = format.parse(dateStr) ?: Date()
+                val userDate = format.parse(dateStr) ?: Date()
+                selectedDate = userDate
+                initialDate = userDate // Cập nhật initialDate với ngày sinh từ user
             } catch (e: Exception) {
                 // Keep current date if parsing fails
             }
         }
+    }
+
+    // Hàm xử lý khi nhấn back
+    fun handleBackPress() {
+        if (hasChanges.value) {
+            showExitDialog = true
+        } else {
+            navController.navigateUp()
+        }
+    }
+
+    // Dialog xác nhận thoát
+    if (showExitDialog) {
+        AlertDialog(
+            onDismissRequest = { showExitDialog = false },
+            title = {
+                Text(
+                    text = "Xác nhận thoát",
+                    fontWeight = FontWeight.Bold
+                )
+            },
+            text = {
+                Text(
+                    text = "Bạn có thay đổi chưa được lưu. Bạn có chắc chắn muốn thoát không?",
+                    color = Color(0xFF666666)
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showExitDialog = false
+                        navController.navigateUp()
+                    }
+                ) {
+                    Text(
+                        text = "Thoát",
+                        color = Color(0xFFFF3333),
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = { showExitDialog = false }
+                ) {
+                    Text(
+                        text = "Hủy",
+                        color = Color(0xFFFFB700),
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            },
+            containerColor = Color.White,
+            shape = RoundedCornerShape(16.dp)
+        )
     }
 
     Column(
@@ -88,7 +156,7 @@ fun UpdateDOBScreen(
                 )
             },
             navigationIcon = {
-                IconButton(onClick = { navController.popBackStack() }) {
+                IconButton(onClick = { handleBackPress() }) {
                     Icon(Icons.Default.ArrowBack, contentDescription = "Back", tint = Color.Black)
                 }
             },
@@ -154,19 +222,33 @@ fun UpdateDOBScreen(
 
                     Button(
                         onClick = {
-                            val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
-                            val dateString = dateFormat.format(selectedDate)
-                            viewModel.updateBirthDate(dateString, context)
+                            if (isValidBirthDate(selectedDate)) {
+                                val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+                                val dateString = dateFormat.format(selectedDate)
+                                viewModel.updateBirthDate(dateString, context)
+                            } else {
+                                Toast.makeText(
+                                    context,
+                                    "Ngày sinh không được lớn hơn ngày hiện tại",
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                            }
                         },
                         modifier = Modifier.fillMaxWidth().height(48.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFFB700)),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = if (hasChanges.value && !isLoading) Color(0xFFFFB700) else Color(0xFFCCCCCC)
+                        ),
                         shape = RoundedCornerShape(8.dp),
-                        enabled = !isLoading
+                        enabled = !isLoading && hasChanges.value // Chỉ enable khi có thay đổi và không loading
                     ) {
                         if (isLoading) {
                             CircularProgressIndicator(color = Color.White, modifier = Modifier.size(20.dp))
                         } else {
-                            Text("Lưu thông tin thay đổi", fontWeight = FontWeight.Bold, color = Color.Black)
+                            Text(
+                                text = "Lưu thông tin thay đổi",
+                                fontWeight = FontWeight.Bold,
+                                color = if (hasChanges.value) Color.Black else Color(0xFF666666)
+                            )
                         }
                     }
                 }
@@ -186,7 +268,7 @@ fun UpdateDOBScreen(
                 ) {
                     Text("🎂", fontSize = 20.sp, modifier = Modifier.padding(end = 12.dp))
                     Text(
-                        text = "Ngày sinh giúp chúng tôi gửi cho bạn những ưu đãi đặc biệt và chúc mừng sinh nhật.",
+                        text = "Ngày sinh giúp chúng tôi gửi cho bạn những ưu đãi đặc biệt và chúc mừng sinh nhật. Lưu ý: Ngày sinh không được lớn hơn ngày hiện tại.",
                         fontSize = 14.sp,
                         color = Color(0xFF666666),
                         lineHeight = 20.sp
@@ -200,9 +282,17 @@ fun UpdateDOBScreen(
     if (showDatePicker) {
         SimpleDatePickerDialog(
             currentDate = selectedDate,
-            onDateSelected = {
-                selectedDate = it
-                showDatePicker = false
+            onDateSelected = { newDate ->
+                if (isValidBirthDate(newDate)) {
+                    selectedDate = newDate
+                    showDatePicker = false
+                } else {
+                    Toast.makeText(
+                        context,
+                        "Ngày sinh không được lớn hơn ngày hiện tại",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
             },
             onDismiss = { showDatePicker = false }
         )
@@ -217,7 +307,13 @@ fun SimpleDatePickerDialog(
     onDismiss: () -> Unit
 ) {
     val datePickerState = rememberDatePickerState(
-        initialSelectedDateMillis = currentDate.time
+        initialSelectedDateMillis = currentDate.time,
+        selectableDates = object : SelectableDates {
+            override fun isSelectableDate(utcTimeMillis: Long): Boolean {
+                // Chỉ cho phép chọn ngày <= ngày hiện tại
+                return utcTimeMillis <= System.currentTimeMillis()
+            }
+        }
     )
 
     DatePickerDialog(
@@ -226,16 +322,26 @@ fun SimpleDatePickerDialog(
             TextButton(
                 onClick = {
                     datePickerState.selectedDateMillis?.let { millis ->
-                        onDateSelected(Date(millis))
+                        val selectedDate = Date(millis)
+                        if (isValidBirthDate(selectedDate)) {
+                            onDateSelected(selectedDate)
+                        }
                     }
                 }
             ) {
-                Text("Xác nhận")
+                Text(
+                    text = "Xác nhận",
+                    color = Color(0xFFFFB700),
+                    fontWeight = FontWeight.Bold
+                )
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Hủy")
+                Text(
+                    text = "Hủy",
+                    color = Color(0xFF666666)
+                )
             }
         }
     ) {
@@ -249,4 +355,11 @@ private fun getCurrentDate(): Date = Date()
 private fun formatDate(date: Date): String {
     val format = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
     return format.format(date)
+}
+
+// Validation function để kiểm tra ngày sinh hợp lệ
+private fun isValidBirthDate(birthDate: Date): Boolean {
+    val currentDate = Date()
+    // Kiểm tra ngày sinh không được lớn hơn ngày hiện tại
+    return !birthDate.after(currentDate)
 }

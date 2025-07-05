@@ -2,6 +2,7 @@
 
 package com.example.pizza_app.ui.profile
 
+import android.content.Intent
 import android.net.Uri
 import android.util.Log
 import android.widget.Toast
@@ -13,9 +14,13 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowForwardIos
+import androidx.compose.material.pullrefresh.PullRefreshIndicator
+import androidx.compose.material.pullrefresh.pullRefresh
+import androidx.compose.material.pullrefresh.rememberPullRefreshState
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -38,73 +43,74 @@ import com.example.pizza_app.R
 import com.example.pizza_app.data.source.UserManager
 import com.example.pizza_app.data.source.getFullImageUrl
 import com.example.pizza_app.data.model.UserPreferences
-import com.example.pizza_app.data.source.remote.RetrofitInstance
 import java.text.SimpleDateFormat
 import java.util.*
+import kotlin.system.exitProcess
 
+
+@OptIn(ExperimentalMaterialApi::class)
 @Composable
 fun ProfileDetailsScreen(navController: NavController) {
     val context = LocalContext.current
+    val viewModel: UserUpdateViewModel = viewModel()
 
     val user by UserManager.currentUser.collectAsState()
+    val isUploadingAvatar by viewModel.isUploadingAvatar.collectAsState()
+    val message by viewModel.message.collectAsState()
+    val success by viewModel.success.collectAsState()
+    val isRefreshing by viewModel.isRefreshing.collectAsState() // Thêm dòng này
+
     Log.d("ProfileDetails", "Email hiện tại: ${user?.email}")
 
     var selectedImageUri by remember { mutableStateOf<Uri?>(null) }
-    var isUploading by remember { mutableStateOf(false) }
+    var showImageSourceDialog by remember { mutableStateOf(false) }
 
+    // Pull refresh state
+    val pullRefreshState = rememberPullRefreshState(
+        refreshing = isRefreshing,
+        onRefresh = { viewModel.refreshUserFromServer(context) }
+    )
+
+    // Xử lý kết quả upload ảnh và tự động refresh
+    LaunchedEffect(success, message) {
+        if (success && message.isNotEmpty()) {
+            Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+            // Tự động refresh sau khi upload thành công
+            if (message.contains("ảnh đại diện")) {
+                viewModel.refreshUserFromServer(context)
+            }
+            viewModel.resetState()
+        } else if (!success && message.isNotEmpty()) {
+            Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+            viewModel.resetState()
+        }
+    }
+
+    // Launcher chọn ảnh từ gallery
     val imagePickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
         uri?.let {
             selectedImageUri = it
-            uploadImage(it, user?.ma_nguoi_dung ?: -1) { newAvatarPath ->
-                isUploading = false
-                if (newAvatarPath != null) {
-                    val updatedUser = user?.copy(anh_dai_dien = newAvatarPath)
-                    if (updatedUser != null) {
-                        UserManager.setUser(updatedUser)
-                        UserPreferences(context).saveUser(updatedUser)
-                        Toast.makeText(context, "Cập nhật ảnh thành công", Toast.LENGTH_SHORT).show()
-                    }
-                } else {
-                    Toast.makeText(context, "Lỗi khi tải ảnh lên", Toast.LENGTH_SHORT).show()
-                }
-            }
-            isUploading = true
+            viewModel.updateAvatar(it, context)
         }
     }
 
+    // Launcher chụp ảnh từ camera
     val cameraLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.TakePicture()
     ) { success ->
         if (success && selectedImageUri != null) {
-            uploadImage(selectedImageUri!!, user?.ma_nguoi_dung ?: -1) { newAvatarPath ->
-                isUploading = false
-                if (newAvatarPath != null) {
-                    val updatedUser = user?.copy(anh_dai_dien = newAvatarPath)
-                    if (updatedUser != null) {
-                        UserManager.setUser(updatedUser)
-                        UserPreferences(context).saveUser(updatedUser)
-                        Toast.makeText(context, "Cập nhật ảnh thành công", Toast.LENGTH_SHORT).show()
-                    }
-                } else {
-                    Toast.makeText(context, "Lỗi khi tải ảnh lên", Toast.LENGTH_SHORT).show()
-                }
-            }
-            isUploading = true
+            viewModel.updateAvatar(selectedImageUri!!, context)
         }
     }
 
-    var showImageSourceDialog by remember { mutableStateOf(false) }
-    val avatarUrl = user?.anh_dai_dien ?: ""
-
     val lifecycleOwner = LocalLifecycleOwner.current
-    val viewModel: UserUpdateViewModel = viewModel()
 
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_RESUME) {
-                viewModel.refreshUserFromServer(context) // ✅ Gọi qua ViewModel là hợp lệ
+                viewModel.refreshUserFromServer(context)
             }
         }
 
@@ -128,98 +134,140 @@ fun ProfileDetailsScreen(navController: NavController) {
         } ?: "Chưa cập nhật"
     }
 
-    Column(
+    // Wrap toàn bộ content trong Box với pull refresh
+    Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFFF5F5F5))
+            .pullRefresh(pullRefreshState)
     ) {
-        TopAppBar(
-            title = {
-                Text("Thông tin tài khoản", fontSize = 18.sp, fontWeight = FontWeight.Medium, color = Color.Black)
-            },
-            navigationIcon = {
-                IconButton(onClick = { navController.popBackStack() }) {
-                    Icon(Icons.Default.ArrowBack, contentDescription = "Back", tint = Color.Black)
-                }
-            },
-            colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
-        )
-
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(start = 16.dp, end = 16.dp, bottom = 16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
+                .background(Color(0xFFF5F5F5))
         ) {
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = Color.White),
-                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+            TopAppBar(
+                title = {
+                    Text("Thông tin tài khoản", fontSize = 18.sp, fontWeight = FontWeight.Medium, color = Color.Black)
+                },
+                navigationIcon = {
+                    IconButton(onClick = { navController.popBackStack() }) {
+                        Icon(Icons.Default.ArrowBack, contentDescription = "Back", tint = Color.Black)
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
+            )
+
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(start = 16.dp, end = 16.dp, bottom = 16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Column(
-                    modifier = Modifier.padding(24.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color.White),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
                 ) {
-                    val imageUrl = selectedImageUri?.toString() ?: getFullImageUrl(avatarUrl)
-
-                    Image(
-                        painter = rememberAsyncImagePainter(imageUrl),
-                        contentDescription = "Avatar",
-                        modifier = Modifier.size(100.dp).clip(CircleShape),
-                        contentScale = ContentScale.Crop
-                    )
-
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    Button(
-                        onClick = { showImageSourceDialog = true },
-                        enabled = !isUploading,
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFFB700)),
-                        shape = RoundedCornerShape(8.dp)
+                    Column(
+                        modifier = Modifier.padding(24.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        if (isUploading) {
-                            CircularProgressIndicator(
-                                modifier = Modifier.size(16.dp), color = Color.Black, strokeWidth = 2.dp
+                        // Avatar với loading overlay
+                        Box(
+                            modifier = Modifier.size(100.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            val imageUrl = getFullImageUrl(user?.anh_dai_dien ?: "")
+
+                            Image(
+                                painter = rememberAsyncImagePainter(imageUrl),
+                                contentDescription = "Avatar",
+                                modifier = Modifier
+                                    .size(100.dp)
+                                    .clip(CircleShape),
+                                contentScale = ContentScale.Crop
                             )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text("Đang tải lên...", color = Color.Black, fontWeight = FontWeight.Medium)
-                        } else {
-                            Text("Thay đổi ảnh", color = Color.Black, fontWeight = FontWeight.Medium)
+
+                            // Loading overlay khi đang upload
+                            if (isUploadingAvatar) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(100.dp)
+                                        .clip(CircleShape)
+                                        .background(Color.Black.copy(alpha = 0.5f)),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    CircularProgressIndicator(
+                                        modifier = Modifier.size(24.dp),
+                                        color = Color.White,
+                                        strokeWidth = 2.dp
+                                    )
+                                }
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(16.dp))
+
+                        Button(
+                            onClick = { showImageSourceDialog = true },
+                            enabled = !isUploadingAvatar,
+                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFFB700)),
+                            shape = RoundedCornerShape(8.dp)
+                        ) {
+                            if (isUploadingAvatar) {
+                                CircularProgressIndicator(
+                                    modifier = Modifier.size(16.dp),
+                                    color = Color.Black,
+                                    strokeWidth = 2.dp
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text("Đang tải lên...", color = Color.Black, fontWeight = FontWeight.Medium)
+                            } else {
+                                Text("Thay đổi ảnh", color = Color.Black, fontWeight = FontWeight.Medium)
+                            }
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color.White),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+                ) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        ProfileInfoItem("Họ và tên", user?.ho_ten ?: "(Chưa cập nhật)") {
+                            navController.navigate("update_name")
+                        }
+                        ProfileInfoItem("Số điện thoại", user?.so_dien_thoai ?: "(Chưa có)") {
+                            navController.navigate("update_phone")
+                        }
+                        ProfileInfoItem("Email", user?.email ?: "(Chưa có)") {
+                            navController.navigate("update_email")
+                        }
+                        ProfileInfoItem("Ngày sinh", formattedBirthDate) {
+                            navController.navigate("update_dob")
+                        }
+                        ProfileInfoItem("Mật khẩu", "***", isLast = true) {
+                            navController.navigate("update_password")
                         }
                     }
                 }
             }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = Color.White),
-                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
-            ) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    ProfileInfoItem("Họ và tên", user?.ho_ten ?: "(Chưa cập nhật)") {
-                        navController.navigate("update_name")
-                    }
-                    ProfileInfoItem("Số điện thoại", user?.so_dien_thoai ?: "(Chưa có)") {
-                        navController.navigate("update_phone")
-                    }
-                    ProfileInfoItem("Email", user?.email ?: "(Chưa có)") {
-                        navController.navigate("update_email")
-                    }
-                    ProfileInfoItem("Ngày sinh", formattedBirthDate) {
-                        navController.navigate("update_dob")
-                    }
-                    ProfileInfoItem("Mật khẩu", "***", isLast = true) {
-                        navController.navigate("update_password")
-                    }
-                }
-            }
         }
+
+        // Pull refresh indicator
+        PullRefreshIndicator(
+            refreshing = isRefreshing,
+            state = pullRefreshState,
+            modifier = Modifier.align(Alignment.TopCenter)
+        )
     }
 
+    // Dialog chọn nguồn ảnh
     if (showImageSourceDialog) {
         AlertDialog(
             onDismissRequest = { showImageSourceDialog = false },
@@ -229,25 +277,28 @@ fun ProfileDetailsScreen(navController: NavController) {
                 Row {
                     TextButton(onClick = {
                         showImageSourceDialog = false
-                        selectedImageUri = createImageUri(context)
+                        selectedImageUri = ImageUtils.createTempImageUri(context)
                         selectedImageUri?.let { cameraLauncher.launch(it) }
-                    }) { Text("Camera") }
+                    }) {
+                        Text("Camera", color = Color(0xFFFFB700))
+                    }
                     Spacer(modifier = Modifier.width(8.dp))
                     TextButton(onClick = {
                         showImageSourceDialog = false
                         imagePickerLauncher.launch("image/*")
-                    }) { Text("Thư viện") }
+                    }) {
+                        Text("Thư viện", color = Color(0xFFFFB700))
+                    }
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showImageSourceDialog = false }) {
-                    Text("Hủy")
+                    Text("Hủy", color = Color.Gray)
                 }
             }
         )
     }
 }
-
 @Composable
 fun ProfileInfoItem(
     label: String,
@@ -256,35 +307,40 @@ fun ProfileInfoItem(
     onClick: () -> Unit
 ) {
     Column(
-        modifier = Modifier.fillMaxWidth().clickable { onClick() }.padding(vertical = 12.dp)
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onClick() }
+            .padding(vertical = 12.dp)
     ) {
-        Text(label, fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = Color(0xFF666666))
+        Text(
+            text = label,
+            fontWeight = FontWeight.SemiBold,
+            fontSize = 14.sp,
+            color = Color(0xFF666666)
+        )
         Spacer(modifier = Modifier.height(4.dp))
-        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
-            Text(value, modifier = Modifier.weight(1f), fontSize = 16.sp, color = Color.Black)
-            Icon(Icons.Default.ArrowForwardIos, contentDescription = null, modifier = Modifier.size(16.dp), tint = Color.Gray)
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text(
+                text = value,
+                modifier = Modifier.weight(1f),
+                fontSize = 16.sp,
+                color = Color.Black
+            )
+            Icon(
+                Icons.Default.ArrowForwardIos,
+                contentDescription = null,
+                modifier = Modifier.size(16.dp),
+                tint = Color.Gray
+            )
         }
         if (!isLast) {
-            HorizontalDivider(modifier = Modifier.padding(top = 12.dp), color = Color(0xFFE0E0E0))
+            HorizontalDivider(
+                modifier = Modifier.padding(top = 12.dp),
+                color = Color(0xFFE0E0E0)
+            )
         }
     }
-}
-
-private fun createImageUri(context: android.content.Context): Uri? {
-    return try {
-        val contentResolver = context.contentResolver
-        android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI.let { uri ->
-            contentResolver.insert(uri, android.content.ContentValues())
-        }
-    } catch (e: Exception) {
-        null
-    }
-}
-
-private fun uploadImage(uri: Uri, userId: Int, onComplete: (String?) -> Unit) {
-    // TODO: Gọi API thực tế. Đây là bản giả lập
-    android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
-        val fakePath = "/images/user_${userId}.jpg"
-        onComplete(fakePath)
-    }, 2000)
 }

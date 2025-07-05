@@ -9,12 +9,15 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -22,35 +25,113 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import coil.compose.AsyncImagePainter
 import com.example.pizza_app.data.source.UserManager
-import com.example.pizza_app.data.model.UserPreferences
 
 @Composable
-fun UpdateEmailScreen(navController: NavController) {
+fun UpdateEmailScreen(
+    navController: NavController,
+    viewModel: UserUpdateViewModel = viewModel()
+) {
     val context = LocalContext.current
-    val viewModel: UserUpdateViewModel = viewModel()
-
     val user by UserManager.currentUser.collectAsState()
+
+    // States
     val currentEmail = user?.email ?: ""
     var email by remember(currentEmail) { mutableStateOf(currentEmail) }
+    var initialEmail by remember { mutableStateOf(currentEmail) }
+    val focusRequester = remember { FocusRequester() }
 
+    // State để track thay đổi
+    val hasChanges = remember(initialEmail, email) {
+        derivedStateOf {
+            email.trim() != initialEmail.trim()
+        }
+    }
+
+    // State để hiển thị dialog
+    var showExitDialog by remember { mutableStateOf(false) }
+
+    // ViewModel states
     val isLoading by viewModel.isLoading.collectAsState()
-    val errorMessage by viewModel.message.collectAsState()
+    val message by viewModel.message.collectAsState()
     val success by viewModel.success.collectAsState()
 
+    // Handle success
     LaunchedEffect(success) {
         if (success) {
             Toast.makeText(context, "Cập nhật email thành công", Toast.LENGTH_SHORT).show()
-            navController.navigateUp() // Thay vì popBackStack()
+            navController.navigateUp()
             viewModel.resetState()
         }
     }
 
-    LaunchedEffect(errorMessage) {
-        if (errorMessage.isNotBlank()) {
-            Toast.makeText(context, errorMessage, Toast.LENGTH_SHORT).show()
+    LaunchedEffect(message) {
+        if (message.isNotBlank()) {
+            Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
         }
+    }
+
+    // Initialize email from user
+    LaunchedEffect(user) {
+        user?.email?.let { userEmail ->
+            email = userEmail
+            initialEmail = userEmail
+        }
+    }
+
+    // Hàm xử lý khi nhấn back
+    fun handleBackPress() {
+        if (hasChanges.value) {
+            showExitDialog = true
+        } else {
+            navController.navigateUp()
+        }
+    }
+
+    // Dialog xác nhận thoát
+    if (showExitDialog) {
+        AlertDialog(
+            onDismissRequest = { showExitDialog = false },
+            title = {
+                Text(
+                    text = "Xác nhận thoát",
+                    fontWeight = FontWeight.Bold
+                )
+            },
+            text = {
+                Text(
+                    text = "Bạn có thay đổi chưa được lưu. Bạn có chắc chắn muốn thoát không?",
+                    color = Color(0xFF666666)
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showExitDialog = false
+                        navController.navigateUp()
+                    }
+                ) {
+                    Text(
+                        text = "Thoát",
+                        color = Color(0xFFFF3333),
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = { showExitDialog = false }
+                ) {
+                    Text(
+                        text = "Hủy",
+                        color = Color(0xFFFFB700),
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            },
+            containerColor = Color.White,
+            shape = RoundedCornerShape(16.dp)
+        )
     }
 
     Column(
@@ -72,7 +153,7 @@ fun UpdateEmailScreen(navController: NavController) {
                 )
             },
             navigationIcon = {
-                IconButton(onClick = { navController.popBackStack() }) {
+                IconButton(onClick = { handleBackPress() }) {
                     Icon(Icons.Default.ArrowBack, contentDescription = "Back", tint = Color.Black)
                 }
             },
@@ -99,34 +180,62 @@ fun UpdateEmailScreen(navController: NavController) {
                         value = email,
                         onValueChange = { email = it },
                         label = { Text("Email") },
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .focusRequester(focusRequester),
                         singleLine = true,
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedBorderColor = Color(0xFFFFB700),
                             focusedLabelColor = Color(0xFFFFB700)
-                        )
+                        ),
+                        trailingIcon = {
+                            if (email.isNotEmpty()) {
+                                IconButton(
+                                    onClick = {
+                                        email = ""
+                                        focusRequester.requestFocus()
+                                    }
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Clear,
+                                        contentDescription = "Clear text",
+                                        tint = Color(0xFF666666)
+                                    )
+                                }
+                            }
+                        }
                     )
 
                     Spacer(modifier = Modifier.height(24.dp))
 
                     Button(
                         onClick = {
-                            if (email.isNotBlank() && email.contains("@")) {
-                                viewModel.updateEmail(email, context)
+                            if (isValidEmail(email)) {
+                                viewModel.updateEmail(email.trim(), context)
                             } else {
-                                Toast.makeText(context, "Email không hợp lệ", Toast.LENGTH_SHORT).show()
+                                Toast.makeText(
+                                    context,
+                                    "Email không hợp lệ. Vui lòng nhập email đúng định dạng.",
+                                    Toast.LENGTH_SHORT
+                                ).show()
                             }
                         },
                         modifier = Modifier.fillMaxWidth().height(48.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFFB700)),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = if (hasChanges.value && !isLoading) Color(0xFFFFB700) else Color(0xFFCCCCCC)
+                        ),
                         shape = RoundedCornerShape(8.dp),
-                        enabled = !isLoading
+                        enabled = !isLoading && hasChanges.value // Chỉ enable khi có thay đổi và không loading
                     ) {
                         if (isLoading) {
                             CircularProgressIndicator(color = Color.White, modifier = Modifier.size(20.dp))
                         } else {
-                            Text("Lưu thông tin thay đổi", fontWeight = FontWeight.Bold, color = Color.Black)
+                            Text(
+                                text = "Lưu thông tin thay đổi",
+                                fontWeight = FontWeight.Bold,
+                                color = if (hasChanges.value) Color.Black else Color(0xFF666666)
+                            )
                         }
                     }
                 }
@@ -155,4 +264,10 @@ fun UpdateEmailScreen(navController: NavController) {
             }
         }
     }
+}
+
+// Helper function để validate email
+private fun isValidEmail(email: String): Boolean {
+    val emailPattern = "^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$"
+    return email.trim().matches(emailPattern.toRegex())
 }

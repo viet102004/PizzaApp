@@ -9,6 +9,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.*
@@ -17,6 +18,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -28,10 +31,13 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 
 @Composable
-fun UpdatePasswordScreen(navController: NavController) {
+fun UpdatePasswordScreen(
+    navController: NavController,
+    viewModel: UserUpdateViewModel = viewModel()
+) {
     val context = LocalContext.current
-    val viewModel: UserUpdateViewModel = viewModel()
 
+    // States
     var currentPassword by remember { mutableStateOf("") }
     var newPassword by remember { mutableStateOf("") }
     var confirmPassword by remember { mutableStateOf("") }
@@ -40,22 +46,91 @@ fun UpdatePasswordScreen(navController: NavController) {
     var newVisible by remember { mutableStateOf(false) }
     var confirmVisible by remember { mutableStateOf(false) }
 
-    val isLoading by viewModel.isLoading.collectAsState()
-    val success by viewModel.success.collectAsState()
-    val errorMessage by viewModel.message.collectAsState()
+    val focusRequester = remember { FocusRequester() }
 
+    // State để track thay đổi
+    val hasChanges = remember(currentPassword, newPassword, confirmPassword) {
+        derivedStateOf {
+            currentPassword.isNotBlank() || newPassword.isNotBlank() || confirmPassword.isNotBlank()
+        }
+    }
+
+    // State để hiển thị dialog
+    var showExitDialog by remember { mutableStateOf(false) }
+
+    // ViewModel states
+    val isLoading by viewModel.isLoading.collectAsState()
+    val message by viewModel.message.collectAsState()
+    val success by viewModel.success.collectAsState()
+
+    // Handle success
     LaunchedEffect(success) {
         if (success) {
             Toast.makeText(context, "Đổi mật khẩu thành công", Toast.LENGTH_SHORT).show()
-            navController.popBackStack()
+            navController.navigateUp()
             viewModel.resetState()
         }
     }
 
-    LaunchedEffect(errorMessage) {
-        if (errorMessage.isNotBlank()) {
-            Toast.makeText(context, errorMessage, Toast.LENGTH_SHORT).show()
+    LaunchedEffect(message) {
+        if (message.isNotBlank()) {
+            Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
         }
+    }
+
+    // Hàm xử lý khi nhấn back
+    fun handleBackPress() {
+        if (hasChanges.value) {
+            showExitDialog = true
+        } else {
+            navController.navigateUp()
+        }
+    }
+
+    // Dialog xác nhận thoát
+    if (showExitDialog) {
+        AlertDialog(
+            onDismissRequest = { showExitDialog = false },
+            title = {
+                Text(
+                    text = "Xác nhận thoát",
+                    fontWeight = FontWeight.Bold
+                )
+            },
+            text = {
+                Text(
+                    text = "Bạn có thay đổi chưa được lưu. Bạn có chắc chắn muốn thoát không?",
+                    color = Color(0xFF666666)
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showExitDialog = false
+                        navController.navigateUp()
+                    }
+                ) {
+                    Text(
+                        text = "Thoát",
+                        color = Color(0xFFFF3333),
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = { showExitDialog = false }
+                ) {
+                    Text(
+                        text = "Hủy",
+                        color = Color(0xFFFFB700),
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            },
+            containerColor = Color.White,
+            shape = RoundedCornerShape(16.dp)
+        )
     }
 
     Column(
@@ -77,7 +152,7 @@ fun UpdatePasswordScreen(navController: NavController) {
                 )
             },
             navigationIcon = {
-                IconButton(onClick = { navController.popBackStack() }) {
+                IconButton(onClick = { handleBackPress() }) {
                     Icon(Icons.Default.ArrowBack, contentDescription = "Back", tint = Color.Black)
                 }
             },
@@ -109,9 +184,29 @@ fun UpdatePasswordScreen(navController: NavController) {
                         singleLine = true,
                         visualTransformation = if (currentVisible) VisualTransformation.None else PasswordVisualTransformation(),
                         trailingIcon = {
-                            val icon = if (currentVisible) Icons.Filled.VisibilityOff else Icons.Filled.Visibility
-                            IconButton(onClick = { currentVisible = !currentVisible }) {
-                                Icon(imageVector = icon, contentDescription = null)
+                            Row {
+                                if (currentPassword.isNotEmpty()) {
+                                    IconButton(
+                                        onClick = {
+                                            currentPassword = ""
+                                            focusRequester.requestFocus()
+                                        }
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.Clear,
+                                            contentDescription = "Clear text",
+                                            tint = Color(0xFF666666)
+                                        )
+                                    }
+                                }
+                                val icon = if (currentVisible) Icons.Filled.VisibilityOff else Icons.Filled.Visibility
+                                IconButton(onClick = { currentVisible = !currentVisible }) {
+                                    Icon(
+                                        imageVector = icon,
+                                        contentDescription = if (currentVisible) "Hide password" else "Show password",
+                                        tint = Color(0xFF666666)
+                                    )
+                                }
                             }
                         },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
@@ -128,13 +223,35 @@ fun UpdatePasswordScreen(navController: NavController) {
                         value = newPassword,
                         onValueChange = { newPassword = it },
                         label = { Text("Mật khẩu mới") },
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .focusRequester(focusRequester),
                         singleLine = true,
                         visualTransformation = if (newVisible) VisualTransformation.None else PasswordVisualTransformation(),
                         trailingIcon = {
-                            val icon = if (newVisible) Icons.Filled.VisibilityOff else Icons.Filled.Visibility
-                            IconButton(onClick = { newVisible = !newVisible }) {
-                                Icon(imageVector = icon, contentDescription = null)
+                            Row {
+                                if (newPassword.isNotEmpty()) {
+                                    IconButton(
+                                        onClick = {
+                                            newPassword = ""
+                                            focusRequester.requestFocus()
+                                        }
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.Clear,
+                                            contentDescription = "Clear text",
+                                            tint = Color(0xFF666666)
+                                        )
+                                    }
+                                }
+                                val icon = if (newVisible) Icons.Filled.VisibilityOff else Icons.Filled.Visibility
+                                IconButton(onClick = { newVisible = !newVisible }) {
+                                    Icon(
+                                        imageVector = icon,
+                                        contentDescription = if (newVisible) "Hide password" else "Show password",
+                                        tint = Color(0xFF666666)
+                                    )
+                                }
                             }
                         },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
@@ -155,9 +272,29 @@ fun UpdatePasswordScreen(navController: NavController) {
                         singleLine = true,
                         visualTransformation = if (confirmVisible) VisualTransformation.None else PasswordVisualTransformation(),
                         trailingIcon = {
-                            val icon = if (confirmVisible) Icons.Filled.VisibilityOff else Icons.Filled.Visibility
-                            IconButton(onClick = { confirmVisible = !confirmVisible }) {
-                                Icon(imageVector = icon, contentDescription = null)
+                            Row {
+                                if (confirmPassword.isNotEmpty()) {
+                                    IconButton(
+                                        onClick = {
+                                            confirmPassword = ""
+                                            focusRequester.requestFocus()
+                                        }
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.Clear,
+                                            contentDescription = "Clear text",
+                                            tint = Color(0xFF666666)
+                                        )
+                                    }
+                                }
+                                val icon = if (confirmVisible) Icons.Filled.VisibilityOff else Icons.Filled.Visibility
+                                IconButton(onClick = { confirmVisible = !confirmVisible }) {
+                                    Icon(
+                                        imageVector = icon,
+                                        contentDescription = if (confirmVisible) "Hide password" else "Show password",
+                                        tint = Color(0xFF666666)
+                                    )
+                                }
                             }
                         },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
@@ -172,28 +309,28 @@ fun UpdatePasswordScreen(navController: NavController) {
                     // Nút lưu
                     Button(
                         onClick = {
-                            when {
-                                currentPassword.isBlank() || newPassword.isBlank() || confirmPassword.isBlank() ->
-                                    Toast.makeText(context, "Vui lòng điền đầy đủ thông tin", Toast.LENGTH_SHORT).show()
-
-                                newPassword != confirmPassword ->
-                                    Toast.makeText(context, "Mật khẩu xác nhận không khớp", Toast.LENGTH_SHORT).show()
-
-                                newPassword.length < 8 ->
-                                    Toast.makeText(context, "Mật khẩu mới phải ít nhất 8 ký tự", Toast.LENGTH_SHORT).show()
-
-                                else -> viewModel.updatePassword(currentPassword, newPassword, context)
+                            if (isValidPasswordUpdate(currentPassword, newPassword, confirmPassword)) {
+                                viewModel.updatePassword(currentPassword, newPassword, context)
+                            } else {
+                                val errorMsg = getPasswordValidationError(currentPassword, newPassword, confirmPassword)
+                                Toast.makeText(context, errorMsg, Toast.LENGTH_SHORT).show()
                             }
                         },
                         modifier = Modifier.fillMaxWidth().height(48.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFFB700)),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = if (hasChanges.value && !isLoading) Color(0xFFFFB700) else Color(0xFFCCCCCC)
+                        ),
                         shape = RoundedCornerShape(8.dp),
-                        enabled = !isLoading
+                        enabled = !isLoading && hasChanges.value
                     ) {
                         if (isLoading) {
                             CircularProgressIndicator(color = Color.White, modifier = Modifier.size(20.dp))
                         } else {
-                            Text("Lưu mật khẩu mới", fontWeight = FontWeight.Bold, color = Color.Black)
+                            Text(
+                                text = "Lưu mật khẩu mới",
+                                fontWeight = FontWeight.Bold,
+                                color = if (hasChanges.value) Color.Black else Color(0xFF666666)
+                            )
                         }
                     }
                 }
@@ -213,7 +350,7 @@ fun UpdatePasswordScreen(navController: NavController) {
                 ) {
                     Text("🔒", fontSize = 20.sp, modifier = Modifier.padding(end = 12.dp))
                     Text(
-                        text = "Mật khẩu mới phải có ít nhất 8 ký tự và bao gồm chữ hoa, chữ thường, số và ký tự đặc biệt.",
+                        text = "Mật khẩu mới phải có ít nhất 8 ký tự và bao gồm chữ hoa, chữ thường, số và ký tự đặc biệt để đảm bảo an toàn.",
                         fontSize = 14.sp,
                         color = Color(0xFF666666),
                         lineHeight = 20.sp
@@ -221,5 +358,51 @@ fun UpdatePasswordScreen(navController: NavController) {
                 }
             }
         }
+    }
+}
+
+// Helper functions để validate mật khẩu
+private fun isValidPasswordUpdate(currentPassword: String, newPassword: String, confirmPassword: String): Boolean {
+    return currentPassword.isNotBlank() &&
+            newPassword.isNotBlank() &&
+            confirmPassword.isNotBlank() &&
+            newPassword == confirmPassword &&
+            isStrongPassword(newPassword)
+}
+
+private fun isStrongPassword(password: String): Boolean {
+    val minLength = 8
+    val hasUpperCase = password.any { it.isUpperCase() }
+    val hasLowerCase = password.any { it.isLowerCase() }
+    val hasDigit = password.any { it.isDigit() }
+    val hasSpecialChar = password.any { !it.isLetterOrDigit() }
+
+    return password.length >= minLength && hasUpperCase && hasLowerCase && hasDigit && hasSpecialChar
+}
+
+private fun getPasswordValidationError(currentPassword: String, newPassword: String, confirmPassword: String): String {
+    return when {
+        currentPassword.isBlank() || newPassword.isBlank() || confirmPassword.isBlank() ->
+            "Vui lòng điền đầy đủ thông tin"
+
+        newPassword != confirmPassword ->
+            "Mật khẩu xác nhận không khớp"
+
+        newPassword.length < 8 ->
+            "Mật khẩu mới phải có ít nhất 8 ký tự"
+
+        !newPassword.any { it.isUpperCase() } ->
+            "Mật khẩu mới phải chứa ít nhất 1 chữ hoa"
+
+        !newPassword.any { it.isLowerCase() } ->
+            "Mật khẩu mới phải chứa ít nhất 1 chữ thường"
+
+        !newPassword.any { it.isDigit() } ->
+            "Mật khẩu mới phải chứa ít nhất 1 chữ số"
+
+        !newPassword.any { !it.isLetterOrDigit() } ->
+            "Mật khẩu mới phải chứa ít nhất 1 ký tự đặc biệt"
+
+        else -> "Mật khẩu không hợp lệ"
     }
 }

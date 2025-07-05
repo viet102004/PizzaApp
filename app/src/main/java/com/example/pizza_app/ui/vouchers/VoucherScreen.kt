@@ -76,7 +76,7 @@ fun VoucherScreen(
                         VoucherItem(
                             voucher = voucher,
                             onUseClick = {
-                                // Xử lý khi bấm "Dùng ngay"
+                                navController.navigate("home")
                             }
                         )
                     }

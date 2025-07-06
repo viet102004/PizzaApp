@@ -20,6 +20,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.pizza_app.data.model.Order
+import com.example.pizza_app.ui.home.formatDateOnly
+import com.example.pizza_app.ui.home.formatDateTime
+import com.example.pizza_app.ui.home.formatDateTimeByParsing
 
 @Composable
 fun OrderList(orders: List<Order>, onDetailClick: (Int) -> Unit) {
@@ -91,7 +94,7 @@ fun OrderList(orders: List<Order>, onDetailClick: (Int) -> Unit) {
 
                     // Thời gian với null safety
                     Text(
-                        text = "Đặt lúc: ${order.ngay_tao ?: "Không xác định"}",
+                        text = "Đặt lúc: ${order.ngay_tao.formatDateTimeByParsing() ?: "Không xác định"}",
                         fontSize = 12.sp,
                         color = Color(0xFF666666)
                     )
@@ -161,10 +164,7 @@ fun OrderList(orders: List<Order>, onDetailClick: (Int) -> Unit) {
                                 if (phiGiaoHang > 0) {
                                     Text(
                                         text = "Phí giao hàng: +${
-                                            String.format(
-                                                "%,.0f",
-                                                phiGiaoHang
-                                            )
+                                            String.format("%,.0f", phiGiaoHang)
                                         } đ",
                                         fontSize = 12.sp,
                                         color = Color(0xFF666666)

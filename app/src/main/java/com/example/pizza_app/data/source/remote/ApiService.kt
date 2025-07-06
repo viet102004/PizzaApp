@@ -34,6 +34,7 @@ import com.example.pizza_app.data.model.ThemVaoGioHangRequest
 import com.example.pizza_app.data.model.UpdateAvatarResponse
 import com.example.pizza_app.data.model.UserResponse
 import okhttp3.MultipartBody
+import okhttp3.RequestBody
 import retrofit2.Response
 import retrofit2.http.DELETE
 import retrofit2.http.Field
@@ -259,10 +260,16 @@ interface ApiService {
         @Path("orderId") orderId: Int
     ): Response<Any>
 
+    @Multipart
     @POST("danhGia")
     suspend fun submitReview(
-        @Body request: ReviewRequest
-    )
+        @Part("ma_nguoi_dung") maNguoiDung: RequestBody,
+        @Part("ma_san_pham") maSanPham: RequestBody,
+        @Part("ma_don_hang") maDonHang: RequestBody,
+        @Part("diem_so") diemSo: RequestBody,
+        @Part("binh_luan") binhLuan: RequestBody?,
+        @Part images: List<MultipartBody.Part>?
+    ): Response<Any>
 
     @GET("danhGia/sanPham/{ma_san_pham}")
     suspend fun getProductReviews(

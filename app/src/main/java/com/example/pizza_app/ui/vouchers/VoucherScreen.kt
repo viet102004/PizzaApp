@@ -43,17 +43,29 @@ fun VoucherScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Danh sách mã giảm giá") },
+                title = {
+                    Text(
+                        "Danh sách mã giảm giá",
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 20.sp,
+                        color = Color(0xFF1A1A1A)
+                    )
+                },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
                         Icon(
                             imageVector = Icons.Default.ArrowBack,
-                            contentDescription = "Quay lại"
+                            contentDescription = "Quay lại",
+                            tint = Color(0xFF666666)
                         )
                     }
-                }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = Color(0xFFFAFAFA)
+                )
             )
-        }
+        },
+        containerColor = Color(0xFFFAFAFA)
     ) { paddingValues ->
         Column(
             modifier = Modifier
@@ -62,11 +74,33 @@ fun VoucherScreen(
                 .padding(16.dp)
         ) {
             if (vouchers.isEmpty()) {
-                Text(
-                    text = message,
-                    color = Color.Red,
-                    modifier = Modifier.padding(top = 8.dp)
-                )
+                // Empty state với style tương tự AlertDialog
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(32.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Icon(
+                        Icons.Default.LocalOffer,
+                        contentDescription = null,
+                        tint = Color(0xFFCCCCCC),
+                        modifier = Modifier.size(48.dp)
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Text(
+                        "Chưa có mã giảm giá",
+                        fontSize = 16.sp,
+                        color = Color(0xFF666666),
+                        fontWeight = FontWeight.Medium
+                    )
+                    Text(
+                        "Mã giảm giá sẽ xuất hiện tại đây",
+                        fontSize = 12.sp,
+                        color = Color(0xFF999999),
+                        modifier = Modifier.padding(top = 4.dp)
+                    )
+                }
             } else {
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
@@ -94,85 +128,163 @@ fun VoucherItem(
     val isUsed = voucher.so_lan_su_dung_toi_da != null &&
             voucher.da_su_dung >= voucher.so_lan_su_dung_toi_da
 
-    val discountText = when (voucher.loai_giam_gia) {
-        "phan_tram" -> "-${voucher.gia_tri_giam.stripTrailingZeros().toPlainString()}%"
-        "tien_mat" -> "-${voucher.gia_tri_giam.stripTrailingZeros().toPlainString()}₫"
-        else -> "-${voucher.gia_tri_giam.stripTrailingZeros().toPlainString()}"
-    }
+    val isValid = !isUsed
 
-    val minOrderText = "Đơn tối thiểu: ${voucher.gia_tri_don_hang_toi_thieu?.toInt() ?: "0"}₫"
-    val expiryText = "HSD: ${voucher.ngay_ket_thuc}"
+    val discountText = when (voucher.loai_giam_gia) {
+        "phan_tram" -> "${voucher.gia_tri_giam.stripTrailingZeros().toPlainString()}%"
+        "tien_mat" -> "${voucher.gia_tri_giam.stripTrailingZeros().toPlainString()}đ"
+        else -> "${voucher.gia_tri_giam.stripTrailingZeros().toPlainString()}"
+    }
 
     val usageText = if (voucher.so_lan_su_dung_toi_da != null)
         "Đã dùng ${voucher.da_su_dung}/${voucher.so_lan_su_dung_toi_da}"
     else "Có thể dùng nhiều lần"
 
     Card(
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable {
+                if (isValid) {
+                    onUseClick()
+                }
+            },
+        colors = CardDefaults.cardColors(
+            containerColor = when {
+                isUsed -> Color(0xFFF5F5F5)
+                else -> Color.White
+            }
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+        shape = RoundedCornerShape(16.dp)
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(16.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Discount badge
-            Box(
-                modifier = Modifier
-                    .size(60.dp)
-                    .clip(RoundedCornerShape(8.dp))
-                    .background(
-                        if (isUsed) Color.Gray.copy(alpha = 0.3f)
-                        else Color(0xFFFF6B35)
-                    ),
-                contentAlignment = Alignment.Center
+            // Left side - Voucher icon and info
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.weight(1f)
             ) {
-                Text(
-                    text = discountText,
-                    color = if (isUsed) Color.Gray else Color.White,
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Bold
-                )
+                // Voucher icon with gradient background
+                Box(
+                    modifier = Modifier
+                        .size(48.dp)
+                        .background(
+                            brush = Brush.linearGradient(
+                                colors = if (isValid) {
+                                    listOf(Color(0xFFFF6B35), Color(0xFFFFB700))
+                                } else {
+                                    listOf(Color(0xFFCCCCCC), Color(0xFFE0E0E0))
+                                }
+                            ),
+                            shape = RoundedCornerShape(12.dp)
+                        ),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        Icons.Default.LocalOffer,
+                        contentDescription = null,
+                        tint = Color.White,
+                        modifier = Modifier.size(24.dp)
+                    )
+                }
+
+                Spacer(modifier = Modifier.width(12.dp))
+
+                // Voucher details
+                Column {
+                    Text(
+                        text = voucher.ma_code,
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = if (isValid) Color(0xFF1A1A1A) else Color(0xFF999999)
+                    )
+
+                    Text(
+                        text = "Giảm $discountText",
+                        fontSize = 14.sp,
+                        color = if (isValid) Color(0xFF4CAF50) else Color(0xFF999999),
+                        fontWeight = FontWeight.Medium
+                    )
+
+                    voucher.gia_tri_don_hang_toi_thieu?.let { minValue ->
+                        Text(
+                            text = "Đơn từ ${minValue.toInt()}đ",
+                            fontSize = 12.sp,
+                            color = Color(0xFF666666)
+                        )
+                    }
+
+                    Text(
+                        text = "HSD: ${voucher.ngay_ket_thuc}",
+                        fontSize = 12.sp,
+                        color = Color(0xFF666666)
+                    )
+
+                    if (isUsed) {
+                        Surface(
+                            shape = RoundedCornerShape(8.dp),
+                            color = Color(0xFFFFEBEE)
+                        ) {
+                            Text(
+                                text = "Đã hết lượt sử dụng",
+                                fontSize = 11.sp,
+                                color = Color(0xFFE53935),
+                                fontWeight = FontWeight.Medium,
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                            )
+                        }
+                    }
+                }
             }
 
-            Spacer(modifier = Modifier.width(16.dp))
-
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = voucher.ma_code,
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = if (isUsed) Color.Gray else Color.Black
-                )
-
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(text = usageText, fontSize = 14.sp, color = Color.Gray)
-
-                Spacer(modifier = Modifier.height(2.dp))
-                Text(text = minOrderText, fontSize = 12.sp, color = Color.Gray)
-
-                Spacer(modifier = Modifier.height(2.dp))
-                Text(text = expiryText, fontSize = 12.sp, color = Color.Gray)
-            }
-
-            Button(
-                onClick = onUseClick,
-                enabled = !isUsed,
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = if (isUsed) Color.Gray.copy(alpha = 0.3f)
-                    else Color(0xFFFFD700),
-                    contentColor = Color.Black
-                ),
-                shape = RoundedCornerShape(6.dp),
-                modifier = Modifier.height(36.dp),
-                contentPadding = PaddingValues(horizontal = 16.dp)
+            // Right side - Use button and status
+            Column(
+                horizontalAlignment = Alignment.End
             ) {
+                if (isValid) {
+                    Button(
+                        onClick = onUseClick,
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color(0xFF4CAF50)
+                        ),
+                        shape = RoundedCornerShape(12.dp),
+                        modifier = Modifier.height(36.dp),
+                        contentPadding = PaddingValues(horizontal = 16.dp)
+                    ) {
+                        Text(
+                            text = "Dùng ngay",
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Medium,
+                            color = Color.White
+                        )
+                    }
+                } else {
+                    Surface(
+                        shape = RoundedCornerShape(12.dp),
+                        color = Color(0xFFE0E0E0)
+                    ) {
+                        Text(
+                            text = "Đã dùng",
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Medium,
+                            color = Color(0xFF999999),
+                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
+
                 Text(
-                    text = if (isUsed) "Đã dùng" else "Dùng ngay",
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.Medium
+                    text = usageText,
+                    fontSize = 12.sp,
+                    color = Color(0xFF666666),
+                    textAlign = TextAlign.End
                 )
             }
         }

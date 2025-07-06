@@ -32,6 +32,12 @@ class ProductDetailViewModel : ViewModel() {
     val isLoading: StateFlow<Boolean> = _isLoading
 
     // Thêm StateFlow cho cart
+    private val _allReviews = MutableStateFlow<List<ReviewResponse>>(emptyList())
+    val allReviews: StateFlow<List<ReviewResponse>> = _allReviews.asStateFlow()
+
+    private val _hasMoreReviews = MutableStateFlow(true)
+    val hasMoreReviews: StateFlow<Boolean> = _hasMoreReviews.asStateFlow()
+
     private val _addToCartState = MutableStateFlow<AddToCartState>(AddToCartState.Idle)
     val addToCartState: StateFlow<AddToCartState> = _addToCartState
 
@@ -133,6 +139,30 @@ class ProductDetailViewModel : ViewModel() {
             } catch (e: Exception) {
                 Log.e("ProductDetailViewModel", "Error fetching review stats", e)
                 _reviewStats.value = null
+            }
+        }
+    }
+
+    fun fetchMoreProductReviews(maSanPham: Int, page: Int) {
+        viewModelScope.launch {
+            try {
+                val response = RetrofitInstance.api.getProductReviews(maSanPham, page, 5)
+                val newReviews = response.danh_sach_danh_gia
+
+                if (newReviews.isNotEmpty()) {
+                    // Thêm reviews mới vào danh sách hiện tại (không replace)
+                    val currentReviews = _reviews.value.toMutableList()
+                    currentReviews.addAll(newReviews)
+                    _reviews.value = currentReviews
+
+                    // Kiểm tra có còn review nào không
+                    _hasMoreReviews.value = newReviews.size >= 5
+                } else {
+                    _hasMoreReviews.value = false
+                }
+            } catch (e: Exception) {
+                Log.e("ProductDetailViewModel", "Error fetching more reviews", e)
+                _hasMoreReviews.value = false
             }
         }
     }

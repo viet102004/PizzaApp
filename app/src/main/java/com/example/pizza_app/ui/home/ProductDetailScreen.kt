@@ -56,6 +56,11 @@ fun ProductDetailScreen(
 ) {
     val isFavorite by viewModel.isFavorite.collectAsState()
 
+    val hasMoreReviews by viewModel.hasMoreReviews.collectAsState()
+
+    // Biến để theo dõi trang hiện tại
+    var currentPage by remember { mutableStateOf(1) }
+
     LaunchedEffect(maSanPham) {
         viewModel.fetchProductDetail(maSanPham)
         viewModel.checkIsFavorite(maSanPham)
@@ -333,12 +338,11 @@ fun ProductDetailScreen(
                     reviews = reviews,
                     reviewStats = reviewStats,
                     isLoading = isLoadingReviews,
-                    onSeeAllClick = {
-                        // Navigate to full reviews screen
-                        onNavigateTo("reviews/$maSanPham")
-                    },
-                    primaryColor = primaryColor,
-                    cardColor = cardColor
+                    hasMoreReviews = hasMoreReviews,
+                    onLoadMoreReviews = {
+                        currentPage++
+                        viewModel.fetchMoreProductReviews(maSanPham, currentPage)
+                    }
                 )
 
                 Spacer(modifier = Modifier.height(100.dp))

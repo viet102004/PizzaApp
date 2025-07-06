@@ -22,6 +22,10 @@ import androidx.compose.material.Text
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -201,7 +205,6 @@ fun ReviewItem(
                     placeholder = painterResource(
                         id = R.drawable.ic_order_empty
                     )
-
                 )
 
                 Spacer(modifier = Modifier.width(12.dp))
@@ -231,7 +234,7 @@ fun ReviewItem(
                         Spacer(modifier = Modifier.width(8.dp))
 
                         Text(
-                            text = review.ngay_danh_gia, // Bạn có thể format date ở đây
+                            text = review.ngay_danh_gia.formatDateTime(),
                             fontSize = 12.sp,
                             color = Color.Gray
                         )
@@ -273,11 +276,16 @@ fun ReviewsSection(
     reviews: List<ReviewResponse>,
     reviewStats: ReviewStatsResponse?,
     isLoading: Boolean,
-    onSeeAllClick: () -> Unit,
+    hasMoreReviews: Boolean,
+    onLoadMoreReviews: () -> Unit,
     modifier: Modifier = Modifier,
     primaryColor: Color = Color(0xFFFF6B35),
     cardColor: Color = Color.White
 ) {
+    // State để theo dõi xem có hiển thị tất cả review hay không
+    var showAllReviews by remember { mutableStateOf(false) }
+    var isLoadingMore by remember { mutableStateOf(false) }
+
     Column(modifier = modifier) {
         // Review stats
         ReviewStatsCard(
@@ -309,39 +317,77 @@ fun ReviewsSection(
                             color = Color.Black
                         )
 
-                        Text(
-                            text = "Xem tất cả",
-                            fontSize = 14.sp,
-                            color = primaryColor,
-                            fontWeight = FontWeight.Medium,
-                            modifier = Modifier.clickable { onSeeAllClick() }
-                        )
+                        // Chỉ hiển thị "Xem tất cả" nếu chưa show all và có nhiều hơn 3 review
+                        if (!showAllReviews && reviews.size > 3) {
+                            Text(
+                                text = "Xem tất cả",
+                                fontSize = 14.sp,
+                                color = primaryColor,
+                                fontWeight = FontWeight.Medium,
+                                modifier = Modifier.clickable {
+                                    showAllReviews = true
+                                }
+                            )
+                        }
                     }
 
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    // Show first 3 reviews
-                    reviews.take(3).forEachIndexed { index, review ->
+                    // Hiển thị reviews
+                    val reviewsToShow = if (showAllReviews) reviews else reviews.take(3)
+
+                    reviewsToShow.forEachIndexed { index, review ->
                         ReviewItem(
                             review = review,
                             cardColor = Color(0xFFF8F9FA)
                         )
 
-                        if (index < minOf(2, reviews.size - 1)) {
+                        if (index < reviewsToShow.size - 1) {
                             Spacer(modifier = Modifier.height(12.dp))
                         }
                     }
 
-                    if (reviews.size > 3) {
+                    // Hiển thị nút "Xem thêm" nếu đang show all và còn có more reviews
+                    if (showAllReviews && hasMoreReviews) {
+                        Spacer(modifier = Modifier.height(16.dp))
+
+                        if (isLoadingMore) {
+                            Box(
+                                modifier = Modifier.fillMaxWidth(),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                CircularProgressIndicator(
+                                    color = primaryColor,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                            }
+                        } else {
+                            Text(
+                                text = "Xem thêm đánh giá",
+                                fontSize = 14.sp,
+                                color = primaryColor,
+                                fontWeight = FontWeight.Medium,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable {
+                                        isLoadingMore = true
+                                        onLoadMoreReviews()
+                                        // Reset loading state sau khi load xong
+                                        isLoadingMore = false
+                                    },
+                                textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                            )
+                        }
+                    }
+
+                    // Hiển thị thông báo nếu đang show all nhưng không còn review để load
+                    if (showAllReviews && !hasMoreReviews && reviews.size > 3) {
                         Spacer(modifier = Modifier.height(16.dp))
                         Text(
-                            text = "Xem thêm ${reviews.size - 3} đánh giá khác",
+                            text = "Đã hiển thị tất cả đánh giá",
                             fontSize = 14.sp,
-                            color = primaryColor,
-                            fontWeight = FontWeight.Medium,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable { onSeeAllClick() },
+                            color = Color.Gray,
+                            modifier = Modifier.fillMaxWidth(),
                             textAlign = androidx.compose.ui.text.style.TextAlign.Center
                         )
                     }
@@ -349,6 +395,7 @@ fun ReviewsSection(
             }
         }
 
+        // Loading indicator ban đầu
         if (isLoading) {
             Box(
                 modifier = Modifier

@@ -1,5 +1,7 @@
 package com.example.pizza_app.data.model
 
+import java.util.Date
+
 data class ReviewResponse(
     val ma_danh_gia: Int,
     val ten_nguoi_danh_gia: String?,

@@ -1,6 +1,13 @@
+
 package com.example.pizza_app.ui.order
 
+import android.content.Context
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -15,11 +22,13 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
 import coil.compose.AsyncImage
 import com.example.pizza_app.data.model.*
 import com.example.pizza_app.data.source.getFullImageUrl
@@ -48,12 +57,12 @@ fun OrderDetailScreen(
     viewModel: OrderDetailViewModel = androidx.lifecycle.viewmodel.compose.viewModel(),
     onBackClick: () -> Unit = {}
 ) {
+    val context = LocalContext.current
     val orderDetail by viewModel.orderDetail.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
     val errorMessage by viewModel.errorMessage.collectAsState()
     val isCancelling by viewModel.isCancelling.collectAsState()
     val isSubmittingReview by viewModel.isSubmittingReview.collectAsState()
-
 
     // State để hiển thị dialog xác nhận hủy và dialog đánh giá
     var showCancelDialog by remember { mutableStateOf(false) }
@@ -116,7 +125,7 @@ fun OrderDetailScreen(
             orderDetail != null -> OrderDetailContent(
                 orderDetail = orderDetail!!,
                 onCancelOrder = { showCancelDialog = true },
-                onReviewOrder = { showReviewDialog = true }, // SỬA: Uncomment dòng này
+                onReviewOrder = { showReviewDialog = true },
                 isCancelling = isCancelling
             )
 
@@ -176,7 +185,7 @@ fun OrderDetailScreen(
             isSubmitting = isSubmittingReview,
             onDismiss = { showReviewDialog = false },
             onSubmitReview = { productId, rating, comment, imageUri ->
-                viewModel.submitReview(orderId, productId, rating, comment, imageUri = null)
+                viewModel.submitReview(orderId, productId, rating, comment, imageUri, context)
                 showReviewDialog = false
             }
         )
@@ -187,7 +196,7 @@ fun OrderDetailScreen(
 fun OrderDetailContent(
     orderDetail: OrderDetail,
     onCancelOrder: () -> Unit,
-    onReviewOrder: () -> Unit, // THÊM parameter này
+    onReviewOrder: () -> Unit,
     isCancelling: Boolean
 ) {
     LazyColumn(
@@ -216,6 +225,7 @@ fun OrderDetailContent(
             }
         }
 
+        // Nút đánh giá đơn hàng (chỉ hiển thị khi trạng thái là "hoan_thanh")
         if (orderDetail.don_hang.trang_thai == "hoan_thanh") {
             item {
                 ReviewOrderButton(onReviewOrder = onReviewOrder)
@@ -235,6 +245,241 @@ fun OrderDetailContent(
         // Spacer cuối
         item {
             Spacer(modifier = Modifier.height(16.dp))
+        }
+    }
+}
+
+@Composable
+fun ReviewDialog(
+    orderDetail: OrderDetail,
+    isSubmitting: Boolean,
+    onDismiss: () -> Unit,
+    onSubmitReview: (Long, Int, String, String?) -> Unit
+) {
+    var selectedProductId by remember { mutableStateOf<Long?>(null) }
+    var rating by remember { mutableStateOf(5) }
+    var comment by remember { mutableStateOf("") }
+    var imageUri by remember { mutableStateOf<String?>(null) }
+
+    val imagePickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+        imageUri = uri?.toString()
+    }
+
+    Dialog(onDismissRequest = onDismiss) {
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            shape = RoundedCornerShape(12.dp),
+            elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
+        ) {
+            Column(
+                modifier = Modifier.padding(20.dp)
+            ) {
+                // Tiêu đề
+                Text(
+                    text = "Đánh giá đơn hàng",
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = HarmoniousColors.OnSurface
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // Chọn sản phẩm để đánh giá
+                Text(
+                    text = "Chọn sản phẩm:",
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = HarmoniousColors.OnSurface
+                )
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                // Danh sách sản phẩm
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(max = 200.dp),
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    items(orderDetail.mat_hang.filter { it.loai_mat_hang == "san_pham" }) { matHang ->
+                        val productId = matHang.ma_san_pham?.toLong() ?: 0L
+
+                        Card(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { selectedProductId = productId },
+                            colors = CardDefaults.cardColors(
+                                containerColor = if (selectedProductId == productId)
+                                    HarmoniousColors.PrimaryLight
+                                else
+                                    HarmoniousColors.Background
+                            ),
+                            border = if (selectedProductId == productId)
+                                androidx.compose.foundation.BorderStroke(2.dp, HarmoniousColors.Primary)
+                            else null
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(12.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                AsyncImage(
+                                    model = getFullImageUrl(matHang.hinh_anh),
+                                    contentDescription = null,
+                                    modifier = Modifier
+                                        .size(40.dp)
+                                        .clip(RoundedCornerShape(6.dp)),
+                                    contentScale = ContentScale.Crop
+                                )
+
+                                Spacer(modifier = Modifier.width(12.dp))
+
+                                Text(
+                                    text = matHang.ten_san_pham ?: "Sản phẩm",
+                                    fontSize = 14.sp,
+                                    fontWeight = FontWeight.Medium,
+                                    color = HarmoniousColors.OnSurface
+                                )
+                            }
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // Đánh giá sao
+                Text(
+                    text = "Đánh giá:",
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = HarmoniousColors.OnSurface
+                )
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    repeat(5) { index ->
+                        Icon(
+                            Icons.Default.Star,
+                            contentDescription = null,
+                            tint = if (index < rating) HarmoniousColors.StarYellow else HarmoniousColors.OnSurfaceLight,
+                            modifier = Modifier
+                                .size(32.dp)
+                                .clickable { rating = index + 1 }
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // Bình luận
+                Text(
+                    text = "Bình luận:",
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = HarmoniousColors.OnSurface
+                )
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                OutlinedTextField(
+                    value = comment,
+                    onValueChange = { comment = it },
+                    modifier = Modifier.fillMaxWidth(),
+                    placeholder = { Text("Chia sẻ trải nghiệm của bạn...") },
+                    minLines = 3,
+                    maxLines = 5,
+                    shape = RoundedCornerShape(8.dp)
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // Thêm hình ảnh
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "Hình ảnh:",
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = HarmoniousColors.OnSurface
+                    )
+
+                    TextButton(
+                        onClick = { imagePickerLauncher.launch("image/*") }
+                    ) {
+                        Icon(
+                            Icons.Default.Add,
+                            contentDescription = null,
+                            modifier = Modifier.size(16.dp)
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text("Thêm ảnh")
+                    }
+                }
+
+                // Hiển thị hình ảnh đã chọn
+                if (imageUri != null) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    AsyncImage(
+                        model = imageUri,
+                        contentDescription = null,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(120.dp)
+                            .clip(RoundedCornerShape(8.dp)),
+                        contentScale = ContentScale.Crop
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(20.dp))
+
+                // Nút hành động
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    OutlinedButton(
+                        onClick = onDismiss,
+                        modifier = Modifier.weight(1f),
+                        enabled = !isSubmitting
+                    ) {
+                        Text("Hủy")
+                    }
+
+                    Button(
+                        onClick = {
+                            selectedProductId?.let { productId ->
+                                onSubmitReview(productId, rating, comment, imageUri)
+                            }
+                        },
+                        modifier = Modifier.weight(1f),
+                        enabled = !isSubmitting && selectedProductId != null,
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = HarmoniousColors.Primary
+                        )
+                    ) {
+                        if (isSubmitting) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(16.dp),
+                                color = Color.White,
+                                strokeWidth = 2.dp
+                            )
+                        } else {
+                            Text("Gửi đánh giá")
+                        }
+                    }
+                }
+            }
         }
     }
 }
@@ -444,7 +689,6 @@ fun MatHangListCard(matHangList: List<MatHang>) {
         }
     }
 }
-
 @Composable
 fun MatHangItem(matHang: MatHang) {
     Column {
@@ -743,7 +987,7 @@ fun CompactTotalCard(donHang: OrderDetail.DonHang) {
                         color = getPaymentStatusColor(donHang.trang_thai_thanh_toan).copy(alpha = 0.12f)
                     ) {
                         Text(
-                            text = getPaymentStatusText(donHang.trang_thai_thanh_toan),
+                            text = getPaymentStatusText(donHang.trang_thai_thanh_toan.toString()),
                             fontSize = 12.sp,
                             color = getPaymentStatusColor(donHang.trang_thai_thanh_toan),
                             fontWeight = FontWeight.Medium,
@@ -784,8 +1028,8 @@ fun getPaymentMethodText(method: String?): String = when (method) {
 }
 
 fun getPaymentStatusText(status: String?): String = when (status) {
-    "chua_thanh_toan" -> "Chưa thanh toán"
-    "da_thanh_toan" -> "Đã thanh toán"
+    "cho_xu_ly" -> "Chưa thanh toán"
+    "hoan_thanh" -> "Đã thanh toán"
     "that_bai" -> "Thất bại"
     else -> "Không xác định"
 }

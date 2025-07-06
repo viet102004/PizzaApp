@@ -22,6 +22,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Image
+import androidx.compose.material.icons.filled.PhotoLibrary
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -46,13 +47,16 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
+import coil.request.ImageRequest
 import com.example.pizza_app.data.model.OrderDetail
 
 @Composable
@@ -108,7 +112,7 @@ fun ReviewOrderButton(onReviewOrder: () -> Unit) {
 @Composable
 fun ReviewDialog(
     orderDetail: OrderDetail,
-    reviewedProductIds: Set<Long> = emptySet(), // Thêm parameter này
+    reviewedProductIds: Set<Long> = emptySet(),
     isSubmitting: Boolean,
     onDismiss: () -> Unit,
     onSubmitReview: (Long, Int, String, String?) -> Unit
@@ -117,12 +121,42 @@ fun ReviewDialog(
     var rating by remember { mutableStateOf(5) }
     var comment by remember { mutableStateOf("") }
     var selectedImageUri by remember { mutableStateOf<Uri?>(null) }
+    var showImageSourceDialog by remember { mutableStateOf(false) }
 
-    // Image picker launcher
-    val imagePickerLauncher = rememberLauncherForActivityResult(
+    val context = LocalContext.current
+
+    // Camera launcher
+    val cameraLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.TakePicture()
+    ) { success ->
+        if (success) {
+            // Image captured successfully, selectedImageUri is already set
+        }
+    }
+
+    // Gallery launcher
+    val galleryLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
         selectedImageUri = uri
+    }
+
+    // Create temporary file for camera
+    fun createTempImageUri(): Uri? {
+        return try {
+            val tempFile = java.io.File.createTempFile(
+                "review_image_${System.currentTimeMillis()}",
+                ".jpg",
+                context.cacheDir
+            )
+            androidx.core.content.FileProvider.getUriForFile(
+                context,
+                "${context.packageName}.fileprovider",
+                tempFile
+            )
+        } catch (e: Exception) {
+            null
+        }
     }
 
     // Lọc ra những sản phẩm chưa được đánh giá
@@ -133,7 +167,6 @@ fun ReviewDialog(
     }
 
     if (reviewableProducts.isEmpty()) {
-        // Nếu không có sản phẩm nào có thể đánh giá
         AlertDialog(
             onDismissRequest = onDismiss,
             title = { Text("Thông báo") },
@@ -153,6 +186,69 @@ fun ReviewDialog(
             }
         )
         return
+    }
+
+    // Image source selection dialog
+    if (showImageSourceDialog) {
+        AlertDialog(
+            onDismissRequest = { showImageSourceDialog = false },
+            title = { Text("Chọn nguồn ảnh") },
+            text = {
+                Column {
+                    OutlinedButton(
+                        onClick = {
+                            showImageSourceDialog = false
+                            val tempUri = createTempImageUri()
+                            if (tempUri != null) {
+                                selectedImageUri = tempUri
+                                cameraLauncher.launch(tempUri)
+                            }
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = ButtonDefaults.outlinedButtonColors(
+                            contentColor = HarmoniousColors.Primary
+                        ),
+                        border = BorderStroke(1.dp, HarmoniousColors.Primary)
+                    ) {
+                        Icon(
+                            Icons.Default.CameraAlt,
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Chụp ảnh")
+                    }
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    OutlinedButton(
+                        onClick = {
+                            showImageSourceDialog = false
+                            galleryLauncher.launch("image/*")
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = ButtonDefaults.outlinedButtonColors(
+                            contentColor = HarmoniousColors.Primary
+                        ),
+                        border = BorderStroke(1.dp, HarmoniousColors.Primary)
+                    ) {
+                        Icon(
+                            Icons.Default.PhotoLibrary,
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Chọn từ thư viện")
+                    }
+                }
+            },
+            confirmButton = {},
+            dismissButton = {
+                TextButton(onClick = { showImageSourceDialog = false }) {
+                    Text("Hủy")
+                }
+            }
+        )
     }
 
     AlertDialog(
@@ -175,7 +271,6 @@ fun ReviewDialog(
 
                 Spacer(modifier = Modifier.height(8.dp))
 
-                // Product selection (simplified - you might want to use a dropdown)
                 LazyColumn(
                     modifier = Modifier.height(100.dp)
                 ) {
@@ -188,7 +283,10 @@ fun ReviewDialog(
                         ) {
                             RadioButton(
                                 selected = selectedProductIndex == index,
-                                onClick = { selectedProductIndex = index }
+                                onClick = { selectedProductIndex = index },
+                                colors = RadioButtonDefaults.colors(
+                                    selectedColor = HarmoniousColors.Primary
+                                )
                             )
                             Spacer(modifier = Modifier.width(8.dp))
                             Text(
@@ -253,7 +351,7 @@ fun ReviewDialog(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // Image selection section
+                // Enhanced Image selection section
                 Text(
                     text = "Hình ảnh (tùy chọn):",
                     fontSize = 14.sp,
@@ -268,27 +366,27 @@ fun ReviewDialog(
                     horizontalArrangement = Arrangement.spacedBy(12.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    // Image preview or placeholder
-                    if (selectedImageUri != null) {
-                        Card(
-                            modifier = Modifier.size(80.dp),
-                            shape = RoundedCornerShape(8.dp)
-                        ) {
+                    // Enhanced image preview
+                    Card(
+                        modifier = Modifier.size(80.dp),
+                        shape = RoundedCornerShape(8.dp),
+                        colors = CardDefaults.cardColors(
+                            containerColor = if (selectedImageUri != null) Color.Transparent else HarmoniousColors.Background
+                        )
+                    ) {
+                        if (selectedImageUri != null) {
                             AsyncImage(
-                                model = selectedImageUri,
+                                model = ImageRequest.Builder(LocalContext.current)
+                                    .data(selectedImageUri)
+                                    .crossfade(true)
+                                    .build(),
                                 contentDescription = "Hình ảnh đánh giá",
-                                modifier = Modifier.fillMaxSize(),
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .clip(RoundedCornerShape(8.dp)),
                                 contentScale = ContentScale.Crop
                             )
-                        }
-                    } else {
-                        Card(
-                            modifier = Modifier.size(80.dp),
-                            shape = RoundedCornerShape(8.dp),
-                            colors = CardDefaults.cardColors(
-                                containerColor = HarmoniousColors.Background
-                            )
-                        ) {
+                        } else {
                             Box(
                                 modifier = Modifier.fillMaxSize(),
                                 contentAlignment = Alignment.Center
@@ -309,7 +407,7 @@ fun ReviewDialog(
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         OutlinedButton(
-                            onClick = { imagePickerLauncher.launch("image/*") },
+                            onClick = { showImageSourceDialog = true },
                             modifier = Modifier.fillMaxWidth(),
                             colors = ButtonDefaults.outlinedButtonColors(
                                 contentColor = HarmoniousColors.Primary
@@ -323,7 +421,7 @@ fun ReviewDialog(
                             )
                             Spacer(modifier = Modifier.width(4.dp))
                             Text(
-                                text = if (selectedImageUri != null) "Đổi ảnh" else "Chọn ảnh",
+                                text = if (selectedImageUri != null) "Đổi ảnh" else "Thêm ảnh",
                                 fontSize = 12.sp
                             )
                         }
@@ -356,7 +454,6 @@ fun ReviewDialog(
                 onClick = {
                     val selectedProduct = reviewableProducts[selectedProductIndex]
                     selectedProduct.ma_san_pham?.let { productId ->
-                        // Convert URI to string if image is selected
                         val imageString = selectedImageUri?.toString()
                         onSubmitReview(productId.toLong(), rating, comment, imageString)
                     }

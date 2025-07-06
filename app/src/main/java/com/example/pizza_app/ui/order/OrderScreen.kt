@@ -91,9 +91,6 @@ fun OrderScreen(
             TopAppBar(
                 title = { Text("Đơn hàng của tôi", fontSize = 26.sp, fontWeight = FontWeight.Bold) },
                 actions = {
-                    IconButton(onClick = { /* TODO */ }) {
-                        Icon(Icons.Default.Search, contentDescription = "Search", tint = Color(0xFFFFB700))
-                    }
                     IconButton(onClick = {
                         if (isLoggedIn) onNavigateTo("favorite") else showAuthDialog = true
                     }) {

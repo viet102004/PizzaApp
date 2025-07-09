@@ -91,11 +91,11 @@ fun OrderScreen(
             TopAppBar(
                 title = { Text("Đơn hàng của tôi", fontSize = 26.sp, fontWeight = FontWeight.Bold) },
                 actions = {
-                    IconButton(onClick = {
-                        if (isLoggedIn) onNavigateTo("favorite") else showAuthDialog = true
-                    }) {
-                        Icon(Icons.Default.FavoriteBorder, contentDescription = "Favorite", tint = Color(0xFFFFB700))
-                    }
+//                    IconButton(onClick = {
+//                        if (isLoggedIn) onNavigateTo("favorite") else showAuthDialog = true
+//                    }) {
+//                        Icon(Icons.Default.FavoriteBorder, contentDescription = "Favorite", tint = Color(0xFFFFB700))
+//                    }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
             )

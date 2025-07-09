@@ -196,7 +196,7 @@ fun UpdatePhoneScreen(
                             if (phoneNumber.isNotEmpty()) {
                                 IconButton(
                                     onClick = {
-                                        phoneNumber = "+84"
+                                        phoneNumber = ""
                                         focusRequester.requestFocus()
                                     }
                                 ) {

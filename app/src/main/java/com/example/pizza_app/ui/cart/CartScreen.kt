@@ -181,23 +181,23 @@ fun CartScreen(
                             onRemove = {
                                 cartViewModel.removeFromCart(item.id)
                             },
-                            onEditClick = {
-                                selectedCartItem.value = item
-                                product.value = item.product
-                                quantity.value = item.quantity
-                                selectedImage.value = item.imageUrl
-                                dialogAction.value = "edit_cart"
-                                isEditMode.value = true
-
-                                restoreSelectedOptionsFromCartItem(
-                                    item = item,
-                                    options = options,
-                                    selectedOptions = selectedOptions,
-                                    multipleSelectedOptions = multipleSelectedOptions
-                                )
-
-                                showDialog.value = true
-                            }
+//                            onEditClick = {
+//                                selectedCartItem.value = item
+//                                product.value = item.product
+//                                quantity.value = item.quantity
+//                                selectedImage.value = item.imageUrl
+//                                dialogAction.value = "edit_cart"
+//                                isEditMode.value = true
+//
+//                                restoreSelectedOptionsFromCartItem(
+//                                    item = item,
+//                                    options = options,
+//                                    selectedOptions = selectedOptions,
+//                                    multipleSelectedOptions = multipleSelectedOptions
+//                                )
+//
+//                                showDialog.value = true
+//                            }
 
                         )
                     }

@@ -15,6 +15,7 @@ import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.LocalPizza
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.*
@@ -166,9 +167,9 @@ fun LoginScreen(navController: NavController) {
                             emailTextFieldValue = it
                             email = it.text
                         },
-                        label = { Text("Email hoặc số điện thoại") },
+                        label = { Text("Email hoặc số điện thoại", fontSize = 15.sp) },
                         leadingIcon = {
-                            Icon(Icons.Default.Email, contentDescription = null, tint = primaryColor)
+                            Icon(Icons.Default.Person, contentDescription = null, tint = primaryColor)
                         },
                         modifier = Modifier
                             .fillMaxWidth()
@@ -215,7 +216,7 @@ fun LoginScreen(navController: NavController) {
                             passwordTextFieldValue = it
                             password = it.text
                         },
-                        label = { Text("Mật khẩu") },
+                        label = { Text("Mật khẩu", fontSize = 15.sp) },
                         leadingIcon = {
                             Icon(Icons.Default.Lock, contentDescription = null, tint = primaryColor)
                         },

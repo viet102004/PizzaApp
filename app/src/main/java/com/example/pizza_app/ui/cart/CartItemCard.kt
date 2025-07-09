@@ -37,7 +37,7 @@ fun CartItemCard(
     item: CartItem,
     onQuantityChange: (Int) -> Unit,
     onRemove: () -> Unit,
-    onEditClick: () -> Unit = {},
+   // onEditClick: () -> Unit = {},
     showControls: Boolean = true
 ) {
     Card(

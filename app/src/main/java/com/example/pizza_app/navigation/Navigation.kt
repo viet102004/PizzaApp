@@ -215,7 +215,12 @@ fun AppNavigation(navController: NavHostController) {
                 )
                 CategoryProductsScreen(
                     navController = navController,
-                    category = category
+                    category = category,
+                    isLoggedIn = isLoggedIn,  // Thêm này
+                    onNavigateTo = { route ->  // Thêm này
+                        navController.navigate(route)
+                    },
+                    cartViewModel = cartViewModel  // Thêm này
                 )
             }
         }

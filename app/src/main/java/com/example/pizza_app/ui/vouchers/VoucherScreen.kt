@@ -27,6 +27,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.pizza_app.data.model.MaGiamGia
+import com.example.pizza_app.ui.cart.formatCurrency
 
 @Composable
 fun VoucherScreen(
@@ -34,7 +35,6 @@ fun VoucherScreen(
     viewModel: VoucherViewModel = viewModel()
 ) {
     val vouchers by viewModel.voucherList.collectAsState()
-    val message by viewModel.message.collectAsState()
 
     LaunchedEffect(Unit) {
         viewModel.fetchVouchers()
@@ -74,7 +74,6 @@ fun VoucherScreen(
                 .padding(16.dp)
         ) {
             if (vouchers.isEmpty()) {
-                // Empty state với style tương tự AlertDialog
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -205,7 +204,8 @@ fun VoucherItem(
                     )
 
                     Text(
-                        text = "Giảm $discountText",
+                        text = if(voucher.loai_giam_gia == "co_dinh") "Giảm ${formatCurrency(discountText.toDouble())}"
+                            else "Giảm $discountText",
                         fontSize = 14.sp,
                         color = if (isValid) Color(0xFF4CAF50) else Color(0xFF999999),
                         fontWeight = FontWeight.Medium

@@ -391,13 +391,150 @@ fun ProductDetailScreen(
     )
 
     // Bottom Sheet Dialog với dữ liệu động (chỉ hiển thị khi đã đăng nhập)
-    if (showDialog.value && isLoggedIn) {
+    // Gọi ProductOptionsDialog
+    if (showDialog.value && isLoggedIn && product != null) {
+        ProductOptionsDialog(
+            product = product!!,
+            showDialog = showDialog.value,
+            onDismiss = { showDialog.value = false },
+            onAddToCart = { prod, selectedOpts, qty, imageUrl, opts ->
+                when (dialogAction.value) {
+                    "add_to_cart" -> {
+                        cartViewModel.addToCart(
+                            product = prod,
+                            selectedOptions = selectedOpts,
+                            quantity = qty,
+                            imageUrl = imageUrl,
+                            options = opts
+                        )
+                        Toast.makeText(context, "Đã thêm vào giỏ hàng", Toast.LENGTH_SHORT).show()
+                        showDialog.value = false
+                    }
+                    "buy_now" -> {
+                        cartViewModel.addToCart(
+                            product = prod,
+                            selectedOptions = selectedOpts,
+                            quantity = qty,
+                            imageUrl = imageUrl,
+                            options = opts
+                        )
+                        onNavigateTo("checkout")
+                        showDialog.value = false
+                    }
+                }
+            }
+        )
+    }
+}
+
+@Composable
+private fun ProductOptionsDialog(
+    product: Product,
+    showDialog: Boolean,
+    onDismiss: () -> Unit,
+    onAddToCart: (Product, Map<Int, Int>, Int, String, List<com.example.pizza_app.data.model.ProductOption>) -> Unit
+) {
+    val productDetailViewModel: ProductDetailViewModel = viewModel()
+    val options by productDetailViewModel.options.collectAsState()
+
+    val quantity = remember { mutableStateOf(1) }
+    val selectedOptions = remember { mutableStateMapOf<Int, Int>() }
+    val multipleSelectedOptions = remember { mutableStateMapOf<Int, MutableSet<Int>>() }
+    val context = LocalContext.current
+
+    val primaryColor = Color(0xFFFF6B35)
+    val cardColor = Color.White
+
+    // Load product options khi dialog mở
+    LaunchedEffect(showDialog, product.ma_san_pham) {
+        if (showDialog) {
+            productDetailViewModel.fetchProductDetail(product.ma_san_pham.toInt())
+        }
+    }
+
+    // Initialize options
+    LaunchedEffect(options) {
+        if (options.isNotEmpty()) {
+            selectedOptions.clear()
+            multipleSelectedOptions.clear()
+
+            options.forEach { option ->
+                when (option.loai_lua_chon) {
+                    "checkbox", "multiple" -> {
+                        multipleSelectedOptions[option.ma_loai_tuy_chon] = mutableSetOf()
+                    }
+                    else -> {
+                        if (option.gia_tri.isNotEmpty()) {
+                            selectedOptions[option.ma_loai_tuy_chon] = option.gia_tri.first().ma_gia_tri
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // Function để tính tổng giá
+    fun calculateTotalPrice(): Double {
+        val basePrice = product.gia_co_ban
+        val singleOptionsPrice = selectedOptions.entries.sumOf { (maLoaiTuyChon, maGiaTri) ->
+            options.find { it.ma_loai_tuy_chon == maLoaiTuyChon }?.gia_tri
+                ?.find { it.ma_gia_tri == maGiaTri }?.gia_them ?: 0.0
+        }
+        val multipleOptionsPrice = multipleSelectedOptions.entries.sumOf { (maLoaiTuyChon, selectedValues) ->
+            val option = options.find { it.ma_loai_tuy_chon == maLoaiTuyChon }
+            selectedValues.sumOf { maGiaTri ->
+                option?.gia_tri?.find { it.ma_gia_tri == maGiaTri }?.gia_them ?: 0.0
+            }
+        }
+        return basePrice + singleOptionsPrice + multipleOptionsPrice
+    }
+
+    // Function để validate required options
+    fun validateRequiredOptions(): String? {
+        val missingOptions = mutableListOf<String>()
+
+        options.forEach { option ->
+            if (option.bat_buoc) {
+                when (option.loai_lua_chon) {
+                    "checkbox", "multiple" -> {
+                        val selectedValues = multipleSelectedOptions[option.ma_loai_tuy_chon]
+                        if (selectedValues.isNullOrEmpty()) {
+                            missingOptions.add(option.ten_loai)
+                        }
+                    }
+                    else -> {
+                        if (selectedOptions[option.ma_loai_tuy_chon] == null) {
+                            missingOptions.add(option.ten_loai)
+                        }
+                    }
+                }
+            }
+        }
+
+        return if (missingOptions.isNotEmpty()) {
+            "Vui lòng chọn: ${missingOptions.joinToString(", ")}"
+        } else null
+    }
+
+    // Function để tạo final selected options map
+    fun createFinalSelectedOptionsMap(): Map<Int, Int> {
+        val finalMap = mutableMapOf<Int, Int>()
+        finalMap.putAll(selectedOptions)
+        multipleSelectedOptions.forEach { (maLoaiTuyChon, selectedValues) ->
+            if (selectedValues.isNotEmpty()) {
+                finalMap[maLoaiTuyChon] = selectedValues.first()
+            }
+        }
+        return finalMap
+    }
+
+    if (showDialog) {
         Dialog(
-            onDismissRequest = { showDialog.value = false },
+            onDismissRequest = onDismiss,
             properties = DialogProperties(usePlatformDefaultWidth = false)
         ) {
             AnimatedVisibility(
-                visible = showDialog.value,
+                visible = showDialog,
                 enter = slideInVertically(initialOffsetY = { it }),
                 exit = slideOutVertically(targetOffsetY = { it })
             ) {
@@ -405,12 +542,12 @@ fun ProductDetailScreen(
                     modifier = Modifier
                         .fillMaxSize()
                         .background(Color.Black.copy(alpha = 0.5f))
-                        .clickable { showDialog.value = false }
+                        .clickable { onDismiss() }
                 ) {
                     Card(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .fillMaxHeight(0.7f)
+                            .fillMaxHeight(0.8f)
                             .align(Alignment.BottomCenter)
                             .clickable { },
                         shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
@@ -430,14 +567,15 @@ fun ProductDetailScreen(
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Text(
-                                    text = "Tùy chọn sản phẩm",
+                                    text = product.ten_san_pham,
                                     fontSize = 20.sp,
                                     fontWeight = FontWeight.Bold,
-                                    color = Color.Black
+                                    color = Color.Black,
+                                    modifier = Modifier.weight(1f)
                                 )
 
                                 IconButton(
-                                    onClick = { showDialog.value = false },
+                                    onClick = onDismiss,
                                     modifier = Modifier.size(32.dp)
                                 ) {
                                     Icon(
@@ -450,7 +588,7 @@ fun ProductDetailScreen(
 
                             Spacer(modifier = Modifier.height(20.dp))
 
-                            // Hiển thị các tùy chọn động từ API
+                            // Hiển thị các tùy chọn
                             options.forEach { option ->
                                 Text(
                                     text = option.ten_loai + if (option.bat_buoc) " *" else "",
@@ -460,84 +598,46 @@ fun ProductDetailScreen(
                                 )
                                 Spacer(modifier = Modifier.height(12.dp))
 
-                                // Hiển thị các giá trị của tùy chọn dựa trên loai_lua_chon
                                 when (option.loai_lua_chon) {
                                     "radio", "single" -> {
-                                        // Single choice
-                                        if (option.gia_tri.size <= 3) {
-                                            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                                                option.gia_tri.forEach { value ->
-                                                    val isSelected = selectedOptions[option.ma_loai_tuy_chon] == value.ma_gia_tri
-                                                    Box(
-                                                        modifier = Modifier
-                                                            .weight(1f)
-                                                            .height(64.dp)
-                                                            .background(
-                                                                if (isSelected) primaryColor else Color(0xFFF5F5F5),
-                                                                RoundedCornerShape(12.dp)
-                                                            )
-                                                            .clickable {
-                                                                selectedOptions[option.ma_loai_tuy_chon] = value.ma_gia_tri
-                                                            },
-                                                        contentAlignment = Alignment.Center
-                                                    ) {
-                                                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                                            Text(
-                                                                text = value.ten_gia_tri,
-                                                                fontSize = 14.sp,
-                                                                fontWeight = FontWeight.Bold,
-                                                                color = if (isSelected) Color.White else Color.Black
-                                                            )
-                                                            if (value.gia_them > 0) {
-                                                                Text(
-                                                                    text = "+${value.gia_them.formatCurrency()}",
-                                                                    fontSize = 12.sp,
-                                                                    color = if (isSelected) Color.White else Color.Gray
-                                                                )
-                                                            }
-                                                        }
-                                                    }
-                                                }
-                                            }
-                                        } else {
-                                            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                                                option.gia_tri.forEach { value ->
-                                                    val isSelected = selectedOptions[option.ma_loai_tuy_chon] == value.ma_gia_tri
-                                                    Row(
-                                                        modifier = Modifier
-                                                            .fillMaxWidth()
-                                                            .height(48.dp)
-                                                            .background(
-                                                                if (isSelected) primaryColor else Color(0xFFF5F5F5),
-                                                                RoundedCornerShape(12.dp)
-                                                            )
-                                                            .clickable {
-                                                                selectedOptions[option.ma_loai_tuy_chon] = value.ma_gia_tri
-                                                            }
-                                                            .padding(horizontal = 16.dp),
-                                                        verticalAlignment = Alignment.CenterVertically,
-                                                        horizontalArrangement = Arrangement.SpaceBetween
-                                                    ) {
-                                                        Text(
-                                                            text = value.ten_gia_tri,
-                                                            fontSize = 14.sp,
-                                                            fontWeight = FontWeight.Medium,
-                                                            color = if (isSelected) Color.White else Color.Black
+                                        // Single choice options
+                                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                            option.gia_tri.forEach { value ->
+                                                val isSelected = selectedOptions[option.ma_loai_tuy_chon] == value.ma_gia_tri
+                                                Row(
+                                                    modifier = Modifier
+                                                        .fillMaxWidth()
+                                                        .height(48.dp)
+                                                        .background(
+                                                            if (isSelected) primaryColor else Color(0xFFF5F5F5),
+                                                            RoundedCornerShape(12.dp)
                                                         )
-                                                        if (value.gia_them > 0) {
-                                                            Text(
-                                                                text = "+${value.gia_them.formatCurrency()}",
-                                                                fontSize = 12.sp,
-                                                                color = if (isSelected) Color.White else Color.Gray
-                                                            )
+                                                        .clickable {
+                                                            selectedOptions[option.ma_loai_tuy_chon] = value.ma_gia_tri
                                                         }
+                                                        .padding(horizontal = 16.dp),
+                                                    verticalAlignment = Alignment.CenterVertically,
+                                                    horizontalArrangement = Arrangement.SpaceBetween
+                                                ) {
+                                                    Text(
+                                                        text = value.ten_gia_tri,
+                                                        fontSize = 14.sp,
+                                                        fontWeight = FontWeight.Medium,
+                                                        color = if (isSelected) Color.White else Color.Black
+                                                    )
+                                                    if (value.gia_them > 0) {
+                                                        Text(
+                                                            text = "+${value.gia_them.formatCurrency()}",
+                                                            fontSize = 12.sp,
+                                                            color = if (isSelected) Color.White else Color.Gray
+                                                        )
                                                     }
                                                 }
                                             }
                                         }
                                     }
                                     "checkbox", "multiple" -> {
-                                        // Multiple choice
+                                        // Multiple choice options
                                         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                                             option.gia_tri.forEach { value ->
                                                 val selectedValues = multipleSelectedOptions[option.ma_loai_tuy_chon] ?: mutableSetOf()
@@ -596,36 +696,7 @@ fun ProductDetailScreen(
                                             }
                                         }
                                     }
-                                    else -> {
-                                        // Default fallback
-                                        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                                            option.gia_tri.forEach { value ->
-                                                val isSelected = selectedOptions[option.ma_loai_tuy_chon] == value.ma_gia_tri
-                                                Box(
-                                                    modifier = Modifier
-                                                        .weight(1f)
-                                                        .height(48.dp)
-                                                        .background(
-                                                            if (isSelected) primaryColor else Color(0xFFF5F5F5),
-                                                            RoundedCornerShape(12.dp)
-                                                        )
-                                                        .clickable {
-                                                            selectedOptions[option.ma_loai_tuy_chon] = value.ma_gia_tri
-                                                        },
-                                                    contentAlignment = Alignment.Center
-                                                ) {
-                                                    Text(
-                                                        text = value.ten_gia_tri,
-                                                        fontSize = 14.sp,
-                                                        fontWeight = FontWeight.Medium,
-                                                        color = if (isSelected) Color.White else Color.Black
-                                                    )
-                                                }
-                                            }
-                                        }
-                                    }
                                 }
-
                                 Spacer(modifier = Modifier.height(24.dp))
                             }
 
@@ -699,47 +770,23 @@ fun ProductDetailScreen(
 
                             Spacer(modifier = Modifier.height(24.dp))
 
-                            // Action button
+                            // Add to cart button
                             Button(
                                 onClick = {
-                                    product?.let { prod ->
-                                        // Validate required options
-                                        val validationError = validateRequiredOptions()
-                                        if (validationError != null) {
-                                            Toast.makeText(context, validationError, Toast.LENGTH_SHORT).show()
-                                            return@Button
-                                        }
-
-                                        val finalSelectedOptions = createFinalSelectedOptionsMap()
-
-                                        when (dialogAction.value) {
-                                            "add_to_cart" -> {
-                                                cartViewModel.addToCart(
-                                                    product = prod,
-                                                    selectedOptions = finalSelectedOptions,
-                                                    quantity = quantity.value,
-                                                    imageUrl = selectedImage.value ?: "",
-                                                    options = options
-                                                )
-                                                Toast.makeText(context, "Đã thêm vào giỏ hàng", Toast.LENGTH_SHORT).show()
-                                                showDialog.value = false
-                                            }
-                                            "buy_now" -> {
-                                                // Thêm vào giỏ hàng trước khi mua ngay
-                                                cartViewModel.addToCart(
-                                                    product = prod,
-                                                    selectedOptions = finalSelectedOptions,
-                                                    quantity = quantity.value,
-                                                    imageUrl = selectedImage.value ?: "",
-                                                    options = options
-                                                )
-
-                                                // Navigate to checkout
-                                                onNavigateTo("checkout")
-                                                showDialog.value = false
-                                            }
-                                        }
+                                    val validationError = validateRequiredOptions()
+                                    if (validationError != null) {
+                                        Toast.makeText(context, validationError, Toast.LENGTH_SHORT).show()
+                                        return@Button
                                     }
+
+                                    val finalSelectedOptions = createFinalSelectedOptionsMap()
+                                    onAddToCart(
+                                        product,
+                                        finalSelectedOptions,
+                                        quantity.value,
+                                        product.hinh_anh ?: "",
+                                        options
+                                    )
                                 },
                                 modifier = Modifier
                                     .fillMaxWidth()
@@ -751,11 +798,7 @@ fun ProductDetailScreen(
                                 elevation = ButtonDefaults.elevation(4.dp)
                             ) {
                                 Text(
-                                    text = when (dialogAction.value) {
-                                        "add_to_cart" -> "Thêm vào giỏ - ${(calculateTotalPrice() * quantity.value).formatCurrency()}"
-                                        "buy_now" -> "Mua ngay - ${(calculateTotalPrice() * quantity.value).formatCurrency()}"
-                                        else -> "Xác nhận"
-                                    },
+                                    text = "Thêm vào giỏ - ${(calculateTotalPrice() * quantity.value).formatCurrency()}",
                                     color = Color.White,
                                     fontWeight = FontWeight.Medium,
                                     fontSize = 16.sp

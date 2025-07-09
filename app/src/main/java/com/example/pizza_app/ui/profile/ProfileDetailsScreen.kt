@@ -8,6 +8,7 @@ import android.util.Log
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.core.*
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -18,6 +19,7 @@ import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowForwardIos
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.pullrefresh.PullRefreshIndicator
 import androidx.compose.material.pullrefresh.pullRefresh
 import androidx.compose.material.pullrefresh.rememberPullRefreshState
@@ -26,6 +28,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -58,12 +61,27 @@ fun ProfileDetailsScreen(navController: NavController) {
     val isUploadingAvatar by viewModel.isUploadingAvatar.collectAsState()
     val message by viewModel.message.collectAsState()
     val success by viewModel.success.collectAsState()
-    val isRefreshing by viewModel.isRefreshing.collectAsState() // Thêm dòng này
+    val isRefreshing by viewModel.isRefreshing.collectAsState()
 
     Log.d("ProfileDetails", "Email hiện tại: ${user?.email}")
 
     var selectedImageUri by remember { mutableStateOf<Uri?>(null) }
     var showImageSourceDialog by remember { mutableStateOf(false) }
+
+    // Animation cho nút reload
+    val rotationState = remember { mutableStateOf(0f) }
+    val animatedRotation by animateFloatAsState(
+        targetValue = if (isRefreshing) rotationState.value + 360f else rotationState.value,
+        animationSpec = tween(1000, easing = LinearEasing),
+        label = "refresh_rotation"
+    )
+
+    // Cập nhật rotation state khi refresh
+    LaunchedEffect(isRefreshing) {
+        if (isRefreshing) {
+            rotationState.value += 360f
+        }
+    }
 
     // Pull refresh state
     val pullRefreshState = rememberPullRefreshState(
@@ -152,6 +170,23 @@ fun ProfileDetailsScreen(navController: NavController) {
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
                         Icon(Icons.Default.ArrowBack, contentDescription = "Back", tint = Color.Black)
+                    }
+                },
+                actions = {
+                    IconButton(
+                        onClick = {
+                            if (!isRefreshing) {
+                                viewModel.refreshUserFromServer(context)
+                            }
+                        },
+                        enabled = !isRefreshing
+                    ) {
+                        Icon(
+                            Icons.Default.Refresh,
+                            contentDescription = "Refresh",
+                            tint = if (isRefreshing) Color.Gray else Color.Black,
+                            modifier = Modifier.rotate(animatedRotation)
+                        )
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
@@ -299,6 +334,7 @@ fun ProfileDetailsScreen(navController: NavController) {
         )
     }
 }
+
 @Composable
 fun ProfileInfoItem(
     label: String,

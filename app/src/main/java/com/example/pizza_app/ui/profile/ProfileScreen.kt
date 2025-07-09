@@ -102,7 +102,7 @@ fun ProfileScreen(
                     modifier = Modifier.padding(16.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    // Avatar - luôn hiển thị
+                    // Avatar - hiển thị icon person khi chưa đăng nhập
                     if (isLoggedIn && avatarUrl.isNotBlank()) {
                         Image(
                             painter = rememberAsyncImagePainter(getFullImageUrl(avatarUrl)),
@@ -113,14 +113,23 @@ fun ProfileScreen(
                             contentScale = ContentScale.Crop
                         )
                     } else {
-                        Image(
-                            painter = painterResource(id = R.drawable.avatar),
-                            contentDescription = "Avatar",
+                        // Hiển thị icon person cho khách hoặc người dùng chưa có avatar
+                        Box(
                             modifier = Modifier
                                 .size(60.dp)
-                                .clip(CircleShape),
-                            contentScale = ContentScale.Crop
-                        )
+                                .background(
+                                    Color(0xFFE0E0E0),
+                                    shape = CircleShape
+                                ),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                Icons.Default.Person,
+                                contentDescription = "Person Icon",
+                                tint = Color(0xFF757575),
+                                modifier = Modifier.size(30.dp)
+                            )
+                        }
                     }
 
                     Spacer(modifier = Modifier.width(12.dp))

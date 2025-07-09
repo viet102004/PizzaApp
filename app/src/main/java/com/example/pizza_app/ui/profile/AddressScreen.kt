@@ -17,6 +17,7 @@ import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.filled.Note
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material.icons.filled.Refresh
@@ -94,22 +95,11 @@ fun AddressListScreen(
             },
             navigationIcon = {
                 IconButton(onClick = { navController.popBackStack() }) {
-                    Box(
-                        modifier = Modifier
-                            .size(40.dp)
-                            .background(
-                                Color(0xFFFFB700).copy(alpha = 0.1f),
-                                shape = CircleShape
-                            ),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            Icons.Default.ArrowBack,
-                            contentDescription = "Quay lại",
-                            tint = Color(0xFFFFB700),
-                            modifier = Modifier.size(20.dp)
-                        )
-                    }
+                    Icon(
+                        imageVector = Icons.Default.ArrowBack,
+                        contentDescription = "Quay lại",
+                        tint = Color(0xFF666666)
+                    )
                 }
             },
             actions = {
@@ -648,6 +638,8 @@ fun AddressCard(
                             if (address.phuong_xa.isNotBlank()) append("\n${address.phuong_xa}")
                             if (address.quan_huyen.isNotBlank()) append(", ${address.quan_huyen}")
                             if (address.tinh_thanh_pho.isNotBlank()) append(", ${address.tinh_thanh_pho}")
+                            if(!address.ghi_chu?.trim().isNullOrEmpty()) append("\n Ghi chú: ${address.ghi_chu}")
+
                         },
                         fontSize = 14.sp,
                         color = Color(0xFF666666),
@@ -655,6 +647,7 @@ fun AddressCard(
                         modifier = Modifier.fillMaxWidth()
                     )
                 }
+
 
                 Spacer(modifier = Modifier.height(16.dp))
 

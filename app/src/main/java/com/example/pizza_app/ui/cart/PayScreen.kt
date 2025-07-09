@@ -102,9 +102,9 @@ fun PayScreen(
 
     val paymentMethods = listOf(
         PaymentMethod("Tiền mặt", "💰", "Thanh toán khi nhận hàng"),
-        PaymentMethod("MoMo", "📱", "Ví điện tử MoMo"),
-        PaymentMethod("ZaloPay", "⚡", "Ví điện tử ZaloPay"),
-        PaymentMethod("Thẻ tín dụng", "💳", "Visa, Master, JCB")
+        //PaymentMethod("MoMo", "📱", "Ví điện tử MoMo"),
+        //PaymentMethod("ZaloPay", "⚡", "Ví điện tử ZaloPay"),
+        //PaymentMethod("Thẻ tín dụng", "💳", "Visa, Master, JCB")
     )
 
     // Load data when screen opens

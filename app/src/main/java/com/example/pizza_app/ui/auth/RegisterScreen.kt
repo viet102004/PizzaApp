@@ -138,7 +138,7 @@ fun RegisterScreen(navController: NavController) {
                         OutlinedTextField(
                             value = name,
                             onValueChange = { name = it },
-                            label = { Text("Họ và tên") },
+                            label = { Text("Họ và tên", fontSize = 14.sp) },
                             leadingIcon = { Icon(Icons.Default.Person, contentDescription = null, tint = primaryColor) },
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -156,7 +156,7 @@ fun RegisterScreen(navController: NavController) {
                         OutlinedTextField(
                             value = email,
                             onValueChange = { email = it },
-                            label = { Text("Email") },
+                            label = { Text("Email", fontSize = 14.sp) },
                             leadingIcon = { Icon(Icons.Default.Email, contentDescription = null, tint = primaryColor) },
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -179,7 +179,7 @@ fun RegisterScreen(navController: NavController) {
                                     phone = it
                                 }
                             },
-                            label = { Text("Số điện thoại") },
+                            label = { Text("Số điện thoại", fontSize = 14.sp) },
                             leadingIcon = { Icon(Icons.Default.Phone, contentDescription = null, tint = primaryColor) },
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -198,7 +198,7 @@ fun RegisterScreen(navController: NavController) {
                         OutlinedTextField(
                             value = password,
                             onValueChange = { password = it },
-                            label = { Text("Mật khẩu") },
+                            label = { Text("Mật khẩu", fontSize = 14.sp) },
                             leadingIcon = { Icon(Icons.Default.Lock, contentDescription = null, tint = primaryColor) },
                             trailingIcon = {
                                 IconButton(onClick = { passwordVisible = !passwordVisible }) {
@@ -226,7 +226,7 @@ fun RegisterScreen(navController: NavController) {
                         OutlinedTextField(
                             value = confirmPassword,
                             onValueChange = { confirmPassword = it },
-                            label = { Text("Xác nhận mật khẩu") },
+                            label = { Text("Xác nhận mật khẩu", fontSize = 14.sp) },
                             leadingIcon = { Icon(Icons.Default.Lock, contentDescription = null, tint = primaryColor) },
                             trailingIcon = {
                                 IconButton(onClick = { confirmPasswordVisible = !confirmPasswordVisible }) {
@@ -264,14 +264,20 @@ fun RegisterScreen(navController: NavController) {
 
                         Button(
                             onClick = {
-                                viewModel.register(
-                                    name.trim(),
-                                    email.trim(),
-                                    phone.trim(),
-                                    password,
-                                    confirmPassword,
-                                    context
-                                )
+                                // Kiểm tra validation trước khi gọi API
+                                if (isValidRegistration(name.trim(), email.trim(), phone.trim(), password, confirmPassword)) {
+                                    viewModel.register(
+                                        name.trim(),
+                                        email.trim(),
+                                        phone.trim(),
+                                        password,
+                                        confirmPassword,
+                                        context
+                                    )
+                                } else {
+                                    val errorMsg = getRegistrationValidationError(name.trim(), email.trim(), phone.trim(), password, confirmPassword)
+                                    Toast.makeText(context, errorMsg, Toast.LENGTH_SHORT).show()
+                                }
                             },
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -309,5 +315,55 @@ fun RegisterScreen(navController: NavController) {
                 Spacer(modifier = Modifier.height(16.dp))
             }
         }
+    }
+}
+
+// Helper functions để validate đăng ký
+private fun isValidRegistration(name: String, email: String, phone: String, password: String, confirmPassword: String): Boolean {
+    return name.isNotBlank() &&
+            email.isNotBlank() &&
+            phone.isNotBlank() &&
+            password.isNotBlank() &&
+            confirmPassword.isNotBlank() &&
+            password == confirmPassword &&
+            isStrongPassword(password) &&
+            isValidEmail(email) &&
+            isValidPhone(phone)
+}
+
+private fun isStrongPassword(password: String): Boolean {
+    val minLength = 8
+    val hasUpperCase = password.any { it.isUpperCase() }
+    val hasLowerCase = password.any { it.isLowerCase() }
+    val hasDigit = password.any { it.isDigit() }
+    val hasSpecialChar = password.any { !it.isLetterOrDigit() }
+
+    return password.length >= minLength && hasUpperCase && hasLowerCase && hasDigit && hasSpecialChar
+}
+
+private fun isValidEmail(email: String): Boolean {
+    return android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()
+}
+
+private fun isValidPhone(phone: String): Boolean {
+    return phone.length >= 10 && phone.all { it.isDigit() || it == '+' || it == ' ' || it == '-' }
+}
+
+private fun getRegistrationValidationError(name: String, email: String, phone: String, password: String, confirmPassword: String): String {
+    return when {
+        name.isBlank() -> "Vui lòng nhập họ và tên"
+        email.isBlank() -> "Vui lòng nhập email"
+        !isValidEmail(email) -> "Email không hợp lệ"
+        phone.isBlank() -> "Vui lòng nhập số điện thoại"
+        !isValidPhone(phone) -> "Số điện thoại không hợp lệ"
+        password.isBlank() -> "Vui lòng nhập mật khẩu"
+        confirmPassword.isBlank() -> "Vui lòng xác nhận mật khẩu"
+        password != confirmPassword -> "Mật khẩu xác nhận không khớp"
+        password.length < 8 -> "Mật khẩu phải có ít nhất 8 ký tự"
+        !password.any { it.isUpperCase() } -> "Mật khẩu phải chứa ít nhất 1 chữ hoa"
+        !password.any { it.isLowerCase() } -> "Mật khẩu phải chứa ít nhất 1 chữ thường"
+        !password.any { it.isDigit() } -> "Mật khẩu phải chứa ít nhất 1 chữ số"
+        !password.any { !it.isLetterOrDigit() } -> "Mật khẩu phải chứa ít nhất 1 ký tự đặc biệt"
+        else -> "Thông tin đăng ký không hợp lệ"
     }
 }

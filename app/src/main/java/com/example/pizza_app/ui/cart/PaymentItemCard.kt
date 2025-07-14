@@ -192,11 +192,15 @@ fun PaymentMethodItem(
                 .padding(horizontal = 12.dp, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(
-                text = method.icon,
-                fontSize = 18.sp,
-                modifier = Modifier.padding(end = 12.dp)
-            )
+            if (method.icon != null) {
+                Image(
+                    painter = painterResource(id = method.icon),
+                    contentDescription = method.name,
+                    modifier = Modifier
+                        .size(46.dp)
+                        .padding(end = 12.dp)
+                )
+            }
             Column(
                 modifier = Modifier.weight(1f)
             ) {

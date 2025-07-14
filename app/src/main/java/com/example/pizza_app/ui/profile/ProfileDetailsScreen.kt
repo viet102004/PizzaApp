@@ -19,6 +19,7 @@ import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowForwardIos
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.pullrefresh.PullRefreshIndicator
 import androidx.compose.material.pullrefresh.pullRefresh
@@ -186,6 +187,7 @@ fun ProfileDetailsScreen(navController: NavController) {
                             contentDescription = "Refresh",
                             tint = if (isRefreshing) Color.Gray else Color.Black,
                             modifier = Modifier.rotate(animatedRotation)
+                                .size(30.dp)
                         )
                     }
                 },
@@ -213,16 +215,37 @@ fun ProfileDetailsScreen(navController: NavController) {
                             modifier = Modifier.size(100.dp),
                             contentAlignment = Alignment.Center
                         ) {
-                            val imageUrl = getFullImageUrl(user?.anh_dai_dien ?: "")
+                            val imageUrl = user?.anh_dai_dien
 
-                            Image(
-                                painter = rememberAsyncImagePainter(imageUrl),
-                                contentDescription = "Avatar",
-                                modifier = Modifier
-                                    .size(100.dp)
-                                    .clip(CircleShape),
-                                contentScale = ContentScale.Crop
-                            )
+                            if (!imageUrl.isNullOrBlank()) {
+                                // Hiển thị ảnh đại diện nếu có
+                                Image(
+                                    painter = rememberAsyncImagePainter(getFullImageUrl(imageUrl)),
+                                    contentDescription = "Avatar",
+                                    modifier = Modifier
+                                        .size(100.dp)
+                                        .clip(CircleShape),
+                                    contentScale = ContentScale.Crop
+                                )
+                            } else {
+                                // Hiển thị icon Person nếu không có ảnh
+                                Box(
+                                    modifier = Modifier
+                                        .size(100.dp)
+                                        .background(
+                                            Color(0xFFE0E0E0),
+                                            shape = CircleShape
+                                        ),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(
+                                        Icons.Default.Person,
+                                        contentDescription = "Person Icon",
+                                        tint = Color(0xFF757575),
+                                        modifier = Modifier.size(50.dp)
+                                    )
+                                }
+                            }
 
                             // Loading overlay khi đang upload
                             if (isUploadingAvatar) {

@@ -49,6 +49,7 @@ import kotlinx.coroutines.launch
 import kotlin.math.max
 import kotlin.math.min
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LoginScreen(navController: NavController) {
 
@@ -111,219 +112,250 @@ fun LoginScreen(navController: NavController) {
         showError = errorMessage.isNotBlank()
     }
 
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(
-                Brush.verticalGradient(colors = listOf(lightOrange, Color.White))
-            )
-    ) {
-
-
-
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(24.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
-        ) {
-            // Logo
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Box(
-                    modifier = Modifier
-                        .size(100.dp)
-                        .background(primaryColor, CircleShape),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        Icons.Default.LocalPizza,
-                        contentDescription = null,
-                        tint = Color.White,
-                        modifier = Modifier.size(50.dp)
-                    )
-                }
-
-                Spacer(modifier = Modifier.height(24.dp))
-
-                Text("Pizza Kimchi", fontSize = 32.sp, fontWeight = FontWeight.Bold, color = primaryColor)
-                Text("Chào mừng bạn trở lại", fontSize = 16.sp, color = Color.Gray, modifier = Modifier.padding(top = 8.dp))
-            }
-
-            Spacer(modifier = Modifier.height(48.dp))
-
-            // Form đăng nhập
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .shadow(8.dp, RoundedCornerShape(16.dp)),
-                shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = Color.White)
-            ) {
-                Column(modifier = Modifier.padding(24.dp)) {
-                    OutlinedTextField(
-                        value = emailTextFieldValue,
-                        onValueChange = {
-                            emailTextFieldValue = it
-                            email = it.text
-                        },
-                        label = { Text("Email hoặc số điện thoại", fontSize = 15.sp) },
-                        leadingIcon = {
-                            Icon(Icons.Default.Person, contentDescription = null, tint = primaryColor)
-                        },
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { },
+                navigationIcon = {
+                    Box(
                         modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(bottom = 16.dp)
-                            .pointerInput(Unit) {
-                                detectHorizontalDragGestures(
-                                    onDragStart = {
-                                        // Khi bắt đầu drag, đảm bảo cursor hiển thị
-                                    },
-                                    onDragEnd = {
-                                        // Khi kết thúc drag, giữ cursor tại vị trí hiện tại
-                                    }
-                                ) { _, dragAmount ->
-                                    scrollEmailText(-dragAmount)
-                                }
-                            }
-                            .onFocusChanged { focusState ->
-                                if (!focusState.isFocused) {
-                                    // Khi mất focus, reset cursor về đầu text
-                                    emailTextFieldValue = emailTextFieldValue.copy(
-                                        selection = TextRange(0)
-                                    )
-                                }
-                            },
-                        shape = RoundedCornerShape(12.dp),
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = primaryColor,
-                            focusedLabelColor = primaryColor,
-                            cursorColor = primaryColor
-                        ),
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email, imeAction = ImeAction.Next),
-                        keyboardActions = KeyboardActions(
-                            onNext = { focusManager.moveFocus(androidx.compose.ui.focus.FocusDirection.Down) }
-                        ),
-                        singleLine = true,
-                        textStyle = TextStyle(fontSize = 16.sp),
-                        maxLines = 1,
-                        readOnly = false
-                    )
-
-                    OutlinedTextField(
-                        value = passwordTextFieldValue,
-                        onValueChange = {
-                            passwordTextFieldValue = it
-                            password = it.text
-                        },
-                        label = { Text("Mật khẩu", fontSize = 15.sp) },
-                        leadingIcon = {
-                            Icon(Icons.Default.Lock, contentDescription = null, tint = primaryColor)
-                        },
-                        trailingIcon = {
-                            IconButton(onClick = { passwordVisible = !passwordVisible }) {
-                                Icon(
-                                    if (passwordVisible) Icons.Default.VisibilityOff else Icons.Default.Visibility,
-                                    contentDescription = null,
-                                    tint = primaryColor
-                                )
-                            }
-                        },
-                        visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .pointerInput(Unit) {
-                                detectHorizontalDragGestures(
-                                    onDragStart = {
-                                        // Khi bắt đầu drag, đảm bảo cursor hiển thị
-                                    },
-                                    onDragEnd = {
-                                        // Khi kết thúc drag, giữ cursor tại vị trí hiện tại
-                                    }
-                                ) { _, dragAmount ->
-                                    scrollPasswordText(-dragAmount)
-                                }
-                            }
-                            .onFocusChanged { focusState ->
-                                if (!focusState.isFocused) {
-                                    // Khi mất focus, reset cursor về đầu text
-                                    passwordTextFieldValue = passwordTextFieldValue.copy(
-                                        selection = TextRange(0)
-                                    )
-                                }
-                            },
-                        shape = RoundedCornerShape(12.dp),
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = primaryColor,
-                            focusedLabelColor = primaryColor,
-                            cursorColor = primaryColor
-                        ),
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, imeAction = ImeAction.Done),
-                        keyboardActions = KeyboardActions(
-                            onDone = { focusManager.clearFocus() }
-                        ),
-                        singleLine = true,
-                        textStyle = TextStyle(fontSize = 16.sp),
-                        maxLines = 1,
-                        readOnly = false
-                    )
-
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 8.dp),
-                        horizontalArrangement = Arrangement.End
+                            .padding(start = 16.dp)
+                            .size(40.dp)
+                            .background(primaryColor, CircleShape),
+                        contentAlignment = Alignment.Center
                     ) {
-                        TextButton(onClick = { navController.navigate("forgot_password") }) {
-                            Text("Quên mật khẩu?", color = primaryColor, fontSize = 14.sp)
+                        IconButton(
+                            onClick = { navController.popBackStack() },
+                            modifier = Modifier.size(40.dp)
+                        ) {
+                            Icon(
+                                Icons.Default.ArrowBack,
+                                contentDescription = "Quay lại",
+                                tint = Color.White,
+                                modifier = Modifier.size(20.dp)
+                            )
                         }
                     }
-
-                    if (showError && errorMessage.isNotBlank()) {
-                        Text(
-                            text = errorMessage,
-                            color = Color.Red,
-                            fontSize = 13.sp,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(bottom = 8.dp)
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = Color.Transparent
+                )
+            )
+        },
+        containerColor = Color.Transparent
+    ) { paddingValues ->
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(
+                    Brush.verticalGradient(colors = listOf(lightOrange, Color.White))
+                )
+                .padding(paddingValues)
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+                // Logo
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Box(
+                        modifier = Modifier
+                            .size(100.dp)
+                            .background(primaryColor, CircleShape),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            Icons.Default.LocalPizza,
+                            contentDescription = null,
+                            tint = Color.White,
+                            modifier = Modifier.size(50.dp)
                         )
                     }
 
-                    Button(
-                        onClick = {
-                            viewModel.login(email, password, context)
-                        },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(50.dp),
-                        shape = RoundedCornerShape(12.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = primaryColor),
-                        enabled = !isLoading && email.isNotBlank() && password.isNotBlank()
-                    ) {
-                        if (isLoading) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                CircularProgressIndicator(
-                                    modifier = Modifier.size(20.dp),
-                                    color = Color.White,
-                                    strokeWidth = 2.dp
-                                )
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Text("Đang đăng nhập...")
+                    Spacer(modifier = Modifier.height(24.dp))
+
+                    Text("Pizza Kimchi", fontSize = 32.sp, fontWeight = FontWeight.Bold, color = primaryColor)
+                    Text("Chào mừng bạn trở lại", fontSize = 16.sp, color = Color.Gray, modifier = Modifier.padding(top = 8.dp))
+                }
+
+                Spacer(modifier = Modifier.height(48.dp))
+
+                // Form đăng nhập
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .shadow(8.dp, RoundedCornerShape(16.dp)),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color.White)
+                ) {
+                    Column(modifier = Modifier.padding(24.dp)) {
+                        OutlinedTextField(
+                            value = emailTextFieldValue,
+                            onValueChange = {
+                                emailTextFieldValue = it
+                                email = it.text
+                            },
+                            label = { Text("Email hoặc số điện thoại", fontSize = 15.sp) },
+                            leadingIcon = {
+                                Icon(Icons.Default.Person, contentDescription = null, tint = primaryColor)
+                            },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(bottom = 16.dp)
+                                .pointerInput(Unit) {
+                                    detectHorizontalDragGestures(
+                                        onDragStart = {
+                                            // Khi bắt đầu drag, đảm bảo cursor hiển thị
+                                        },
+                                        onDragEnd = {
+                                            // Khi kết thúc drag, giữ cursor tại vị trí hiện tại
+                                        }
+                                    ) { _, dragAmount ->
+                                        scrollEmailText(-dragAmount)
+                                    }
+                                }
+                                .onFocusChanged { focusState ->
+                                    if (!focusState.isFocused) {
+                                        // Khi mất focus, reset cursor về đầu text
+                                        emailTextFieldValue = emailTextFieldValue.copy(
+                                            selection = TextRange(0)
+                                        )
+                                    }
+                                },
+                            shape = RoundedCornerShape(12.dp),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedBorderColor = primaryColor,
+                                focusedLabelColor = primaryColor,
+                                cursorColor = primaryColor
+                            ),
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email, imeAction = ImeAction.Next),
+                            keyboardActions = KeyboardActions(
+                                onNext = { focusManager.moveFocus(androidx.compose.ui.focus.FocusDirection.Down) }
+                            ),
+                            singleLine = true,
+                            textStyle = TextStyle(fontSize = 16.sp),
+                            maxLines = 1,
+                            readOnly = false
+                        )
+
+                        OutlinedTextField(
+                            value = passwordTextFieldValue,
+                            onValueChange = {
+                                passwordTextFieldValue = it
+                                password = it.text
+                            },
+                            label = { Text("Mật khẩu", fontSize = 15.sp) },
+                            leadingIcon = {
+                                Icon(Icons.Default.Lock, contentDescription = null, tint = primaryColor)
+                            },
+                            trailingIcon = {
+                                IconButton(onClick = { passwordVisible = !passwordVisible }) {
+                                    Icon(
+                                        if (passwordVisible) Icons.Default.VisibilityOff else Icons.Default.Visibility,
+                                        contentDescription = null,
+                                        tint = primaryColor
+                                    )
+                                }
+                            },
+                            visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .pointerInput(Unit) {
+                                    detectHorizontalDragGestures(
+                                        onDragStart = {
+                                            // Khi bắt đầu drag, đảm bảo cursor hiển thị
+                                        },
+                                        onDragEnd = {
+                                            // Khi kết thúc drag, giữ cursor tại vị trí hiện tại
+                                        }
+                                    ) { _, dragAmount ->
+                                        scrollPasswordText(-dragAmount)
+                                    }
+                                }
+                                .onFocusChanged { focusState ->
+                                    if (!focusState.isFocused) {
+                                        // Khi mất focus, reset cursor về đầu text
+                                        passwordTextFieldValue = passwordTextFieldValue.copy(
+                                            selection = TextRange(0)
+                                        )
+                                    }
+                                },
+                            shape = RoundedCornerShape(12.dp),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedBorderColor = primaryColor,
+                                focusedLabelColor = primaryColor,
+                                cursorColor = primaryColor
+                            ),
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, imeAction = ImeAction.Done),
+                            keyboardActions = KeyboardActions(
+                                onDone = { focusManager.clearFocus() }
+                            ),
+                            singleLine = true,
+                            textStyle = TextStyle(fontSize = 16.sp),
+                            maxLines = 1,
+                            readOnly = false
+                        )
+
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 8.dp),
+                            horizontalArrangement = Arrangement.End
+                        ) {
+                            TextButton(onClick = { navController.navigate("forgot_password") }) {
+                                Text("Quên mật khẩu?", color = primaryColor, fontSize = 14.sp)
                             }
-                        } else {
-                            Text("Đăng nhập", fontSize = 16.sp, fontWeight = FontWeight.Medium)
+                        }
+
+                        if (showError && errorMessage.isNotBlank()) {
+                            Text(
+                                text = errorMessage,
+                                color = Color.Red,
+                                fontSize = 13.sp,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(bottom = 8.dp)
+                            )
+                        }
+
+                        Button(
+                            onClick = {
+                                viewModel.login(email, password, context)
+                            },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(50.dp),
+                            shape = RoundedCornerShape(12.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = primaryColor),
+                            enabled = !isLoading && email.isNotBlank() && password.isNotBlank()
+                        ) {
+                            if (isLoading) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    CircularProgressIndicator(
+                                        modifier = Modifier.size(20.dp),
+                                        color = Color.White,
+                                        strokeWidth = 2.dp
+                                    )
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text("Đang đăng nhập...")
+                                }
+                            } else {
+                                Text("Đăng nhập", fontSize = 16.sp, fontWeight = FontWeight.Medium)
+                            }
                         }
                     }
                 }
-            }
 
-            Spacer(modifier = Modifier.height(32.dp))
+                Spacer(modifier = Modifier.height(32.dp))
 
-            Row(horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
-                Text("Chưa có tài khoản? ", fontSize = 14.sp, color = Color.Gray)
-                TextButton(onClick = { navController.navigate("register") }) {
-                    Text("Đăng ký", fontSize = 14.sp, fontWeight = FontWeight.Medium, color = primaryColor)
+                Row(horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
+                    Text("Chưa có tài khoản? ", fontSize = 14.sp, color = Color.Gray)
+                    TextButton(onClick = { navController.navigate("register") }) {
+                        Text("Đăng ký", fontSize = 14.sp, fontWeight = FontWeight.Medium, color = primaryColor)
+                    }
                 }
             }
         }

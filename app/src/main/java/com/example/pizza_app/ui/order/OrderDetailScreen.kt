@@ -1,16 +1,24 @@
-
 package com.example.pizza_app.ui.order
 
 import android.content.Context
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -19,6 +27,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
@@ -32,9 +41,12 @@ import androidx.compose.ui.window.Dialog
 import coil.compose.AsyncImage
 import com.example.pizza_app.data.model.*
 import com.example.pizza_app.data.source.getFullImageUrl
+import java.util.concurrent.TimeUnit
 
 // Định nghĩa color palette hài hòa
 object HarmoniousColors {
+    val OutlineVariant = Color(0xFF77503B)
+    val SurfaceVariant = Color(0xFF5E89B6)
     val Primary = Color(0xFFE8782F) // Cam ấm, dịu hơn
     val PrimaryLight = Color(0xFFFFF1E6) // Background cam nhạt
     val Secondary = Color(0xFF4A90A4) // Xanh teal cân bằng
@@ -62,11 +74,17 @@ fun OrderDetailScreen(
     val isLoading by viewModel.isLoading.collectAsState()
     val errorMessage by viewModel.errorMessage.collectAsState()
     val isCancelling by viewModel.isCancelling.collectAsState()
-    val isSubmittingReview by viewModel.isSubmittingReview.collectAsState()
+    val reviewedProductIds by viewModel.reviewedProductIds.collectAsState()
+    val isSubmitting by viewModel.isSubmittingReview.collectAsState()
+
 
     // State để hiển thị dialog xác nhận hủy và dialog đánh giá
     var showCancelDialog by remember { mutableStateOf(false) }
     var showReviewDialog by remember { mutableStateOf(false) }
+
+    val remainingTime by viewModel.remainingTime.collectAsState()
+    val isAutoCancel by viewModel.isAutoCancel.collectAsState()
+    val cancelMessage by viewModel.cancelMessage.collectAsState()
 
     LaunchedEffect(orderId) {
         viewModel.getOrderDetail(orderId)
@@ -126,7 +144,10 @@ fun OrderDetailScreen(
                 orderDetail = orderDetail!!,
                 onCancelOrder = { showCancelDialog = true },
                 onReviewOrder = { showReviewDialog = true },
-                isCancelling = isCancelling
+                isCancelling = isCancelling,
+                remainingTime = remainingTime,
+                isAutoCancel = isAutoCancel,
+                cancelMessage = cancelMessage
             )
 
             else -> Box(
@@ -142,39 +163,16 @@ fun OrderDetailScreen(
         }
     }
 
-    // Dialog xác nhận hủy đơn hàng
+    // Dialog xác nhận hủy đơn hàng - SỬA PHẦN NÀY
     if (showCancelDialog) {
-        AlertDialog(
-            onDismissRequest = { showCancelDialog = false },
-            title = {
-                Text(
-                    text = "Xác nhận hủy đơn hàng",
-                    fontWeight = FontWeight.Bold
-                )
+        CancelOrderDialog(
+            onDismiss = { showCancelDialog = false },
+            onConfirm = { reason ->
+                showCancelDialog = false
+                // Gọi hàm hủy đơn hàng với lý do
+                viewModel.cancelOrder(orderId, reason) // Cần update ViewModel để nhận reason
             },
-            text = {
-                Text("Bạn có chắc chắn muốn hủy đơn hàng này không? Hành động này không thể hoàn tác.")
-            },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        showCancelDialog = false
-                        viewModel.cancelOrder(orderId)
-                    },
-                    colors = ButtonDefaults.textButtonColors(
-                        contentColor = HarmoniousColors.Error
-                    )
-                ) {
-                    Text("Hủy đơn hàng")
-                }
-            },
-            dismissButton = {
-                TextButton(
-                    onClick = { showCancelDialog = false }
-                ) {
-                    Text("Không")
-                }
-            }
+            isCancelling = isCancelling
         )
     }
 
@@ -182,301 +180,261 @@ fun OrderDetailScreen(
     if (showReviewDialog && orderDetail != null) {
         ReviewDialog(
             orderDetail = orderDetail!!,
-            isSubmitting = isSubmittingReview,
+            reviewedProductIds = reviewedProductIds, // Thêm dòng này
+            isSubmitting = isSubmitting,
             onDismiss = { showReviewDialog = false },
             onSubmitReview = { productId, rating, comment, imageUri ->
-                viewModel.submitReview(orderId, productId, rating, comment, imageUri, context)
-                showReviewDialog = false
+                viewModel.submitReview(
+                    orderId = orderDetail!!.don_hang.ma_don_hang,
+                    productId = productId,
+                    rating = rating,
+                    comment = comment,
+                    imageUri = imageUri,
+                    context = context
+                )
             }
         )
     }
 }
 
+// Thêm CancelOrderDialog vào file này
+@OptIn(ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class)
 @Composable
-fun OrderDetailContent(
-    orderDetail: OrderDetail,
-    onCancelOrder: () -> Unit,
-    onReviewOrder: () -> Unit,
+fun CancelOrderDialog(
+    onDismiss: () -> Unit,
+    onConfirm: (String) -> Unit,
     isCancelling: Boolean
 ) {
-    LazyColumn(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(horizontal = 16.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp)
+    var selectedReason by remember { mutableStateOf("") }
+    var customReason by remember { mutableStateOf("") }
+
+    val predefinedReasons = listOf(
+        "Thay đổi ý định",
+        "Đặt nhầm sản phẩm",
+        "Tìm được giá tốt hơn",
+        "Không cần thiết nữa",
+        "Lý do khác"
+    )
+
+    val bottomSheetState = rememberModalBottomSheetState(
+        skipPartiallyExpanded = true
+    )
+
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = bottomSheetState,
+        modifier = Modifier.fillMaxHeight(),
+        containerColor = MaterialTheme.colorScheme.surface
     ) {
-        // Spacer đầu
-        item {
-            Spacer(modifier = Modifier.height(4.dp))
-        }
-
-        // Header đơn hàng
-        item {
-            CompactOrderHeader(orderDetail.don_hang)
-        }
-
-        // Nút hủy đơn hàng (chỉ hiển thị khi trạng thái là "cho_xac_nhan")
-        if (orderDetail.don_hang.trang_thai == "cho_xac_nhan") {
-            item {
-                CancelOrderButton(
-                    onCancelOrder = onCancelOrder,
-                    isCancelling = isCancelling
-                )
-            }
-        }
-
-        // Nút đánh giá đơn hàng (chỉ hiển thị khi trạng thái là "hoan_thanh")
-        if (orderDetail.don_hang.trang_thai == "hoan_thanh") {
-            item {
-                ReviewOrderButton(onReviewOrder = onReviewOrder)
-            }
-        }
-
-        // Card chứa tất cả mặt hàng
-        item {
-            MatHangListCard(orderDetail.mat_hang)
-        }
-
-        // Tổng tiền
-        item {
-            CompactTotalCard(orderDetail.don_hang)
-        }
-
-        // Spacer cuối
-        item {
-            Spacer(modifier = Modifier.height(16.dp))
-        }
-    }
-}
-
-@Composable
-fun ReviewDialog(
-    orderDetail: OrderDetail,
-    isSubmitting: Boolean,
-    onDismiss: () -> Unit,
-    onSubmitReview: (Long, Int, String, String?) -> Unit
-) {
-    var selectedProductId by remember { mutableStateOf<Long?>(null) }
-    var rating by remember { mutableStateOf(5) }
-    var comment by remember { mutableStateOf("") }
-    var imageUri by remember { mutableStateOf<String?>(null) }
-
-    val imagePickerLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.GetContent()
-    ) { uri: Uri? ->
-        imageUri = uri?.toString()
-    }
-
-    Dialog(onDismissRequest = onDismiss) {
-        Card(
+        Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
-            shape = RoundedCornerShape(12.dp),
-            elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
+                .padding(24.dp)
         ) {
-            Column(
-                modifier = Modifier.padding(20.dp)
+            // Header
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                // Tiêu đề
+                Icon(
+                    imageVector = Icons.Default.Cancel,
+                    contentDescription = null,
+                    modifier = Modifier.size(24.dp),
+                    tint = HarmoniousColors.Error
+                )
+                Spacer(modifier = Modifier.width(8.dp))
                 Text(
-                    text = "Đánh giá đơn hàng",
+                    text = "Xác nhận hủy đơn hàng",
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Bold,
                     color = HarmoniousColors.OnSurface
                 )
+            }
 
-                Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(16.dp))
 
-                // Chọn sản phẩm để đánh giá
-                Text(
-                    text = "Chọn sản phẩm:",
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.Medium,
-                    color = HarmoniousColors.OnSurface
-                )
+            HorizontalDivider(
+                modifier = Modifier.fillMaxWidth(),
+                thickness = 1.dp,
+                color = HarmoniousColors.OutlineVariant
+            )
 
-                Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(16.dp))
 
-                // Danh sách sản phẩm
-                LazyColumn(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .heightIn(max = 200.dp),
-                    verticalArrangement = Arrangement.spacedBy(4.dp)
-                ) {
-                    items(orderDetail.mat_hang.filter { it.loai_mat_hang == "san_pham" }) { matHang ->
-                        val productId = matHang.ma_san_pham?.toLong() ?: 0L
+            Text(
+                text = "Vui lòng cho chúng tôi biết lý do hủy đơn hàng:",
+                fontSize = 14.sp,
+                color = HarmoniousColors.OnSurfaceVariant,
+                lineHeight = 20.sp
+            )
 
-                        Card(
+            Spacer(modifier = Modifier.height(20.dp))
+
+            // Danh sách lý do
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                items(predefinedReasons) { reason ->
+                    val isSelected = selectedReason == reason
+
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { selectedReason = reason },
+                        shape = RoundedCornerShape(12.dp),
+                        colors = CardDefaults.cardColors(
+                            containerColor = if (isSelected) {
+                                HarmoniousColors.Primary.copy(alpha = 0.1f)
+                            } else {
+                                HarmoniousColors.SurfaceVariant.copy(alpha = 0.3f)
+                            }
+                        ),
+                        border = if (isSelected) {
+                            BorderStroke(1.dp, HarmoniousColors.Primary)
+                        } else null
+                    ) {
+                        Row(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .clickable { selectedProductId = productId },
-                            colors = CardDefaults.cardColors(
-                                containerColor = if (selectedProductId == productId)
-                                    HarmoniousColors.PrimaryLight
-                                else
-                                    HarmoniousColors.Background
-                            ),
-                            border = if (selectedProductId == productId)
-                                androidx.compose.foundation.BorderStroke(2.dp, HarmoniousColors.Primary)
-                            else null
+                                .padding(16.dp),
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(12.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                AsyncImage(
-                                    model = getFullImageUrl(matHang.hinh_anh),
-                                    contentDescription = null,
-                                    modifier = Modifier
-                                        .size(40.dp)
-                                        .clip(RoundedCornerShape(6.dp)),
-                                    contentScale = ContentScale.Crop
+                            RadioButton(
+                                selected = isSelected,
+                                onClick = { selectedReason = reason },
+                                colors = RadioButtonDefaults.colors(
+                                    selectedColor = HarmoniousColors.Primary,
+                                    unselectedColor = HarmoniousColors.OnSurfaceVariant
                                 )
-
-                                Spacer(modifier = Modifier.width(12.dp))
-
-                                Text(
-                                    text = matHang.ten_san_pham ?: "Sản phẩm",
-                                    fontSize = 14.sp,
-                                    fontWeight = FontWeight.Medium,
-                                    color = HarmoniousColors.OnSurface
-                                )
-                            }
+                            )
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Text(
+                                text = reason,
+                                fontSize = 14.sp,
+                                fontWeight = if (isSelected) FontWeight.Medium else FontWeight.Normal,
+                                color = if (isSelected) {
+                                    HarmoniousColors.Primary
+                                } else {
+                                    HarmoniousColors.OnSurface
+                                }
+                            )
                         }
                     }
                 }
+            }
 
+            // Ô nhập lý do tùy chỉnh
+            if (selectedReason == "Lý do khác") {
                 Spacer(modifier = Modifier.height(16.dp))
-
-                // Đánh giá sao
-                Text(
-                    text = "Đánh giá:",
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.Medium,
-                    color = HarmoniousColors.OnSurface
-                )
-
-                Spacer(modifier = Modifier.height(8.dp))
-
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    repeat(5) { index ->
+                OutlinedTextField(
+                    value = customReason,
+                    onValueChange = { customReason = it },
+                    modifier = Modifier.fillMaxWidth(),
+                    placeholder = {
+                        Text(
+                            "Nhập lý do của bạn...",
+                            color = HarmoniousColors.OnSurfaceVariant
+                        )
+                    },
+                    minLines = 3,
+                    maxLines = 4,
+                    shape = RoundedCornerShape(12.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = HarmoniousColors.Primary,
+                        unfocusedBorderColor = HarmoniousColors.OutlineVariant,
+                        focusedLabelColor = HarmoniousColors.Primary
+                    ),
+                    leadingIcon = {
                         Icon(
-                            Icons.Default.Star,
+                            imageVector = Icons.Default.Edit,
                             contentDescription = null,
-                            tint = if (index < rating) HarmoniousColors.StarYellow else HarmoniousColors.OnSurfaceLight,
-                            modifier = Modifier
-                                .size(32.dp)
-                                .clickable { rating = index + 1 }
+                            modifier = Modifier.size(18.dp),
+                            tint = HarmoniousColors.OnSurfaceVariant
                         )
                     }
-                }
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                // Bình luận
-                Text(
-                    text = "Bình luận:",
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.Medium,
-                    color = HarmoniousColors.OnSurface
                 )
+            }
 
-                Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(24.dp))
 
-                OutlinedTextField(
-                    value = comment,
-                    onValueChange = { comment = it },
-                    modifier = Modifier.fillMaxWidth(),
-                    placeholder = { Text("Chia sẻ trải nghiệm của bạn...") },
-                    minLines = 3,
-                    maxLines = 5,
-                    shape = RoundedCornerShape(8.dp)
-                )
+            HorizontalDivider(
+                modifier = Modifier.fillMaxWidth(),
+                thickness = 1.dp,
+                color = HarmoniousColors.OutlineVariant
+            )
 
-                Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(20.dp))
 
-                // Thêm hình ảnh
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
+            // Nút hành động
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                OutlinedButton(
+                    onClick = onDismiss,
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(48.dp),
+                    enabled = !isCancelling,
+                    shape = RoundedCornerShape(12.dp),
+                    border = BorderStroke(1.dp, HarmoniousColors.OutlineVariant),
+                    colors = ButtonDefaults.outlinedButtonColors(
+                        contentColor = HarmoniousColors.OnSurface
+                    )
                 ) {
                     Text(
-                        text = "Hình ảnh:",
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.Medium,
-                        color = HarmoniousColors.OnSurface
-                    )
-
-                    TextButton(
-                        onClick = { imagePickerLauncher.launch("image/*") }
-                    ) {
-                        Icon(
-                            Icons.Default.Add,
-                            contentDescription = null,
-                            modifier = Modifier.size(16.dp)
-                        )
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text("Thêm ảnh")
-                    }
-                }
-
-                // Hiển thị hình ảnh đã chọn
-                if (imageUri != null) {
-                    Spacer(modifier = Modifier.height(8.dp))
-                    AsyncImage(
-                        model = imageUri,
-                        contentDescription = null,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(120.dp)
-                            .clip(RoundedCornerShape(8.dp)),
-                        contentScale = ContentScale.Crop
+                        "Không",
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Medium
                     )
                 }
 
-                Spacer(modifier = Modifier.height(20.dp))
-
-                // Nút hành động
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                Button(
+                    onClick = {
+                        val finalReason = if (selectedReason == "Lý do khác") {
+                            customReason.takeIf { it.isNotBlank() } ?: selectedReason
+                        } else {
+                            selectedReason
+                        }
+                        onConfirm(finalReason)
+                    },
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(48.dp),
+                    enabled = !isCancelling && selectedReason.isNotBlank() &&
+                            (selectedReason != "Lý do khác" || customReason.isNotBlank()),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = HarmoniousColors.Error,
+                        contentColor = Color.White,
+                        disabledContainerColor = HarmoniousColors.Error.copy(alpha = 0.3f)
+                    )
                 ) {
-                    OutlinedButton(
-                        onClick = onDismiss,
-                        modifier = Modifier.weight(1f),
-                        enabled = !isSubmitting
-                    ) {
-                        Text("Hủy")
-                    }
-
-                    Button(
-                        onClick = {
-                            selectedProductId?.let { productId ->
-                                onSubmitReview(productId, rating, comment, imageUri)
-                            }
-                        },
-                        modifier = Modifier.weight(1f),
-                        enabled = !isSubmitting && selectedProductId != null,
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = HarmoniousColors.Primary
-                        )
-                    ) {
-                        if (isSubmitting) {
+                    if (isCancelling) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
                             CircularProgressIndicator(
                                 modifier = Modifier.size(16.dp),
                                 color = Color.White,
                                 strokeWidth = 2.dp
                             )
-                        } else {
-                            Text("Gửi đánh giá")
+                            Text(
+                                "Đang hủy...",
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.Medium
+                            )
                         }
+                    } else {
+                        Text(
+                            "Hủy đơn hàng",
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Medium
+                        )
                     }
                 }
             }
@@ -975,7 +933,7 @@ fun CompactTotalCard(donHang: OrderDetail.DonHang) {
                             color = HarmoniousColors.OnSurfaceVariant
                         )
                         Text(
-                            text = donHang.phuong_thuc_thanh_toan.toString(),
+                            text = getPaymentMethodText(donHang.phuong_thuc_thanh_toan.toString()),
                             fontSize = 14.sp,
                             color = HarmoniousColors.OnSurface,
                             fontWeight = FontWeight.Medium
@@ -1021,7 +979,7 @@ fun getStatusColor(status: String): Color = when (status) {
 
 fun getPaymentMethodText(method: String?): String = when (method) {
     "tien_mat" -> "Tiền mặt"
-    "the_tin_dung" -> "Thẻ tín dụng"
+    "momo" -> "MoMo"
     "vi_dien_tu" -> "Ví điện tử"
     "chuyen_khoan" -> "Chuyển khoản"
     else -> "Không xác định"
@@ -1040,3 +998,6 @@ fun getPaymentStatusColor(status: String?): Color = when (status) {
     "that_bai" -> HarmoniousColors.Error
     else -> HarmoniousColors.OnSurfaceVariant
 }
+
+
+

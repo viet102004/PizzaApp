@@ -112,7 +112,7 @@ fun AddressListScreen(
                         modifier = Modifier
                             .size(40.dp)
                             .background(
-                                Color(0xFFFFB700).copy(alpha = 0.1f),
+                                Color(0xFFFFFFFF).copy(alpha = 0.1f),
                                 shape = CircleShape
                             ),
                         contentAlignment = Alignment.Center
@@ -120,8 +120,8 @@ fun AddressListScreen(
                         Icon(
                             Icons.Default.Refresh,
                             contentDescription = "Làm mới",
-                            tint = Color(0xFFFFB700),
-                            modifier = Modifier.size(20.dp)
+                            tint = Color(0xFF000000),
+                            modifier = Modifier.size(30.dp)
                         )
                     }
                 }

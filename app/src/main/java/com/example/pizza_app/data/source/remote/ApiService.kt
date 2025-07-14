@@ -9,6 +9,7 @@ import retrofit2.http.Query
 import com.example.pizza_app.data.model.ApiResponse
 import com.example.pizza_app.data.model.Banner
 import com.example.pizza_app.data.model.BaseResponse
+import com.example.pizza_app.data.model.CancelOrderRequest
 import com.example.pizza_app.data.model.CapNhatGioHangRequest
 import com.example.pizza_app.data.model.Category
 import com.example.pizza_app.data.model.DatHangRequest
@@ -21,14 +22,17 @@ import com.example.pizza_app.data.model.MaGiamGiaListResponse
 import com.example.pizza_app.data.model.MaGiamGiaNguoiDungResponse
 import com.example.pizza_app.data.model.Order
 import com.example.pizza_app.data.model.OrderDetail
+import com.example.pizza_app.data.model.OrderReviewsListResponse
 import com.example.pizza_app.data.model.Product
 import com.example.pizza_app.data.model.ProductImage
 import com.example.pizza_app.data.model.ProductListResponse
 import com.example.pizza_app.data.model.ProductOptionsResponse
+import com.example.pizza_app.data.model.ProductReviewCheckResponse
 import com.example.pizza_app.data.model.ProductReviewsResponse
 import com.example.pizza_app.data.model.ResultResponse
 import com.example.pizza_app.data.model.ReviewRequest
 import com.example.pizza_app.data.model.ReviewStatsResponse
+import com.example.pizza_app.data.model.ReviewedProductsResponse
 import com.example.pizza_app.data.model.ThemGioHangResponse
 import com.example.pizza_app.data.model.ThemVaoGioHangRequest
 import com.example.pizza_app.data.model.UpdateAvatarResponse
@@ -255,9 +259,11 @@ interface ApiService {
         @Path("ma_don_hang") maDonHang: Int
     ): Response<OrderDetail>
 
+    // Retrofit interface
     @PUT("huyDonHang/{orderId}")
     suspend fun cancelOrder(
-        @Path("orderId") orderId: Int
+        @Path("orderId") orderId: Int,
+        @Body request: CancelOrderRequest
     ): Response<Any>
 
     @Multipart
@@ -288,6 +294,24 @@ interface ApiService {
         @Path("ma_nguoi_dung") maNguoiDung: Int
     ): MaGiamGiaNguoiDungResponse
 
+
+    @GET("danhGia/donHang/{ma_don_hang}")
+    suspend fun getOrderReviews(
+        @Path("ma_don_hang") maDonHang: Int
+    ): Response<OrderReviewsListResponse>
+
+    // Lấy danh sách ID sản phẩm đã được đánh giá trong đơn hàng
+    @GET("danhGia/donHang/{ma_don_hang}/daDanhGia")
+    suspend fun getReviewedProducts(
+        @Path("ma_don_hang") maDonHang: Int
+    ): Response<ReviewedProductsResponse>
+
+    // Kiểm tra một sản phẩm cụ thể đã được đánh giá trong đơn hàng chưa
+    @GET("danhGia/donHang/{ma_don_hang}/sanPham/{ma_san_pham}/kiemTra")
+    suspend fun checkProductReviewed(
+        @Path("ma_don_hang") maDonHang: Int,
+        @Path("ma_san_pham") maSanPham: Int
+    ): Response<ProductReviewCheckResponse>
 
 
 }

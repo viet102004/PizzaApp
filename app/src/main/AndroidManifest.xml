@@ -20,12 +20,32 @@
             android:name=".MainActivity"
             android:exported="true"
             android:label="@string/app_name"
-            android:theme="@style/Theme.Pizza_app">
+            android:theme="@style/Theme.Pizza_app"
+            android:launchMode="singleTop">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+
+            <!-- Deep link chính cho payment callback -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="pizzaapp"
+                    android:host="payment" />
+            </intent-filter>
+
+            <!-- Intent filter cho HTTP deeplink (nếu cần) -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="https"
+                    android:host="related-burro-selected.ngrok-free.app"
+                    android:pathPrefix="/payment-callback" />
+            </intent-filter>
+
         </activity>
 
     </application>

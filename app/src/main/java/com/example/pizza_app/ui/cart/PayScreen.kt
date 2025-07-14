@@ -1,10 +1,14 @@
 package com.example.pizza_app.ui.cart
 
+import android.content.Intent
+import android.net.Uri
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -36,13 +40,20 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.ui.platform.LocalContext
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.pizza_app.MainActivity
+import com.example.pizza_app.R
 import com.example.pizza_app.data.model.CartItem
 import com.example.pizza_app.data.model.AddressInfo
 import com.example.pizza_app.data.model.MaGiamGia
 import com.example.pizza_app.ui.cart.CartItemCard
 import com.example.pizza_app.ui.profile.AddressViewModel
 import com.example.pizza_app.ui.vouchers.VoucherViewModel
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -55,21 +66,84 @@ fun PayScreen(
     val voucherViewModel: VoucherViewModel = viewModel()
     val vouchers by voucherViewModel.voucherList.collectAsState()
 
-
     val cartItems by cartViewModel.cartItems.collectAsState()
     val cartTotal by cartViewModel.totalAmount.collectAsState()
 
     // Address states
     val isAddressLoading by addressViewModel.isLoading.collectAsState()
-    val addressMessage by addressViewModel.message.collectAsState()
-
 
     var selectedVoucher by remember { mutableStateOf<MaGiamGia?>(null) }
-    var selectedPaymentMethod by remember { mutableStateOf("Tiền mặt") }
+    var selectedPaymentMethod by remember { mutableStateOf<String?>(null) }
     var orderNote by remember { mutableStateOf("") }
     var showAddressDialog by remember { mutableStateOf(false) }
     var showDiscountDialog by remember { mutableStateOf(false) }
     var showAddressRequiredDialog by remember { mutableStateOf(false) }
+    val listState = rememberLazyListState()
+    val scope = rememberCoroutineScope()
+
+
+    val payViewModel: PayViewModel = viewModel()
+    val context = LocalContext.current
+    val activity = context as? MainActivity
+
+    var showPaymentFailDialog by remember { mutableStateOf(false) }
+    var paymentFailMessage by remember { mutableStateOf("") }
+    val showPaymentFailureDialog by payViewModel.showPaymentFailureDialog.collectAsState()
+    val paymentUrl by payViewModel.paymentUrl.collectAsState()
+    val paymentCallbackResult by payViewModel.paymentCallbackResult.collectAsState()
+
+    var isAppInForeground by remember { mutableStateOf(true) }
+    val lifecycleOwner = LocalLifecycleOwner.current
+
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            when (event) {
+                Lifecycle.Event.ON_RESUME -> {
+                    if (!isAppInForeground) {
+                        // App đã resume từ background
+                        payViewModel.onAppResumed()
+                    }
+                    isAppInForeground = true
+                }
+                Lifecycle.Event.ON_PAUSE -> {
+                    isAppInForeground = false
+                }
+                else -> {}
+            }
+        }
+
+        lifecycleOwner.lifecycle.addObserver(observer)
+
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+        }
+    }
+
+    LaunchedEffect(paymentCallbackResult) {
+        paymentCallbackResult?.let { result ->
+            if (!result.isSuccess) {
+                paymentFailMessage = result.message
+                showPaymentFailDialog = true
+            } else {
+                // Thanh toán thành công - về home
+                navController.navigate("home") {
+                    popUpTo("home") { inclusive = true }
+                }
+            }
+        }
+    }
+
+    LaunchedEffect(paymentUrl) {
+        paymentUrl?.let { url ->
+            val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
+            context.startActivity(intent)
+            payViewModel.resetState()
+        }
+    }
+
+    LaunchedEffect(payViewModel) {
+        activity?.setPayViewModel(payViewModel)
+    }
 
     val discountAmount = remember(cartTotal, selectedVoucher) {
         selectedVoucher?.let { voucher ->
@@ -98,31 +172,33 @@ fun PayScreen(
 
     // Kiểm tra có địa chỉ hay không
     val hasAddress = addressList.isNotEmpty()
-    val isOrderEnabled = hasAddress && selectedAddress != null && !isLoading
+    val isOrderEnabled = hasAddress && selectedAddress != null && selectedPaymentMethod != null && !isLoading
+    var paymentMethodIndex by remember { mutableStateOf(-1) }
+
+    var isOrderPlaced by remember { mutableStateOf(false) }
 
     val paymentMethods = listOf(
-        PaymentMethod("Tiền mặt", "💰", "Thanh toán khi nhận hàng"),
-        //PaymentMethod("MoMo", "📱", "Ví điện tử MoMo"),
+        PaymentMethod("Tiền mặt", R.drawable.ic_cash, "Thanh toán khi nhận hàng"),
+        PaymentMethod("MoMo", R.drawable.ic_momo, "Ví điện tử MoMo"),
         //PaymentMethod("ZaloPay", "⚡", "Ví điện tử ZaloPay"),
         //PaymentMethod("Thẻ tín dụng", "💳", "Visa, Master, JCB")
     )
 
-    // Load data when screen opens
     LaunchedEffect(Unit) {
         cartViewModel.fetchCartItems()
         addressViewModel.getDeliveryAddresses()
         voucherViewModel.fetchVouchers()
     }
 
-    // Set default address when address list is loaded
     LaunchedEffect(addressList) {
         if (selectedAddress == null && addressList.isNotEmpty()) {
-            // Find default address or use first address
             val defaultAddress = addressList.find { it.la_dia_chi_mac_dinh == 1 }
                 ?: addressList.firstOrNull()
             selectedAddress = defaultAddress
         }
     }
+
+    BackHandler(enabled = isOrderPlaced) {}
 
     Scaffold(
         topBar = {
@@ -157,6 +233,7 @@ fun PayScreen(
                 .background(Color(0xFFF8F9FA))
         ) {
             LazyColumn(
+                state = listState,
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(bottom = 120.dp), // Space for bottom section
@@ -411,6 +488,11 @@ fun PayScreen(
 
                 // 5. Phương thức thanh toán - Enhanced design
                 item {
+
+                    LaunchedEffect(Unit) {
+                        paymentMethodIndex = 5 // Index của payment method section (đếm từ 0)
+                    }
+
                     ModernCard(
                         icon = Icons.Default.Payment,
                         iconColor = Color(0xFF2196F3),
@@ -419,6 +501,17 @@ fun PayScreen(
                         Column(
                             verticalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
+
+                            if (selectedPaymentMethod == null) {
+                                Text(
+                                    text = "Vui lòng chọn phương thức thanh toán",
+                                    fontSize = 14.sp,
+                                    color = Color(0xFFFF6B35),
+                                    fontWeight = FontWeight.Medium,
+                                    modifier = Modifier.padding(bottom = 8.dp)
+                                )
+                            }
+
                             paymentMethods.forEach { method ->
                                 PaymentMethodItem(
                                     method = method,
@@ -500,23 +593,50 @@ fun PayScreen(
 
                         Button(
                             onClick = {
-                                if (!hasAddress) {
-                                    showAddressRequiredDialog = true
-                                } else if (selectedAddressId != null) {
-                                    viewModel.datHang(
-                                        maThongTinGiaoHang = selectedAddressId!!.toInt(),
-                                        phuongThucThanhToan = selectedPaymentMethod,
-                                        maGiamGia = selectedVoucher?.ma_giam_gia,
-                                        ghiChu = orderNote,
-                                        thoiGianGiaoDuKien = null
-                                    )
-                                    navController.navigate("home")
+                                when {
+                                    !hasAddress -> {
+                                        showAddressRequiredDialog = true
+                                    }
+                                    selectedPaymentMethod == null -> {
+                                        scope.launch {
+                                            listState.animateScrollToItem(paymentMethodIndex)
+                                        }
+                                    }
+                                    selectedAddressId != null -> {
+                                        payViewModel.datHang(
+                                            context = context,
+                                            maThongTinGiaoHang = selectedAddressId!!.toInt(),
+                                            phuongThucThanhToan = when (selectedPaymentMethod) {
+                                                "Tiền mặt" -> "tien_mat"
+                                                "MoMo" -> "momo"
+                                                "ZaloPay" -> "zalopay"
+                                                "Thẻ tín dụng" -> "the_tin_dung"
+                                                else -> "tien_mat"
+                                            },
+                                            maGiamGia = selectedVoucher?.ma_giam_gia,
+                                            ghiChu = orderNote,
+                                            thoiGianGiaoDuKien = null
+                                        )
+                                        if(selectedPaymentMethod == "Tiền mặt" || selectedPaymentMethod == "MoMo") {
+                                            isOrderPlaced = true // Đánh dấu đã đặt hàng
+                                            navController.navigate("home") {
+                                                popUpTo("home") { inclusive = true }
+                                            }
+                                        } else {
+                                            isOrderPlaced = true // Đánh dấu đã đặt hàng cho các phương thức khác
+                                        }
+                                    }
                                 }
                             },
-                            enabled = isOrderEnabled,
+                            enabled = !isLoading, // Chỉ disable khi đang loading
                             modifier = Modifier.fillMaxWidth(),
                             colors = ButtonDefaults.buttonColors(
-                                containerColor = if (isOrderEnabled) Color(0xFFFF6B35) else Color(0xFFCCCCCC),
+                                containerColor = when {
+                                    !hasAddress -> Color(0xFFCCCCCC)
+                                    selectedPaymentMethod == null -> Color(0xFFFFB700) // Màu khác khi chưa chọn thanh toán
+                                    isLoading -> Color(0xFFCCCCCC)
+                                    else -> Color(0xFFFF6B35)
+                                },
                                 contentColor = Color.White
                             )
                         ) {
@@ -527,7 +647,11 @@ fun PayScreen(
                                 )
                             } else {
                                 Text(
-                                    text = if (!hasAddress) "Thêm địa chỉ để đặt hàng" else "Đặt hàng",
+                                    text = when {
+                                        !hasAddress -> "Thêm địa chỉ để đặt hàng"
+                                        selectedPaymentMethod == null -> "Chọn phương thức thanh toán"
+                                        else -> "Đặt hàng"
+                                    },
                                     fontSize = 16.sp,
                                     fontWeight = FontWeight.Medium
                                 )
@@ -537,6 +661,80 @@ fun PayScreen(
                 }
             }
         }
+    }
+    if (showPaymentFailureDialog) {
+        AlertDialog(
+            onDismissRequest = { }, // Không cho dismiss bằng cách click ra ngoài
+            title = {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        Icons.Default.Warning,
+                        contentDescription = null,
+                        tint = Color(0xFFFF9800),
+                        modifier = Modifier.size(24.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        "Thanh toán không thành công",
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            },
+            text = {
+                Column {
+                    Text(
+                        "Bạn đã không hoàn thành thanh toán MoMo, nhưng đơn hàng đã được đặt thành công.",
+                        fontSize = 14.sp,
+                        color = Color(0xFF666666),
+                        lineHeight = 20.sp
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        "Bạn có thể:",
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = Color(0xFF333333)
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        "• Thanh toán khi nhận hàng\n• Thanh toán online sau trong phần đơn hàng",
+                        fontSize = 14.sp,
+                        color = Color(0xFF666666),
+                        lineHeight = 20.sp
+                    )
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        payViewModel.dismissPaymentFailureDialog()
+                        navController.navigate("home") {
+                            popUpTo("home") { inclusive = true }
+                        }
+                    },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color(0xFFFF6B35)
+                    )
+                ) {
+                    Text("Đóng", color = Color.White)
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = {
+                        payViewModel.dismissPaymentFailureDialog()
+                        navController.navigate("orders") {
+                            popUpTo("home") { inclusive = false }
+                        }
+                    }
+                ) {
+                    Text("Xem đơn hàng", color = Color(0xFFFF6B35))
+                }
+            }
+        )
     }
 
     if (showAddressDialog) {
@@ -629,7 +827,7 @@ fun PayScreen(
         )
     }
 
-    // Dialog yêu cầu thêm địa chỉ
+
     if (showAddressRequiredDialog) {
         AlertDialog(
             onDismissRequest = { showAddressRequiredDialog = false },
@@ -1068,7 +1266,7 @@ fun AddressRadioItem(
 // Data classes for better organization (unchanged)
 data class PaymentMethod(
     val name: String,
-    val icon: String,
+    val icon: Int?,      // Drawable resource ID (nullable)
     val description: String
 )
 

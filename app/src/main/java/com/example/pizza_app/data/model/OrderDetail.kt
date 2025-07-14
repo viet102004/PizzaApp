@@ -1,6 +1,7 @@
 package com.example.pizza_app.data.model
 
 import com.google.gson.annotations.SerializedName
+import java.util.Date
 
 data class OrderDetail(
     val don_hang: DonHang,
@@ -17,6 +18,7 @@ data class OrderDetail(
         val trang_thai_thanh_toan: String?,
         val ghi_chu: String?,
         val thoi_gian_giao_du_kien: String?,
+        val ngay_dat: String, // Thêm field này
         val thong_tin_giao_hang: ThongTinGiaoHang,
         val nguoi_dat: NguoiDat,
         val ma_giam_gia: String?
@@ -34,7 +36,6 @@ data class OrderDetail(
         val email: String?
     )
 }
-
 
 data class TuyChon(
     @SerializedName("ma_chi_tiet")
@@ -55,7 +56,6 @@ data class TuyChon(
     @SerializedName("gia_them")
     val gia_them: Double
 )
-
 
 data class MatHang(
     val ma_mat_hang_don_hang: Int,

@@ -7,5 +7,5 @@ data class Product(
     val gia_co_ban: Double,
     val mo_ta: String?,
     val moi: Int,
-    val ma_danh_muc: Int// Thêm trường này để liên kết với danh mục
+    val ma_danh_muc: Int
 )

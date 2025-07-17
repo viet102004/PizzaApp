@@ -2,6 +2,7 @@ package com.example.pizza_app.ui.cart
 
 import android.content.Intent
 import android.net.Uri
+import android.util.Log
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -119,6 +120,7 @@ fun PayScreen(
         }
     }
 
+
     LaunchedEffect(paymentCallbackResult) {
         paymentCallbackResult?.let { result ->
             if (!result.isSuccess) {
@@ -135,9 +137,17 @@ fun PayScreen(
 
     LaunchedEffect(paymentUrl) {
         paymentUrl?.let { url ->
-            val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
-            context.startActivity(intent)
-            payViewModel.resetState()
+            Log.d("PayScreen", "Received payment URL: $url")
+            try {
+                val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
+                intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK
+                context.startActivity(intent)
+                Log.d("PayScreen", "Started payment intent")
+            } catch (e: Exception) {
+                Log.e("PayScreen", "Error starting payment intent", e)
+            }
+            // Không reset state ngay lập tức để tránh mất thông tin
+            // payViewModel.resetState()
         }
     }
 
@@ -603,37 +613,42 @@ fun PayScreen(
                                         }
                                     }
                                     selectedAddressId != null -> {
+                                        val paymentMethodValue = when (selectedPaymentMethod) {
+                                            "Tiền mặt" -> "tien_mat"
+                                            "MoMo" -> "momo"
+                                            "ZaloPay" -> "zalopay"
+                                            "Thẻ tín dụng" -> "the_tin_dung"
+                                            else -> "tien_mat"
+                                        }
+
+                                        Log.d("PayScreen", "Placing order with payment method: $paymentMethodValue")
+
                                         payViewModel.datHang(
                                             context = context,
                                             maThongTinGiaoHang = selectedAddressId!!.toInt(),
-                                            phuongThucThanhToan = when (selectedPaymentMethod) {
-                                                "Tiền mặt" -> "tien_mat"
-                                                "MoMo" -> "momo"
-                                                "ZaloPay" -> "zalopay"
-                                                "Thẻ tín dụng" -> "the_tin_dung"
-                                                else -> "tien_mat"
-                                            },
+                                            phuongThucThanhToan = paymentMethodValue,
                                             maGiamGia = selectedVoucher?.ma_giam_gia,
                                             ghiChu = orderNote,
                                             thoiGianGiaoDuKien = null
                                         )
-                                        if(selectedPaymentMethod == "Tiền mặt" || selectedPaymentMethod == "MoMo") {
-                                            isOrderPlaced = true // Đánh dấu đã đặt hàng
+
+                                        // Chỉ navigate về home nếu là thanh toán tiền mặt
+                                        if(selectedPaymentMethod == "Tiền mặt") {
+                                            isOrderPlaced = true
                                             navController.navigate("home") {
                                                 popUpTo("home") { inclusive = true }
                                             }
-                                        } else {
-                                            isOrderPlaced = true // Đánh dấu đã đặt hàng cho các phương thức khác
                                         }
+                                        // Với MoMo, chờ paymentUrl để mở link thanh toán
                                     }
                                 }
                             },
-                            enabled = !isLoading, // Chỉ disable khi đang loading
+                            enabled = !isLoading,
                             modifier = Modifier.fillMaxWidth(),
                             colors = ButtonDefaults.buttonColors(
                                 containerColor = when {
                                     !hasAddress -> Color(0xFFCCCCCC)
-                                    selectedPaymentMethod == null -> Color(0xFFFFB700) // Màu khác khi chưa chọn thanh toán
+                                    selectedPaymentMethod == null -> Color(0xFFFFB700)
                                     isLoading -> Color(0xFFCCCCCC)
                                     else -> Color(0xFFFF6B35)
                                 },

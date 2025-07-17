@@ -40,33 +40,18 @@ fun CartScreen(
     isLoggedIn: Boolean,
     onNavigateTo: (String) -> Unit
 ) {
-     // true khi bấm "chỉnh sửa"
-
     val cartItems by cartViewModel.cartItems.collectAsState()
     val cartTotal by cartViewModel.totalAmount.collectAsState()
     val itemCount by cartViewModel.itemCount.collectAsState()
-
-    val isEditMode = mutableStateOf(false)
-    val showDialog = remember { mutableStateOf(false) }
-    val selectedCartItem = remember { mutableStateOf<CartItem?>(null) }
-    val product = remember { mutableStateOf<Product?>(null) }
-    val quantity = remember { mutableStateOf(1) }
-    val selectedImage = remember { mutableStateOf<String?>(null) }
-    val dialogAction = remember { mutableStateOf("add_to_cart") }
-
-    val selectedOptions = remember { mutableStateMapOf<Long, Long>() }
-
-    val multipleSelectedOptions = remember { mutableStateMapOf<Long, MutableSet<Long>>() }
 
     var showAuthDialog by remember { mutableStateOf(false) }
     val productOptionViewModel: CartViewModel = viewModel()
     val options by productOptionViewModel.options.collectAsState()
 
-
-    //val options = remember { mutableStateListOf<ProductOption>() }
-
     LaunchedEffect(Unit) {
-        cartViewModel.fetchCartItems()
+        if (isLoggedIn) {
+            cartViewModel.fetchCartItems()
+        }
     }
 
     Column(
@@ -92,7 +77,7 @@ fun CartScreen(
                         fontWeight = FontWeight.Bold,
                         color = Color.Black
                     )
-                    if (cartItems.isNotEmpty()) {
+                    if (isLoggedIn && cartItems.isNotEmpty()) {
                         Box(
                             modifier = Modifier
                                 .shadow(elevation = 4.dp, shape = CircleShape)
@@ -111,8 +96,8 @@ fun CartScreen(
                 }
             },
             actions = {
-                // Nút xóa tất cả (chỉ hiện khi có sản phẩm)
-                if (cartItems.isNotEmpty()) {
+                // Nút xóa tất cả (chỉ hiện khi đã đăng nhập và có sản phẩm)
+                if (isLoggedIn && cartItems.isNotEmpty()) {
                     Box(
                         modifier = Modifier
                             .size(40.dp)
@@ -158,8 +143,19 @@ fun CartScreen(
             colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
         )
 
-        if (cartItems.isEmpty()) {
-            CartEmptyContent(navController)
+        // Kiểm tra đăng nhập giống OrderScreen
+        if (!isLoggedIn) {
+            CartEmptyContent(
+                title = "Vui lòng đăng nhập để xem giỏ hàng",
+                subtitle = "Hãy đăng nhập để thêm các món pizza yêu thích vào giỏ hàng của bạn!",
+                navController = navController,
+                onNavigateTo = onNavigateTo
+            )
+        } else if (cartItems.isEmpty()) {
+            CartEmptyContent(
+                navController = navController,
+                onNavigateTo = onNavigateTo
+            )
         } else {
             Column(
                 modifier = Modifier.fillMaxSize()
@@ -180,25 +176,7 @@ fun CartScreen(
                             },
                             onRemove = {
                                 cartViewModel.removeFromCart(item.id)
-                            },
-//                            onEditClick = {
-//                                selectedCartItem.value = item
-//                                product.value = item.product
-//                                quantity.value = item.quantity
-//                                selectedImage.value = item.imageUrl
-//                                dialogAction.value = "edit_cart"
-//                                isEditMode.value = true
-//
-//                                restoreSelectedOptionsFromCartItem(
-//                                    item = item,
-//                                    options = options,
-//                                    selectedOptions = selectedOptions,
-//                                    multipleSelectedOptions = multipleSelectedOptions
-//                                )
-//
-//                                showDialog.value = true
-//                            }
-
+                            }
                         )
                     }
                 }
@@ -262,38 +240,13 @@ fun CartScreen(
     )
 }
 
-fun restoreSelectedOptionsFromCartItem(
-    item: CartItem,
-    options: List<ProductOption>,
-    selectedOptions: MutableMap<Long, Long>,
-    multipleSelectedOptions: MutableMap<Long, MutableSet<Long>>
-) {
-    selectedOptions.clear()
-    multipleSelectedOptions.clear()
-
-    item.extraOptions.forEach { selected ->
-        val matchedOption = options.find { option ->
-            option.gia_tri.any { it.ma_gia_tri == selected.ma_gia_tri }
-        }
-
-        matchedOption?.let { option ->
-            when (option.loai_lua_chon) {
-                "radio", "single" -> {
-                    selectedOptions[option.ma_loai_tuy_chon.toLong()] = selected.ma_gia_tri.toLong()
-                }
-                "checkbox", "multiple" -> {
-                    val current = multipleSelectedOptions.getOrPut(option.ma_loai_tuy_chon.toLong()) { mutableSetOf() }
-                    current.add(selected.ma_gia_tri.toLong())
-                }
-            }
-        }
-    }
-}
-
-
-
 @Composable
-fun CartEmptyContent(navController: NavController) {
+fun CartEmptyContent(
+    navController: NavController,
+    onNavigateTo: (String) -> Unit,
+    title: String = "Quên chưa thêm món rồi nè bạn ơi!!!",
+    subtitle: String = "Hãy thêm một số món pizza ngon vào giỏ hàng của bạn để bắt đầu đặt hàng!"
+) {
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -307,13 +260,13 @@ fun CartEmptyContent(navController: NavController) {
                 .background(Color(0xFFFFB700).copy(alpha = 0.1f), shape = CircleShape),
             contentAlignment = Alignment.Center
         ) {
-            Text(text = "🍕", fontSize = 80.sp)
+            Text(text = "🛒", fontSize = 80.sp)
         }
 
         Spacer(modifier = Modifier.height(24.dp))
 
         Text(
-            text = "Quên chưa thêm món rồi nè bạn ơi!!!",
+            text = title,
             fontSize = 20.sp,
             fontWeight = FontWeight.Bold,
             textAlign = TextAlign.Center,
@@ -323,7 +276,7 @@ fun CartEmptyContent(navController: NavController) {
         Spacer(modifier = Modifier.height(12.dp))
 
         Text(
-            text = "Hãy thêm một số món pizza ngon vào giỏ hàng của bạn để bắt đầu đặt hàng!",
+            text = subtitle,
             textAlign = TextAlign.Center,
             fontSize = 15.sp,
             color = Color(0xFF666666),
@@ -333,7 +286,7 @@ fun CartEmptyContent(navController: NavController) {
         Spacer(modifier = Modifier.height(32.dp))
 
         Button(
-            onClick = { navController.navigate("home") },
+            onClick = { onNavigateTo("home") },
             modifier = Modifier
                 .fillMaxWidth()
                 .height(52.dp),

@@ -41,6 +41,14 @@ class PayViewModel : ViewModel() {
     private val _showPaymentFailureDialog = MutableStateFlow(false)
     val showPaymentFailureDialog: StateFlow<Boolean> = _showPaymentFailureDialog
 
+    // Thêm state để navigate về home
+    private val _navigateToHome = MutableStateFlow(false)
+    val navigateToHome: StateFlow<Boolean> = _navigateToHome
+
+    // Thêm state để trigger mở MoMo
+    private val _openMoMoPayment = MutableStateFlow<String?>(null)
+    val openMoMoPayment: StateFlow<String?> = _openMoMoPayment
+
     data class PaymentCallbackResult(
         val orderId: String,
         val resultCode: String,
@@ -91,30 +99,50 @@ class PayViewModel : ViewModel() {
                     )
                 )
 
+                Log.d("PayViewModel", "API Response: $response")
                 _orderResult.value = response
 
-                if (response.phuong_thuc_thanh_toan == "momo" && !response.payment_url.isNullOrEmpty()) {
-                    // Lưu thông tin pending payment
-                    val orderId = response.ma_don_hang?.toString() ?: "unknown"
-                    _pendingPayment.value = PendingPayment(
-                        orderId = orderId,
-                        paymentMethod = "momo",
-                        timestamp = System.currentTimeMillis()
-                    )
+                // Đợi 1 giây để hiển thị loading
+                delay(1000)
 
-                    // Bắt đầu timeout timer
-                    startPaymentTimeout()
+                // Đặt hàng thành công, chuyển về home trước
+                _navigateToHome.value = true
+                _message.value = "Đặt hàng thành công!"
 
-                    // Thêm returnUrl và notifyUrl với deeplink
-                    val modifiedUrl = addDeeplinkToPaymentUrl(response.payment_url)
-                    _paymentUrl.value = modifiedUrl
+                // Xử lý payment URL cho MoMo sau khi về home
+                if (phuongThucThanhToan == "momo") {
+                    Log.d("PayViewModel", "Processing MoMo payment")
+                    Log.d("PayViewModel", "Payment URL from API: ${response.payment_url}")
 
-                    // Mở MoMo app hoặc browser
-                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse(modifiedUrl))
-                    context.startActivity(intent)
+                    if (!response.payment_url.isNullOrEmpty()) {
+                        // Lưu thông tin pending payment
+                        val orderId = response.ma_don_hang?.toString() ?: "unknown"
+                        _pendingPayment.value = PendingPayment(
+                            orderId = orderId,
+                            paymentMethod = "momo",
+                            timestamp = System.currentTimeMillis()
+                        )
+
+                        // Bắt đầu timeout timer
+                        startPaymentTimeout()
+
+                        // Thêm returnUrl và notifyUrl với deeplink
+                        val modifiedUrl = addDeeplinkToPaymentUrl(response.payment_url)
+                        Log.d("PayViewModel", "Modified payment URL: $modifiedUrl")
+
+                        _paymentUrl.value = modifiedUrl
+
+                        // Đợi thêm 1 giây để user thấy đã về home, rồi mới mở MoMo
+                        delay(1000)
+                        _openMoMoPayment.value = modifiedUrl
+
+                        _message.value = "Đang chuyển hướng đến MoMo..."
+                    } else {
+                        Log.e("PayViewModel", "Payment URL is null or empty")
+                        _message.value = "Lỗi: Không nhận được URL thanh toán từ MoMo"
+                    }
                 }
 
-                _message.value = "Đặt hàng thành công"
                 Log.d("PayViewModel", "Đặt hàng thành công: $response")
 
             } catch (e: Exception) {
@@ -123,6 +151,26 @@ class PayViewModel : ViewModel() {
             } finally {
                 _isLoading.value = false
             }
+        }
+    }
+
+    fun onNavigatedToHome() {
+        // Gọi khi đã navigate về home thành công
+        _navigateToHome.value = false
+    }
+
+    fun onMoMoPaymentOpened() {
+        // Gọi khi đã mở MoMo app thành công
+        _openMoMoPayment.value = null
+    }
+
+    fun openMoMoApp(context: Context, paymentUrl: String) {
+        try {
+            val intent = Intent(Intent.ACTION_VIEW, Uri.parse(paymentUrl))
+            context.startActivity(intent)
+        } catch (e: Exception) {
+            Log.e("PayViewModel", "Error opening MoMo app", e)
+            _message.value = "Không thể mở ứng dụng MoMo. Vui lòng kiểm tra lại."
         }
     }
 
@@ -166,14 +214,21 @@ class PayViewModel : ViewModel() {
     }
 
     private fun addDeeplinkToPaymentUrl(originalUrl: String): String {
-        // Thêm deeplink callback vào URL thanh toán
-        val uri = Uri.parse(originalUrl)
-        val builder = uri.buildUpon()
+        try {
+            // Thêm deeplink callback vào URL thanh toán
+            val uri = Uri.parse(originalUrl)
+            val builder = uri.buildUpon()
 
-        // Thêm returnUrl (deeplink về app)
-        builder.appendQueryParameter("returnUrl", "pizzaapp://payment")
+            // Thêm returnUrl (deeplink về app)
+            builder.appendQueryParameter("returnUrl", "pizzaapp://payment")
+            // Có thể thêm notifyUrl nếu cần
+            // builder.appendQueryParameter("notifyUrl", "https://your-server.com/momo-callback")
 
-        return builder.build().toString()
+            return builder.build().toString()
+        } catch (e: Exception) {
+            Log.e("PayViewModel", "Error modifying payment URL", e)
+            return originalUrl
+        }
     }
 
     fun handlePaymentReturn(orderId: String, resultCode: String) {
@@ -226,5 +281,7 @@ class PayViewModel : ViewModel() {
         _paymentCallbackResult.value = null
         _pendingPayment.value = null
         _showPaymentFailureDialog.value = false
+        _navigateToHome.value = false
+        _openMoMoPayment.value = null
     }
 }
